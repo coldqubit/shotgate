@@ -1,0 +1,78 @@
+name: release
+
+# Triggered by a semver tag (e.g. v0.1.0). Builds the Python distribution and the
+# container image, publishes the image to GHCR, and attaches the dist to the
+# GitHub Release. Everything is built inside containers.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-dist:
+    name: build python distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist + wheel (containerized)
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/library/python:3.12-slim bash -euc "
+              pip install -q build
+              python -m build
+            "
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  publish-image:
+    name: publish container image to GHCR
+    runs-on: ubuntu-latest
+    needs: build-dist
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive image tag
+        id: meta
+        run: echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        run: |
+          podman build \
+            -t "ghcr.io/${GITHUB_REPOSITORY,,}:${{ steps.meta.outputs.tag }}" \
+            -t "ghcr.io/${GITHUB_REPOSITORY,,}:latest" .
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push image
+        run: |
+          podman push "ghcr.io/${GITHUB_REPOSITORY,,}:${{ steps.meta.outputs.tag }}"
+          podman push "ghcr.io/${GITHUB_REPOSITORY,,}:latest"
+
+  github-release:
+    name: create github release
+    runs-on: ubuntu-latest
+    needs: [build-dist, publish-image]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

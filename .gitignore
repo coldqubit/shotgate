@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+
+# Test / coverage / type / lint caches
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# qforge reports
+report.xml
+report.json
+summary.md
+*.qforge.json
+
+# Terraform
+infra/terraform/**/.terraform/
+infra/terraform/**/*.tfstate
+infra/terraform/**/*.tfstate.*
+infra/terraform/**/.terraform.lock.hcl
+crash.log
+
+# QEMU/KVM artifacts (downloaded images, overlays, seeds)
+infra/qemu/.cache/
+*.qcow2
+seed.iso
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Stray caches (e.g. XDG cache when running python in a container with cwd HOME)
+.cache/

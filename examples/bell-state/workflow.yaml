@@ -1,0 +1,43 @@
+apiVersion: qforge.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state
+  description: >-
+    Canonical entanglement smoke test. A Bell pair must collapse to |00> or |11>
+    with ~equal probability and (almost) never to |01> or |10>.
+  labels:
+    suite: smoke
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 1234
+
+jobs:
+  - name: bell-pair
+    circuit:
+      format: qasm2
+      path: bell.qasm
+    assertions:
+      # Statistical goodness-of-fit against the ideal distribution.
+      - type: chi_square
+        expected: { "00": 0.5, "11": 0.5 }
+        significance: 0.01
+      # Distance-based oracle — robust and shot-count agnostic.
+      - type: distribution_tvd
+        expected: { "00": 0.5, "11": 0.5 }
+        max_distance: 0.03
+      - type: hellinger_fidelity
+        expected: { "00": 0.5, "11": 0.5 }
+        min_fidelity: 0.99
+      # Structural oracle: |01> and |10> are forbidden (no noise here).
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.0
+      # Marginal probability window for the |00> outcome.
+      - type: state_probability
+        state: "00"
+        min: 0.45
+        max: 0.55

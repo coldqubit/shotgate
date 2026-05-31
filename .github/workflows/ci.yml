@@ -1,0 +1,96 @@
+name: ci
+
+# Container-native CI: every job runs tools inside Podman containers, mirroring
+# exactly what a developer gets locally with `make`. No language toolchains are
+# installed onto the runner directly.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-core-tests:
+    name: lint + core tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ruff + core unit tests (containerized)
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/library/python:3.12-slim bash -euc "
+              pip install -q -e '.[dev]'
+              ruff check src tests
+              pytest -q -m 'not integration' --junitxml=core-junit.xml
+            "
+
+      - name: Upload core test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-junit
+          path: core-junit.xml
+
+  image-and-integration:
+    name: build image + integration + example gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build qforge runtime image
+        run: podman build -t qforge:ci .
+
+      - name: Build test image and run full suite (unit + integration)
+        run: |
+          podman build --target test -t qforge:ci-test .
+          podman run --rm -v "$PWD:/work:Z" qforge:ci-test \
+            pytest -q --junitxml=/work/integration-junit.xml
+
+      - name: Run example workflows as quality gates
+        run: |
+          set -euo pipefail
+          # Map the runner user through the container userns so reports are writable.
+          USERMAP="--userns=keep-id --user $(id -u):$(id -g)"
+          for wf in bell-state ghz-state grover-2q; do
+            echo "::group::qforge run examples/${wf}"
+            podman run --rm $USERMAP -v "$PWD:/work:Z" -w /work qforge:ci \
+              run "examples/${wf}/workflow.yaml" \
+              --junit "report-${wf}.xml" --markdown "summary-${wf}.md"
+            cat "summary-${wf}.md" >> "$GITHUB_STEP_SUMMARY"
+            echo "::endgroup::"
+          done
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qforge-reports
+          path: |
+            report-*.xml
+            integration-junit.xml
+
+  terraform:
+    name: terraform fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Format check
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/hashicorp/terraform:latest -chdir=infra/terraform fmt -check -recursive
+
+      - name: Init + validate example
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/hashicorp/terraform:latest -chdir=infra/terraform/examples/basic init -backend=false -input=false
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/hashicorp/terraform:latest -chdir=infra/terraform/examples/basic validate

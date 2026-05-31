@@ -1,0 +1,31 @@
+apiVersion: qforge.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: ghz-state
+  description: 3-qubit GHZ entanglement with a small leakage budget.
+  labels:
+    suite: smoke
+    qubits: "3"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 7
+
+jobs:
+  - name: ghz-3q
+    circuit:
+      format: qasm2
+      path: ghz.qasm
+    assertions:
+      - type: distribution_tvd
+        expected: { "000": 0.5, "111": 0.5 }
+        max_distance: 0.03
+      - type: chi_square
+        expected: { "000": 0.5, "111": 0.5 }
+        significance: 0.01
+      # Ideal GHZ only occupies the all-0 / all-1 corners.
+      - type: allowed_states
+        states: ["000", "111"]
+        max_leakage: 0.005

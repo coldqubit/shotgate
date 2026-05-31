@@ -1,0 +1,44 @@
+name: Bug report
+description: Report incorrect behavior in qforge
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug! Please include enough detail to reproduce it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow YAML
+      description: The (minimal) workflow that reproduces the issue.
+      render: yaml
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: How you ran qforge (e.g. `make run WORKFLOW=...`) and the output.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: qforge version / image tag
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      options: [local-aer, ibm, braket, other]
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Podman/QEMU versions, host OS.

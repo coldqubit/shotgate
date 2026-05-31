@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest a new assertion oracle, backend, reporter, or capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today? What quantum-DevOps gap does this close?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch the YAML/CLI/API you'd want. Statistical rationale welcome.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Assertion oracle
+        - Backend (provider)
+        - Reporter / integration
+        - Infrastructure (Terraform / QEMU / Helm)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

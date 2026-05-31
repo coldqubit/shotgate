@@ -1,0 +1,8 @@
+# Default owners for everything in the repo.
+# Replace with real GitHub handles/teams before publishing.
+*                       @your-org/maintainers
+
+# Area owners
+/src/qforge/validation/ @your-org/quantum-stats
+/infra/                 @your-org/platform
+/.github/               @your-org/platform

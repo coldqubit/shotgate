@@ -1,0 +1,43 @@
+#cloud-config
+# qforge ephemeral runner — provisions Podman, runs the workflow inside a
+# container, writes the report back to the shared repo, then powers off.
+# @@WORKFLOW@@ is substituted by create-runner-vm.sh at boot time.
+
+package_update: true
+packages:
+  - podman
+
+write_files:
+  - path: /usr/local/bin/qforge-run.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      WORKFLOW="@@WORKFLOW@@"
+
+      echo "[guest] mounting shared repository over virtio-9p"
+      mkdir -p /work
+      mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 qforge /work
+      cd /work
+
+      echo "[guest] building qforge image inside the VM (Podman)"
+      podman build -t qforge:vm .
+
+      echo "[guest] running workflow: ${WORKFLOW}"
+      set +e
+      podman run --rm -v /work:/work:Z -w /work qforge:vm \
+        run "${WORKFLOW}" --junit /work/report.xml --json /work/report.json
+      rc=$?
+      set -e
+
+      echo "[guest] workflow exit code: ${rc}" | tee /work/.qforge-vm-done
+      poweroff
+
+runcmd:
+  - [ /usr/local/bin/qforge-run.sh ]
+
+# Fail closed: never leave the VM running if provisioning errors out.
+power_state:
+  mode: poweroff
+  condition: true
+  timeout: 600

@@ -1,0 +1,12 @@
+%% qforge CI/CD quantum quality gate — hybrid pipeline.
+flowchart LR
+    dev([commit / PR]) --> lint["Lint and type"]
+    lint --> ct["Classical tests"]
+    ct --> build["Build qforge image\n(podman build)"]
+    build --> sim["Quantum gate: simulator\nqforge run (local-aer)"]
+    sim -->|pass| qpu{"main branch\nor label?"}
+    qpu -->|yes| real["Quantum gate: QPU\nqforge run (ibm)"]
+    qpu -->|no| pkg["Package and publish"]
+    real --> pkg
+    sim -->|fail| stop([block merge])
+    real -->|fail| stop

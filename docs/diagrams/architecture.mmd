@@ -1,0 +1,26 @@
+%% qforge component architecture — render with the Mermaid CLI or any Mermaid viewer.
+flowchart TB
+    subgraph CoreLayer["Validation core — no quantum SDK required"]
+        config["config.py\nWorkflow schema (pydantic)"]
+        assertions["validation/assertions.py\nOracle models + evaluate()"]
+        metrics["validation/metrics.py\nTVD - Hellinger - chi-square"]
+    end
+    subgraph ExecLayer["Execution layer — SDKs imported lazily"]
+        loader["circuits/loader.py\nOpenQASM to circuit"]
+        registry["backends/registry.py\nprovider to Backend"]
+        aer["local_aer.py"]
+        ibm["ibm_runtime.py"]
+    end
+    subgraph OrchLayer["Orchestration and output"]
+        runner["runner.py\nload to run to validate"]
+        telemetry["telemetry.py"]
+        report["report.py\nJUnit - JSON - Markdown"]
+        cli["cli.py"]
+    end
+    config --> assertions --> metrics
+    cli --> runner
+    runner --> loader --> registry
+    registry --> aer & ibm
+    runner --> assertions
+    runner --> telemetry
+    runner --> report

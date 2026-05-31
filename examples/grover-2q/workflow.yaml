@@ -1,0 +1,30 @@
+apiVersion: qforge.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: grover-2q
+  description: >-
+    Algorithmic correctness gate: one Grover iteration must amplify the marked
+    state |11> to (near) certainty.
+  labels:
+    suite: algorithm
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 4096
+    seed: 42
+
+jobs:
+  - name: grover-mark-11
+    circuit:
+      format: qasm2
+      path: grover.qasm
+    assertions:
+      # The marked state should dominate. On an ideal simulator P(|11>) == 1.
+      - type: state_probability
+        state: "11"
+        min: 0.99
+      - type: allowed_states
+        states: ["11"]
+        max_leakage: 0.01
