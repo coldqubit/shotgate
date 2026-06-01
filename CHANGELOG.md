@@ -6,7 +6,42 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed the project from `qforge` to `shotgate`.** The name `qforge` was already
+  taken (PyPI/crates) and raised a VS Code marketplace trademark concern. The package
+  (`src/shotgate`), CLI program, container image, environment variables
+  (`SHOTGATE_IBM_TOKEN`), and the workflow API version (`shotgate.dev/v1alpha1`) all
+  moved to the new name. The canonical home is `github.com/coldqubit/shotgate` and the
+  published image is `ghcr.io/coldqubit/shotgate`.
+- **Pull-first usage.** Documentation now leads with `podman run
+  ghcr.io/coldqubit/shotgate …`; building from source is the contributor fallback.
+- **Honest extras.** `braket` and `mitigation` are marked *planned* and removed from the
+  installable `all` extra, since no Braket backend or Mitiq integration ships yet.
+  `--backend braket` now fails fast at schema validation with a clear message.
+
+### Added
+
+- **Published container image** to GHCR on tag, tagged with the semver version, the
+  git SHA, and `latest` (release pipeline).
+- **Reference CI for GitLab and Jenkins** (`.gitlab-ci.yml`, `Jenkinsfile`) that pull the
+  published image and emit JUnit, alongside the existing GitHub Actions example.
+- **Hardened IBM/QPU backend**: robust counts extraction from named classical registers
+  (with a clear error on unexpected result shapes), corrected Runtime channel default,
+  a token-gated smoke test, and an `[ibm]`-baked image variant (build arg
+  `SHOTGATE_EXTRAS="aer,ibm"`, published as the `:…-ibm` image tag).
+- **Noise-tolerant example** (`examples/bell-state-hardware/`) with relaxed thresholds
+  for real-device runs, plus a documented simulator-vs-QPU threshold split.
+- **`docs/hardware-validation.md`**: a step-by-step plan and acceptance matrix for
+  validating the statistical gates on real IBM quantum hardware (v0.2 milestone).
+
+> The `ibm` backend remains **implemented but not yet validated on real hardware**.
+
 ## [0.1.0] - 2026-06-01
+
+> Initial release, published under the project's original name **`qforge`** (the
+> workflow API version was `qforge.dev/v1alpha1`). Renamed to `shotgate` post-release;
+> see [Unreleased].
 
 ### Added
 
@@ -19,20 +54,20 @@ All notable changes to this project are documented here. The format is based on
   function (no SciPy/numpy dependency).
 - **Pluggable backends**: `Backend` ABC + lazy registry; `local-aer` (Qiskit Aer) and
   an `ibm` (Qiskit Runtime) backend. SDKs imported lazily so the core stays light.
-- **CLI**: `qforge run` (CI quality gate, exit 0/1/2), `validate`, `backends`.
+- **CLI**: `shotgate run` (CI quality gate, exit 0/1/2), `validate`, `backends`.
 - **Reporters**: JUnit XML, JSON, Markdown summary, and Rich console output.
 - **Telemetry**: per-job circuit width/depth/size/op-counts and wall-clock runtime.
 - **Container-native tooling**: multi-stage `Containerfile` (non-root runtime + test
   stage) and a Podman/QEMU `Makefile`.
 - **KVM/QEMU isolation tier**: `infra/qemu` boots an ephemeral Fedora micro-VM
-  (cloud-init, copy-on-write overlay) that runs qforge in Podman inside the VM.
+  (cloud-init, copy-on-write overlay) that runs shotgate in Podman inside the VM.
 - **Terraform IaC module**: express a quantum quality gate as a `terraform_data`
-  resource driven by the qforge container.
+  resource driven by the shotgate container.
 - **CI/CD**: Podman-based GitHub Actions for lint, core + integration tests, example
   gates, Terraform validation, and a tagged release pipeline (dist + GHCR image).
 - **Docs**: solution architecture, pipeline schema, workflow spec, assertion catalog
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/your-org/qforge/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/qforge/releases/tag/v0.1.0
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/coldqubit/shotgate/releases/tag/v0.1.0

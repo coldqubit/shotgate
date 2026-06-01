@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from xml.etree import ElementTree as ET
 
-from qforge.report import to_json, to_junit_xml, to_markdown
-from qforge.runner import JobReport, WorkflowReport
-from qforge.validation.assertions import AssertionResult
+from shotgate.report import to_json, to_junit_xml, to_markdown
+from shotgate.runner import JobReport, WorkflowReport
+from shotgate.validation.assertions import AssertionResult
 
 
 def _sample_report() -> WorkflowReport:
@@ -66,6 +66,6 @@ def test_json_roundtrips_and_summarises():
 
 def test_markdown_contains_status_and_rows():
     md = to_markdown(_sample_report())
-    assert "qforge: `demo`" in md
+    assert "shotgate: `demo`" in md
     assert "❌ failed" in md
     assert "`bell`" in md and "`ghz`" in md

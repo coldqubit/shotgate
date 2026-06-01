@@ -1,4 +1,6 @@
-"""Reporters: turn a :class:`~qforge.runner.WorkflowReport` into CI-friendly output.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
+"""Reporters: turn a :class:`~shotgate.runner.WorkflowReport` into CI-friendly output.
 
 - JUnit XML: consumed natively by GitHub Actions, GitLab, Jenkins, etc.
 - JSON: machine-readable artifact for dashboards and trend analysis.
@@ -12,7 +14,7 @@ import json
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
-from qforge.runner import WorkflowReport
+from shotgate.runner import WorkflowReport
 
 
 def to_json(report: WorkflowReport, *, indent: int = 2) -> str:
@@ -94,7 +96,7 @@ def to_markdown(report: WorkflowReport) -> str:
     """Markdown summary suitable for a GitHub Actions step summary or PR comment."""
     status = "✅ passed" if report.passed else "❌ failed"
     lines = [
-        f"## qforge: `{report.name}` — {status}",
+        f"## shotgate: `{report.name}` — {status}",
         "",
         f"- Jobs: **{len(report.jobs)}**, "
         f"failed: **{sum(1 for j in report.jobs if not j.passed)}**",
@@ -138,7 +140,7 @@ def render_console(report: WorkflowReport, console=None) -> None:
 
     console = console or Console()
     title_color = "green" if report.passed else "red"
-    console.rule(f"[bold {title_color}]qforge :: {report.name}")
+    console.rule(f"[bold {title_color}]shotgate :: {report.name}")
 
     for job in report.jobs:
         table = Table(
@@ -168,7 +170,7 @@ def render_console(report: WorkflowReport, console=None) -> None:
 
 
 def _render_plain(report: WorkflowReport) -> None:
-    print(f"qforge :: {report.name} :: {'PASSED' if report.passed else 'FAILED'}")
+    print(f"shotgate :: {report.name} :: {'PASSED' if report.passed else 'FAILED'}")
     for job in report.jobs:
         print(f"  job {job.name} [{job.backend_name}, {job.shots} shots]")
         if job.error:

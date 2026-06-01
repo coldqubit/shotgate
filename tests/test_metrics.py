@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from qforge.validation import metrics
+from shotgate.validation import metrics
 
 
 def test_counts_to_probabilities_normalises_and_strips_whitespace():

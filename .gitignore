@@ -16,11 +16,11 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# qforge reports
+# shotgate reports
 report.xml
 report.json
 summary.md
-*.qforge.json
+*.shotgate.json
 
 # Terraform
 infra/terraform/**/.terraform/
@@ -41,3 +41,8 @@ seed.iso
 
 # Stray caches (e.g. XDG cache when running python in a container with cwd HOME)
 .cache/
+
+# Local AI-assistant context (not part of the project)
+CLAUDE.md
+CLAUDE.local.md
+.claude/

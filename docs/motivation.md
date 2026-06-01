@@ -1,7 +1,7 @@
 # Motivation: the quantum × DevOps gap
 
-This document records *why* qforge exists — the market and community signals that
-point to a real, currently-unmet need — and how qforge is positioned against them.
+This document records *why* shotgate exists — the market and community signals that
+point to a real, currently-unmet need — and how shotgate is positioned against them.
 
 ## The shape of the gap
 
@@ -43,9 +43,9 @@ simulators…"* — i.e. they don't today. The one Terraform "quantum" provider 
 wild (`coveooss/terraform-provider-quantum`) is unrelated to circuits; it manipulates
 JSON. The IaC space for real quantum workloads is empty.
 
-## How qforge is positioned
+## How shotgate is positioned
 
-qforge **productizes the academically-validated statistical oracles** into a single,
+shotgate **productizes the academically-validated statistical oracles** into a single,
 container-native CLI and wraps them in the DevOps surfaces that are missing:
 
 - A declarative **"workflow as code"** schema (validated YAML).
@@ -61,7 +61,7 @@ the mature SDKs and fills the layer above them.
 
 The demand today is **anticipatory**: few organizations run quantum workloads in
 production at a scale that *requires* an industrial pipeline. The near-term value of
-qforge is therefore as much about **positioning and capability** — being early and
+shotgate is therefore as much about **positioning and capability** — being early and
 credible at the DevOps × quantum junction — as about immediate commercial pull. The
 design reflects that: minimal but scalable, with clean extension points so it can grow
 as the hybrid classical-quantum model matures.

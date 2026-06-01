@@ -1,7 +1,7 @@
 """End-to-end runner tests.
 
 These require a quantum SDK (qiskit + qiskit-aer) and are skipped automatically
-when it is not installed. In CI they run inside the qforge container, which has
+when it is not installed. In CI they run inside the shotgate container, which has
 the ``aer`` extra. Run locally with ``pip install -e .[aer,dev]``.
 """
 
@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from qforge.backends.registry import available_backends
-from qforge.config import load_workflow
-from qforge.runner import Runner
+from shotgate.backends.registry import available_backends
+from shotgate.config import load_workflow
+from shotgate.runner import Runner
 
 pytestmark = pytest.mark.integration
 
@@ -36,11 +36,11 @@ def test_example_workflows_pass(example: str):
 
 @pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
 def test_inline_circuit_runs():
-    from qforge.config import parse_workflow
+    from shotgate.config import parse_workflow
 
     wf = parse_workflow(
         {
-            "apiVersion": "qforge.dev/v1alpha1",
+            "apiVersion": "shotgate.dev/v1alpha1",
             "kind": "QuantumWorkflow",
             "metadata": {"name": "inline"},
             "jobs": [
@@ -66,7 +66,7 @@ def test_inline_circuit_runs():
             ],
         }
     )
-    from qforge.config import LoadedWorkflow
+    from shotgate.config import LoadedWorkflow
 
     report = Runner(LoadedWorkflow(wf, EXAMPLES)).run()
     assert report.passed

@@ -1,21 +1,21 @@
 # Pipeline Schema
 
-How qforge slots into a CI/CD pipeline as a **quantum quality gate**, and the exact
+How shotgate slots into a CI/CD pipeline as a **quantum quality gate**, and the exact
 contract it exposes to the pipeline (inputs, stages, outputs, exit codes).
 
 ## 1. The hybrid pipeline
 
 A 2026-era quantum application is *hybrid*: classical code plus quantum kernels.
-qforge gates the quantum half with the same ergonomics as classical tests.
+shotgate gates the quantum half with the same ergonomics as classical tests.
 
 ```mermaid
 flowchart LR
     dev([commit / PR]) --> lint["Lint & type<br/>(ruff, mypy)"]
     lint --> ct["Classical tests<br/>(pytest)"]
-    ct --> build["Build qforge image<br/>(podman build)"]
-    build --> sim["Quantum gate: simulator<br/>qforge run (local-aer)"]
+    ct --> build["Build shotgate image<br/>(podman build)"]
+    build --> sim["Quantum gate: simulator<br/>shotgate run (local-aer)"]
     sim -->|pass| qpu{"main branch<br/>or label?"}
-    qpu -->|yes| real["Quantum gate: QPU/cloud<br/>qforge run (ibm)"]
+    qpu -->|yes| real["Quantum gate: QPU/cloud<br/>shotgate run (ibm)"]
     qpu -->|no| pkg
     real --> pkg["Package & publish"]
     sim -->|fail| stop([❌ block merge])
@@ -33,7 +33,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    subgraph stage["qforge run &lt;workflow&gt; — a single pipeline stage"]
+    subgraph stage["shotgate run &lt;workflow&gt; — a single pipeline stage"]
         direction TB
         in["INPUTS<br/>• workflow.yaml<br/>• circuit.qasm<br/>• env: tokens (optional)<br/>• flags: --backend --shots"]
         proc["PROCESS<br/>load → execute → validate → benchmark"]
@@ -55,30 +55,69 @@ flowchart TB
 | Markdown | `--markdown summary.md` | `$GITHUB_STEP_SUMMARY`, PR comments |
 | Console | (default) | Local developer feedback (Rich tables) |
 
-## 3. Reference: GitHub Actions
+## 3. Reference CI configurations
 
-The shipped pipeline ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs
-**everything inside Podman**, so local `make` and CI are byte-for-byte equivalent:
+The gate is **the same container on every platform**: pull
+`ghcr.io/coldqubit/shotgate:latest`, run the workflow, emit a JUnit report, and let the
+exit code fail the stage. The **exit-code contract (0 / 1 / 2) is identical across
+GitHub Actions, GitLab CI, and Jenkins** — only the YAML/Groovy wrapper differs.
+
+Ready-to-copy references live in the repo root:
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) ·
+[`.gitlab-ci.yml`](../.gitlab-ci.yml) ·
+[`Jenkinsfile`](../Jenkinsfile).
+
+### GitHub Actions
 
 ```yaml
 - name: Quantum quality gate (simulator)
   run: |
-    podman run --rm -v "$PWD:/work:Z" -w /work qforge:ci \
+    podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
+      -v "$PWD:/work:Z" -w /work \
+      ghcr.io/coldqubit/shotgate:latest \
       run examples/bell-state/workflow.yaml \
       --junit report.xml --markdown "$GITHUB_STEP_SUMMARY"
 ```
 
-| CI job | What it gates | Container used |
-| --- | --- | --- |
-| `lint-and-core-tests` | Style + core logic (no SDK) | `python:3.12-slim` |
-| `image-and-integration` | Image builds; integration + example gates | `qforge:ci`, `qforge:ci-test` |
-| `terraform` | IaC module is valid | `hashicorp/terraform` |
+> shotgate's *own* repo CI ([`ci.yml`](../.github/workflows/ci.yml)) builds the image
+> from source because it tests the source; **consumers pull the published image** as
+> above.
+
+### GitLab CI
+
+```yaml
+quantum-gate:
+  image: ghcr.io/coldqubit/shotgate:latest
+  script:
+    - shotgate run examples/bell-state/workflow.yaml --junit report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml      # a failed assertion turns the job red
+```
+
+### Jenkins (declarative)
+
+```groovy
+stage('Quantum gate') {
+  steps {
+    sh '''podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work:Z" -w /work ghcr.io/coldqubit/shotgate:latest \
+            run examples/bell-state/workflow.yaml --junit report.xml'''
+  }
+  post { always { junit 'report.xml' } }   // surfaces per-assertion pass/fail
+}
+```
+
+For the cloud/QPU path on any platform, swap in `:latest-ibm`, set
+`SHOTGATE_IBM_TOKEN` (as a masked variable / credential), and target a noise-tolerant
+workflow such as [`examples/bell-state-hardware`](../examples/bell-state-hardware/workflow.yaml).
 
 ## 4. Isolation escalation in the pipeline
 
 ```mermaid
 flowchart LR
-    pr["PR pipeline"] -->|"Tier 1"| c["podman run qforge"]
+    pr["PR pipeline"] -->|"Tier 1"| c["podman run shotgate"]
     main["main pipeline"] -->|"Tier 2"| c2["rootless podman, non-root user"]
     untrusted["fork / untrusted circuit"] -->|"Tier 3"| vm["make vm-up<br/>(KVM micro-VM + podman)"]
 ```
@@ -95,10 +134,10 @@ a planned, versioned resource:
 
 ```hcl
 module "vqe_gate" {
-  source   = "github.com/your-org/qforge//infra/terraform"
+  source   = "github.com/coldqubit/shotgate//infra/terraform"
   workflow = "workflows/vqe.yaml"
   backend  = "ibm"
-  env      = { QFORGE_IBM_TOKEN = var.ibm_token }
+  env      = { SHOTGATE_IBM_TOKEN = var.ibm_token }
 }
 ```
 

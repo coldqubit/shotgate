@@ -1,0 +1,41 @@
+# Reference GitLab CI for gating a pipeline on a shotgate quantum workflow.
+#
+# Copy this into your own repo. It PULLS the published image (no build step) and runs
+# the gate as a container job, emitting a JUnit report so the stage turns red when a
+# statistical assertion fails. Exit-code contract: 0 = pass, 1 = a gate failed,
+# 2 = bad config — identical to the GitHub Actions and Jenkins references.
+
+stages:
+  - quantum
+
+variables:
+  SHOTGATE_IMAGE: "ghcr.io/coldqubit/shotgate:latest"
+  WORKFLOW: "examples/bell-state/workflow.yaml"
+
+quantum-gate:
+  stage: quantum
+  image: "$SHOTGATE_IMAGE"
+  script:
+    # The image entrypoint is `shotgate`; GitLab overrides it, so call it explicitly.
+    - shotgate run "$WORKFLOW" --junit report.xml --json report.json
+  artifacts:
+    when: always
+    paths:
+      - report.json
+    reports:
+      junit: report.xml
+
+# Cloud/QPU variant: switch to the :latest-ibm image and provide a token via a
+# masked CI/CD variable (Settings -> CI/CD -> Variables: SHOTGATE_IBM_TOKEN).
+#
+# quantum-gate-qpu:
+#   stage: quantum
+#   image: "ghcr.io/coldqubit/shotgate:latest-ibm"
+#   script:
+#     - shotgate run examples/bell-state-hardware/workflow.yaml --backend ibm --junit report.xml
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: report.xml
+#   rules:
+#     - if: '$SHOTGATE_IBM_TOKEN'

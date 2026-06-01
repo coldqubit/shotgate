@@ -3,6 +3,11 @@ name: ci
 # Container-native CI: every job runs tools inside Podman containers, mirroring
 # exactly what a developer gets locally with `make`. No language toolchains are
 # installed onto the runner directly.
+#
+# NOTE: This is shotgate's OWN repository CI, so it builds the image from source to
+# test the code under change. CONSUMERS should instead *pull* the published image —
+# `podman run ghcr.io/coldqubit/shotgate:latest run workflow.yaml` — as shown in
+# README.md and the GitLab/Jenkins references in docs/pipeline.md.
 
 on:
   push:
@@ -45,13 +50,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build qforge runtime image
-        run: podman build -t qforge:ci .
+      - name: Build shotgate runtime image
+        run: podman build -t shotgate:ci .
 
       - name: Build test image and run full suite (unit + integration)
         run: |
-          podman build --target test -t qforge:ci-test .
-          podman run --rm -v "$PWD:/work:Z" qforge:ci-test \
+          podman build --target test -t shotgate:ci-test .
+          podman run --rm -v "$PWD:/work:Z" shotgate:ci-test \
             pytest -q --junitxml=/work/integration-junit.xml
 
       - name: Run example workflows as quality gates
@@ -60,8 +65,8 @@ jobs:
           # Map the runner user through the container userns so reports are writable.
           USERMAP="--userns=keep-id --user $(id -u):$(id -g)"
           for wf in bell-state ghz-state grover-2q; do
-            echo "::group::qforge run examples/${wf}"
-            podman run --rm $USERMAP -v "$PWD:/work:Z" -w /work qforge:ci \
+            echo "::group::shotgate run examples/${wf}"
+            podman run --rm $USERMAP -v "$PWD:/work:Z" -w /work shotgate:ci \
               run "examples/${wf}/workflow.yaml" \
               --junit "report-${wf}.xml" --markdown "summary-${wf}.md"
             cat "summary-${wf}.md" >> "$GITHUB_STEP_SUMMARY"
@@ -72,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qforge-reports
+          name: shotgate-reports
           path: |
             report-*.xml
             integration-junit.xml

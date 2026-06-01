@@ -1,7 +1,7 @@
 # Solution Architecture
 
 > Status: `v0.1` (alpha). This document describes the design, its rationale, and
-> the extension points that keep qforge "minimal but scalable".
+> the extension points that keep shotgate "minimal but scalable".
 
 ## 1. Problem statement
 
@@ -16,16 +16,16 @@ native way to gate on this. Three concrete gaps follow:
 3. **No IaC / isolation story.** Terraform/Helm can't describe quantum workloads, and
    running untrusted circuits in CI lacks an isolation model.
 
-qforge addresses all three with one composable tool.
+shotgate addresses all three with one composable tool.
 
 ## 2. Design principles
 
 | Principle | Consequence in the codebase |
 | --- | --- |
-| **Statistically correct by construction** | Oracles are χ², TVD, Hellinger fidelity — not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/qforge/validation/metrics.py)). |
+| **Statistically correct by construction** | Oracles are χ², TVD, Hellinger fidelity — not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/shotgate/validation/metrics.py)). |
 | **Core is dependency-light** | The validation core imports only the standard library + pydantic. No quantum SDK is needed to parse a workflow or compute a metric. |
 | **Backends are lazy & pluggable** | Heavy SDKs (qiskit, braket) are imported only when a backend actually runs. New providers register a `"module:Class"` string. |
-| **Everything runs in a container** | The unit of execution is the qforge image. The host needs only Podman (and optionally QEMU). |
+| **Everything runs in a container** | The unit of execution is the shotgate image. The host needs only Podman (and optionally QEMU). |
 | **Declarative over imperative** | Workflows are strict YAML (`extra="forbid"`); typos fail fast. Circuits are OpenQASM, not executable Python. |
 | **CI-native output** | JUnit XML, JSON, and Markdown are first-class; exit codes gate pipelines. |
 
@@ -72,7 +72,7 @@ run a 30 MB metrics-only container and a full QPU job.
 ```mermaid
 sequenceDiagram
     autonumber
-    participant CLI as qforge run
+    participant CLI as shotgate run
     participant Cfg as config.load_workflow
     participant Run as Runner
     participant Ld as loader
@@ -101,7 +101,7 @@ failed assertion is captured in that job's report and never aborts the others.
 
 ## 5. Isolation tiers
 
-qforge offers escalating isolation, all without polluting the host:
+shotgate offers escalating isolation, all without polluting the host:
 
 ```mermaid
 flowchart LR
@@ -112,7 +112,7 @@ flowchart LR
 
 | Tier | Mechanism | Use when |
 | --- | --- | --- |
-| 1 | `podman run qforge` | Normal CI gating. |
+| 1 | `podman run shotgate` | Normal CI gating. |
 | 2 | Rootless Podman, non-root image user | Shared/hardened CI runners. |
 | 3 | Ephemeral Fedora micro-VM (`infra/qemu`) | Untrusted circuits; VM-grade stage isolation. |
 

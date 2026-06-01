@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Statistical metrics for comparing quantum measurement distributions.
 
 Quantum programs are *probabilistic*: running the same circuit twice yields

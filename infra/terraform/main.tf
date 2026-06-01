@@ -1,8 +1,8 @@
-# qforge IaC module — declare a quantum CI workflow as code.
+# shotgate IaC module — declare a quantum CI workflow as code.
 #
 # This expresses "run quantum workflow X, on backend Y, with Z shots, and gate on
 # the statistical result" as a Terraform resource. Execution is delegated to the
-# qforge container, so the only host dependency is a container engine (Podman).
+# shotgate container, so the only host dependency is a container engine (Podman).
 #
 # The run re-executes whenever the workflow file, image, backend, or shot count
 # changes (tracked via triggers_replace), making quantum validation a first-class,
@@ -29,7 +29,7 @@ resource "terraform_data" "quantum_workflow" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
-      QFORGE_FAIL = var.fail_on_assertion_error ? "1" : "0"
+      SHOTGATE_FAIL = var.fail_on_assertion_error ? "1" : "0"
     }
     command = <<-EOT
       set -euo pipefail
@@ -51,8 +51,8 @@ resource "terraform_data" "quantum_workflow" {
       rc=$?
       set -e
 
-      echo "qforge exit code: $rc"
-      if [ "$QFORGE_FAIL" = "1" ] && [ "$rc" -ne 0 ]; then
+      echo "shotgate exit code: $rc"
+      if [ "$SHOTGATE_FAIL" = "1" ] && [ "$rc" -ne 0 ]; then
         echo "quantum assertions failed — failing terraform apply" >&2
         exit "$rc"
       fi

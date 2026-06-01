@@ -1,12 +1,12 @@
 # Ephemeral KVM/QEMU runner
 
-Run a qforge workflow inside a **disposable, hardware-isolated virtual machine**.
+Run a shotgate workflow inside a **disposable, hardware-isolated virtual machine**.
 This is the strongest isolation tier: the workflow (and any untrusted circuit) runs
-in a throwaway Fedora Cloud VM, and qforge itself runs in a Podman container *inside*
+in a throwaway Fedora Cloud VM, and shotgate itself runs in a Podman container *inside*
 that VM. The host only needs `qemu` and `/dev/kvm`.
 
 ```
-host (qemu) ──► KVM micro-VM (Fedora Cloud, cloud-init) ──► Podman ──► qforge ──► report
+host (qemu) ──► KVM micro-VM (Fedora Cloud, cloud-init) ──► Podman ──► shotgate ──► report
         repo shared in over virtio-9p ◄── report.xml / report.json written back
 ```
 
@@ -20,7 +20,7 @@ host (qemu) ──► KVM micro-VM (Fedora Cloud, cloud-init) ──► Podman �
 ## Usage
 
 ```bash
-# Boot the VM, build qforge inside it, run the Bell-state workflow, write report.xml
+# Boot the VM, build shotgate inside it, run the Bell-state workflow, write report.xml
 make vm-up WORKFLOW=examples/bell-state/workflow.yaml
 
 # Or call the script directly
@@ -36,7 +36,7 @@ make vm-down
 2. **Overlay** a copy-on-write qcow2 so the base is never mutated — the VM is disposable.
 3. **Seed** a cloud-init NoCloud ISO (`user-data` + `meta-data`) with the chosen workflow.
 4. **Boot** with `-machine accel=kvm`, sharing the repo read/write over `virtio-9p`.
-5. Inside the guest, cloud-init installs Podman, builds the qforge image, runs the
+5. Inside the guest, cloud-init installs Podman, builds the shotgate image, runs the
    workflow, writes `report.xml`/`report.json` to the shared repo, and powers off.
 
 ## Notes

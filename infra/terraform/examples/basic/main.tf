@@ -3,7 +3,7 @@
 #   terraform init
 #   terraform apply        # builds nothing classical — it validates a Bell state
 #
-# Requires the qforge image to exist locally (make build) and Podman on the host.
+# Requires the shotgate image to exist locally (make build) and Podman on the host.
 
 module "bell_state_gate" {
   source = "../.."
@@ -12,7 +12,7 @@ module "bell_state_gate" {
   project_dir = abspath("${path.module}/../../../..")
   workflow    = "examples/bell-state/workflow.yaml"
 
-  image   = "qforge:dev"
+  image   = "shotgate:dev"
   backend = "local-aer"
   shots   = 8192
 }

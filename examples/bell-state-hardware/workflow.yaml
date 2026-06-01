@@ -1,0 +1,40 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-hardware
+  description: >-
+    Bell-state gate with NOISE-TOLERANT thresholds for execution on a real QPU.
+    Requires an IBM token (SHOTGATE_IBM_TOKEN) — running this on local-aer would
+    pass trivially. See docs/hardware-validation.md for the threshold rationale and
+    the simulator-vs-QPU split. Note: chi_square is intentionally omitted here —
+    with thousands of shots it over-rejects under coherent device noise; distance-
+    and fidelity-based oracles are the right gates for hardware.
+  labels:
+    suite: hardware
+    qubits: "2"
+    target: qpu
+
+defaults:
+  backend:
+    provider: ibm
+    shots: 4096
+    # name: ibm_brisbane   # pin a device, or omit to use least_busy
+
+jobs:
+  - name: bell-pair-qpu
+    circuit:
+      format: qasm2
+      path: bell.qasm
+    assertions:
+      # Relaxed distance bound: real devices show readout + gate error.
+      - type: distribution_tvd
+        expected: { "00": 0.5, "11": 0.5 }
+        max_distance: 0.15
+      # Fidelity floor a good 2-qubit device should clear comfortably.
+      - type: hellinger_fidelity
+        expected: { "00": 0.5, "11": 0.5 }
+        min_fidelity: 0.85
+      # Leakage into |01>/|10> is expected on hardware; bound it generously.
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.15

@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Declarative workflow schema — "quantum workflow as code".
 
-A qforge workflow is a Kubernetes-style YAML document validated by these Pydantic
+A shotgate workflow is a Kubernetes-style YAML document validated by these Pydantic
 models. Keeping the schema strict (``extra="forbid"``) means typos in a workflow
 file fail fast with a clear error instead of being silently ignored.
 
@@ -8,7 +10,7 @@ Example
 -------
 .. code-block:: yaml
 
-    apiVersion: qforge.dev/v1alpha1
+    apiVersion: shotgate.dev/v1alpha1
     kind: QuantumWorkflow
     metadata:
       name: bell-state
@@ -36,12 +38,15 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from qforge.validation.assertions import Assertion
+from shotgate.validation.assertions import Assertion
 
-API_VERSION = "qforge.dev/v1alpha1"
+API_VERSION = "shotgate.dev/v1alpha1"
 KIND = "QuantumWorkflow"
 
-ProviderName = Literal["local-aer", "ibm", "braket"]
+# Only providers with an implemented backend are selectable. Braket is planned
+# (roadmap) and intentionally excluded so a workflow can't request a backend that
+# does not exist — selecting it fails fast at schema validation.
+ProviderName = Literal["local-aer", "ibm"]
 
 
 class _Strict(BaseModel):
@@ -107,7 +112,7 @@ class JobSpec(_Strict):
 
 
 class Workflow(_Strict):
-    api_version: Literal["qforge.dev/v1alpha1"] = Field(alias="apiVersion")
+    api_version: Literal["shotgate.dev/v1alpha1"] = Field(alias="apiVersion")
     kind: Literal["QuantumWorkflow"]
     metadata: Metadata
     defaults: Defaults | None = None

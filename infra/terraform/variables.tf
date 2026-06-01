@@ -1,5 +1,5 @@
 variable "project_dir" {
-  description = "Directory mounted into the qforge container (contains workflows and circuits)."
+  description = "Directory mounted into the shotgate container (contains workflows and circuits)."
   type        = string
   default     = "."
 }
@@ -10,19 +10,19 @@ variable "workflow" {
 }
 
 variable "image" {
-  description = "qforge container image to execute."
+  description = "shotgate container image to execute."
   type        = string
-  default     = "qforge:dev"
+  default     = "shotgate:dev"
 }
 
 variable "backend" {
-  description = "Backend provider override (local-aer | ibm | braket)."
+  description = "Backend provider override (local-aer | ibm). Braket is planned."
   type        = string
   default     = "local-aer"
 
   validation {
-    condition     = contains(["local-aer", "ibm", "braket"], var.backend)
-    error_message = "backend must be one of: local-aer, ibm, braket."
+    condition     = contains(["local-aer", "ibm"], var.backend)
+    error_message = "backend must be one of: local-aer, ibm."
   }
 }
 
@@ -35,7 +35,7 @@ variable "shots" {
 variable "report_dir" {
   description = "Directory (relative to project_dir) where reports are written."
   type        = string
-  default     = "qforge-reports"
+  default     = "shotgate-reports"
 }
 
 variable "podman_bin" {
@@ -45,7 +45,7 @@ variable "podman_bin" {
 }
 
 variable "env" {
-  description = "Environment variables passed to the container (e.g. QFORGE_IBM_TOKEN). Marked sensitive."
+  description = "Environment variables passed to the container (e.g. SHOTGATE_IBM_TOKEN). Marked sensitive."
   type        = map(string)
   default     = {}
   sensitive   = true

@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Local Qiskit Aer simulator backend.
 
 This is the default, zero-cost, fully-offline execution target: it runs entirely
-inside the qforge container with no cloud credentials. Ideal for fast CI gating on
+inside the shotgate container with no cloud credentials. Ideal for fast CI gating on
 small circuits (the report's "5-8 qubits, zero local RAM" MVP target).
 """
 
@@ -10,7 +12,7 @@ from __future__ import annotations
 import importlib.util
 from typing import Any
 
-from qforge.backends.base import Backend, BackendResult
+from shotgate.backends.base import Backend, BackendResult
 
 
 class LocalAerBackend(Backend):

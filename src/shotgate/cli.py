@@ -1,13 +1,15 @@
-"""Command-line interface for qforge.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
+"""Command-line interface for shotgate.
 
 Commands
 --------
-- ``qforge run WORKFLOW``      execute a workflow and gate CI on the result.
-- ``qforge validate WORKFLOW`` schema-validate a workflow without executing it.
-- ``qforge backends``          list backends and whether their deps are installed.
+- ``shotgate run WORKFLOW``      execute a workflow and gate CI on the result.
+- ``shotgate validate WORKFLOW`` schema-validate a workflow without executing it.
+- ``shotgate backends``          list backends and whether their deps are installed.
 
 Exit codes: ``0`` if all assertions pass, ``1`` if any fail, ``2`` for usage or
-load errors. This makes ``qforge run`` a drop-in CI quality gate.
+load errors. This makes ``shotgate run`` a drop-in CI quality gate.
 """
 
 from __future__ import annotations
@@ -16,11 +18,11 @@ from pathlib import Path
 
 import click
 
-from qforge import __version__
+from shotgate import __version__
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(__version__, prog_name="qforge")
+@click.version_option(__version__, prog_name="shotgate")
 def main() -> None:
     """Container-native CI/CD quality gates for quantum circuits."""
 
@@ -59,9 +61,17 @@ def run(
     quiet: bool,
 ) -> None:
     """Execute WORKFLOW: run each job, validate output, and report."""
-    from qforge.config import load_workflow
-    from qforge.report import render_console, to_json, to_junit_xml, to_markdown
-    from qforge.runner import Runner
+    import typing
+
+    from shotgate.config import ProviderName, load_workflow
+    from shotgate.report import render_console, to_json, to_junit_xml, to_markdown
+    from shotgate.runner import Runner
+
+    valid_backends = typing.get_args(ProviderName)
+    if backend is not None and backend not in valid_backends:
+        raise click.ClickException(
+            f"unknown backend {backend!r}; valid backends: {', '.join(valid_backends)}"
+        )
 
     try:
         loaded = load_workflow(workflow)
@@ -87,7 +97,7 @@ def run(
 @click.argument("workflow", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 def validate(workflow: Path) -> None:
     """Schema-validate WORKFLOW without executing any circuit."""
-    from qforge.config import load_workflow
+    from shotgate.config import load_workflow
 
     try:
         loaded = load_workflow(workflow)
@@ -107,7 +117,7 @@ def validate(workflow: Path) -> None:
 @main.command()
 def backends() -> None:
     """List available backends and whether their dependencies are installed."""
-    from qforge.backends.registry import available_backends
+    from shotgate.backends.registry import available_backends
 
     for provider, ready in available_backends().items():
         mark = click.style("ready", fg="green") if ready else click.style(

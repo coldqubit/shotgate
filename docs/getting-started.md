@@ -7,25 +7,25 @@ minutes, using only Podman (no host Python, qiskit, or terraform).
 
 - [Podman](https://podman.io/) 4+ (`podman --version`).
 - Optional: `qemu-system-x86_64` + `/dev/kvm` for the VM tier.
-- This repository checked out.
+- The example workflows from this repo (or your own).
 
-## 1. Build the image
+## 1. Run your first gate (pull the image)
 
-```bash
-make build         # podman build -t qforge:dev .
-```
-
-This bakes qiskit + the Aer simulator into the image, so the default `local-aer`
-backend works fully offline.
-
-## 2. Run your first gate
+No build step — pull the published image and run an example:
 
 ```bash
-make run WORKFLOW=examples/bell-state/workflow.yaml
+podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
+  -v "$PWD:/work:Z" -w /work \
+  ghcr.io/coldqubit/shotgate:latest \
+  run examples/bell-state/workflow.yaml --junit report.xml --json report.json
 ```
 
 You'll see a Rich table of assertion results and the process will exit `0`. A JUnit
-`report.xml` and `report.json` are written to the repo root.
+`report.xml` and `report.json` are written to the working directory. The image bakes in
+qiskit + the Aer simulator, so the default `local-aer` backend works fully offline.
+
+> **Contributor build (optional).** To develop shotgate itself or run on an air-gapped
+> runner, build locally instead: `make build` then `make run WORKFLOW=…`.
 
 ## 3. Read the workflow
 
@@ -38,7 +38,7 @@ Bell pair and five statistical assertions. Open it alongside the
 Create `my-workflow.yaml`:
 
 ```yaml
-apiVersion: qforge.dev/v1alpha1
+apiVersion: shotgate.dev/v1alpha1
 kind: QuantumWorkflow
 metadata:
   name: my-first-gate
@@ -71,13 +71,20 @@ make run      WORKFLOW=my-workflow.yaml      # execute + gate
 
 ## 5. Target real hardware (optional)
 
+Use the **IBM-enabled image variant** (`:latest-ibm`), which bakes in
+`qiskit-ibm-runtime`, and pass a token:
+
 ```bash
-export QFORGE_IBM_TOKEN=...      # from your IBM Quantum account
-podman run --rm -e QFORGE_IBM_TOKEN -v "$PWD:/work:Z" -w /work qforge:dev \
-  run my-workflow.yaml --backend ibm
+export SHOTGATE_IBM_TOKEN=...      # from your IBM Quantum account
+podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
+  ghcr.io/coldqubit/shotgate:latest-ibm \
+  run examples/bell-state-hardware/workflow.yaml --backend ibm
 ```
 
-(Loosen thresholds for device noise — see the [pipeline guide](pipeline.md#1-the-hybrid-pipeline).)
+The `ibm` backend is **implemented but not yet validated on real hardware**. Loosen
+thresholds for device noise (the `bell-state-hardware` example already does) — see the
+[hardware validation plan](hardware-validation.md) and the
+[pipeline guide](pipeline.md#1-the-hybrid-pipeline).
 
 ## 6. Run with VM-grade isolation (optional)
 
@@ -85,14 +92,14 @@ podman run --rm -e QFORGE_IBM_TOKEN -v "$PWD:/work:Z" -w /work qforge:dev \
 make vm-up WORKFLOW=examples/ghz-state/workflow.yaml
 ```
 
-Boots a throwaway KVM micro-VM that runs qforge in Podman *inside* the VM and writes
+Boots a throwaway KVM micro-VM that runs shotgate in Podman *inside* the VM and writes
 the report back. See [`infra/qemu`](../infra/qemu/README.md).
 
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
-| `backend 'local-aer' ... dependencies are not installed` | Use the image (`make build`), or `pip install 'qforge[aer]'`. |
+| `backend 'local-aer' ... dependencies are not installed` | Use the published image (`ghcr.io/coldqubit/shotgate:latest`) or build it (`make build`); or `pip install 'shotgate[aer]'`. |
 | `:Z` mount errors on non-SELinux hosts | Drop `:Z` from the `-v` flag. |
-| QASM parse error | Ensure `include "qelib1.inc";` and a `creg`/`measure` (or omit measurement and qforge appends `measure_all`). |
+| QASM parse error | Ensure `include "qelib1.inc";` and a `creg`/`measure` (or omit measurement and shotgate appends `measure_all`). |
 | VM won't boot | Check `/dev/kvm` is writable and `IMAGE_URL` resolves for your Fedora version. |

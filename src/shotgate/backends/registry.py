@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Backend registry with lazy, dependency-free dispatch.
 
 Concrete backends are referenced by import path and only imported when actually
-requested, so importing qforge (and running the validation core) never requires a
+requested, so importing shotgate (and running the validation core) never requires a
 quantum SDK to be installed.
 """
 
@@ -9,13 +11,13 @@ from __future__ import annotations
 
 import importlib
 
-from qforge.backends.base import Backend, BackendUnavailableError
-from qforge.config import BackendSpec
+from shotgate.backends.base import Backend, BackendUnavailableError
+from shotgate.config import BackendSpec
 
 # provider name -> "module:ClassName"
 _REGISTRY: dict[str, str] = {
-    "local-aer": "qforge.backends.local_aer:LocalAerBackend",
-    "ibm": "qforge.backends.ibm_runtime:IBMRuntimeBackend",
+    "local-aer": "shotgate.backends.local_aer:LocalAerBackend",
+    "ibm": "shotgate.backends.ibm_runtime:IBMRuntimeBackend",
 }
 
 
@@ -42,7 +44,7 @@ def get_backend(spec: BackendSpec) -> Backend:
     if not backend_cls.is_available():
         raise BackendUnavailableError(
             f"backend {spec.provider!r} is selected but its dependencies are not "
-            f"installed; install the matching extra, e.g. pip install 'qforge[aer]'"
+            f"installed; install the matching extra, e.g. pip install 'shotgate[aer]'"
         )
     return backend_cls(name=spec.name, options=spec.options)
 

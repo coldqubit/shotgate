@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Lightweight circuit/execution telemetry for benchmarking and observability.
 
 These metrics (width, depth, gate composition, wall-clock runtime) let teams track

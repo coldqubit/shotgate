@@ -1,11 +1,11 @@
-# qforge Terraform module — quantum workflow as code
+# shotgate Terraform module — quantum workflow as code
 
 Declare a quantum CI/CD quality gate as a Terraform resource. The module runs a
-qforge workflow inside a container and (optionally) fails `terraform apply` when the
+shotgate workflow inside a container and (optionally) fails `terraform apply` when the
 statistical assertions don't hold — making quantum validation a versioned, planned
 part of your infrastructure.
 
-> **Design choice.** We deliberately ship a *module that orchestrates the qforge
+> **Design choice.** We deliberately ship a *module that orchestrates the shotgate
 > container* rather than a bespoke Go provider. It needs no compilation, no plugin
 > registry, and keeps the single source of truth (the validation logic) in one place.
 > A native provider can come later (see [ADR-0003](../../docs/adr/0003-container-and-vm-isolation.md));
@@ -15,11 +15,11 @@ part of your infrastructure.
 
 ```hcl
 module "bell_state_gate" {
-  source = "github.com/your-org/qforge//infra/terraform"
+  source = "github.com/coldqubit/shotgate//infra/terraform"
 
   project_dir = abspath(path.root)               # dir mounted into the container
   workflow    = "examples/bell-state/workflow.yaml"
-  image       = "qforge:dev"
+  image       = "shotgate:dev"
   backend     = "local-aer"
   shots       = 8192
 }
@@ -29,10 +29,10 @@ Run a real QPU by passing a token (kept out of state via `sensitive`):
 
 ```hcl
 module "qpu_gate" {
-  source   = "github.com/your-org/qforge//infra/terraform"
+  source   = "github.com/coldqubit/shotgate//infra/terraform"
   workflow = "workflows/vqe.yaml"
   backend  = "ibm"
-  env      = { QFORGE_IBM_TOKEN = var.ibm_token }
+  env      = { SHOTGATE_IBM_TOKEN = var.ibm_token }
 }
 ```
 
@@ -42,10 +42,10 @@ module "qpu_gate" {
 | --- | --- | --- | --- |
 | `workflow` | string | — | Workflow YAML path, relative to `project_dir`. |
 | `project_dir` | string | `"."` | Directory mounted into the container. |
-| `image` | string | `"qforge:dev"` | qforge image to run. |
-| `backend` | string | `"local-aer"` | `local-aer` \| `ibm` \| `braket`. |
+| `image` | string | `"shotgate:dev"` | shotgate image to run. |
+| `backend` | string | `"local-aer"` | `local-aer` \| `ibm` (Braket planned). |
 | `shots` | number | `4096` | Shot-count override. |
-| `report_dir` | string | `"qforge-reports"` | Where reports are written (under `project_dir`). |
+| `report_dir` | string | `"shotgate-reports"` | Where reports are written (under `project_dir`). |
 | `env` | map(string) | `{}` | Env vars for the container (e.g. tokens). Sensitive. |
 | `fail_on_assertion_error` | bool | `true` | Fail `apply` when assertions fail. |
 

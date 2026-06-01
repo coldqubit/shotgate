@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect behavior in qforge
+description: Report incorrect behavior in shotgate
 labels: ["bug"]
 body:
   - type: markdown
@@ -22,12 +22,12 @@ body:
     id: command
     attributes:
       label: Command and output
-      description: How you ran qforge (e.g. `make run WORKFLOW=...`) and the output.
+      description: How you ran shotgate (e.g. `make run WORKFLOW=...`) and the output.
       render: shell
   - type: input
     id: version
     attributes:
-      label: qforge version / image tag
+      label: shotgate version / image tag
     validations:
       required: true
   - type: dropdown

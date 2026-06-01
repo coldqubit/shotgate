@@ -1,11 +1,11 @@
-# qforge — Podman/QEMU task runner.
+# shotgate — Podman/QEMU task runner.
 #
 # Everything runs in containers or VMs; nothing is installed on the host.
 # Override any variable on the command line, e.g.  make run WORKFLOW=examples/ghz-state/workflow.yaml
 
 PODMAN      ?= podman
-IMAGE       ?= qforge:dev
-TEST_IMAGE  ?= qforge:test
+IMAGE       ?= shotgate:dev
+TEST_IMAGE  ?= shotgate:test
 WORKFLOW    ?= examples/bell-state/workflow.yaml
 PYTHON_VERSION ?= 3.12
 
@@ -25,7 +25,7 @@ USERMAP     := --userns=keep-id --user $(shell id -u):$(shell id -g)
 ## ----------------------------------------------------------------------------
 
 .PHONY: build
-build: ## Build the qforge runtime image (qiskit + Aer baked in)
+build: ## Build the shotgate runtime image (qiskit + Aer baked in)
 	$(PODMAN) build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) -t $(IMAGE) .
 
 .PHONY: build-test

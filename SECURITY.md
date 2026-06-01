@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-qforge is alpha (`0.x`); security fixes land on `main` and the latest tagged release.
+shotgate is alpha (`0.x`); security fixes land on `main` and the latest tagged release.
 
 ## Reporting a vulnerability
 
@@ -19,7 +19,7 @@ acknowledge within 72 hours and to provide a remediation timeline after triage.
   `eval`'d Python. For circuits from untrusted sources, use the **VM isolation tier**
   (`infra/qemu`), which runs the workflow in an ephemeral KVM micro-VM.
 - **Secrets.** Provider tokens are read from environment variables / container `-e`
-  and are never written to disk by qforge. The Terraform module marks token inputs
+  and are never written to disk by shotgate. The Terraform module marks token inputs
   `sensitive`. Never commit tokens or bake them into images.
 - **Least privilege.** The runtime image runs as a non-root user (UID 1001). Prefer
   rootless Podman on shared runners.

@@ -1,5 +1,5 @@
 #cloud-config
-# qforge ephemeral runner — provisions Podman, runs the workflow inside a
+# shotgate ephemeral runner — provisions Podman, runs the workflow inside a
 # container, writes the report back to the shared repo, then powers off.
 # @@WORKFLOW@@ is substituted by create-runner-vm.sh at boot time.
 
@@ -8,7 +8,7 @@ packages:
   - podman
 
 write_files:
-  - path: /usr/local/bin/qforge-run.sh
+  - path: /usr/local/bin/shotgate-run.sh
     permissions: "0755"
     content: |
       #!/usr/bin/env bash
@@ -17,24 +17,24 @@ write_files:
 
       echo "[guest] mounting shared repository over virtio-9p"
       mkdir -p /work
-      mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 qforge /work
+      mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 shotgate /work
       cd /work
 
-      echo "[guest] building qforge image inside the VM (Podman)"
-      podman build -t qforge:vm .
+      echo "[guest] building shotgate image inside the VM (Podman)"
+      podman build -t shotgate:vm .
 
       echo "[guest] running workflow: ${WORKFLOW}"
       set +e
-      podman run --rm -v /work:/work:Z -w /work qforge:vm \
+      podman run --rm -v /work:/work:Z -w /work shotgate:vm \
         run "${WORKFLOW}" --junit /work/report.xml --json /work/report.json
       rc=$?
       set -e
 
-      echo "[guest] workflow exit code: ${rc}" | tee /work/.qforge-vm-done
+      echo "[guest] workflow exit code: ${rc}" | tee /work/.shotgate-vm-done
       poweroff
 
 runcmd:
-  - [ /usr/local/bin/qforge-run.sh ]
+  - [ /usr/local/bin/shotgate-run.sh ]
 
 # Fail closed: never leave the VM running if provisioning errors out.
 power_state:

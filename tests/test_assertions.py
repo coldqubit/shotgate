@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from qforge.validation.assertions import (
+from shotgate.validation.assertions import (
     AllowedStatesAssertion,
     Assertion,
     ChiSquareAssertion,

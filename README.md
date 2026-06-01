@@ -1,13 +1,13 @@
 <div align="center">
 
-# qforge
+# shotgate
 
 **Container-native CI/CD quality gates for quantum circuits.**
 
 *Statistically validate the probabilistic output of quantum programs — across simulators and real QPUs — defined entirely as code.*
 
 [![CI](https://img.shields.io/badge/CI-podman-892CA0)](.github/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#roadmap)
 
@@ -15,7 +15,7 @@
 
 ---
 
-## Why qforge exists
+## Why shotgate exists
 
 Classical CI/CD assumes determinism: same input, same output, `assert x == y`. **Quantum
 programs break that assumption.** Run the same circuit twice and you get different shot
@@ -34,7 +34,7 @@ tooling.** Meanwhile, Infrastructure-as-Code can't describe quantum workloads:
 
 > *"Terraform modules and Helm charts may need support for quantum backends, simulators…"*
 
-**qforge closes that gap.** It packages the proven statistical oracles into a single,
+**shotgate closes that gap.** It packages the proven statistical oracles into a single,
 container-native CLI that:
 
 1. Defines quantum test workflows **as declarative YAML** ("quantum workflow as code").
@@ -50,7 +50,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
 
 ```yaml
 # examples/bell-state/workflow.yaml
-apiVersion: qforge.dev/v1alpha1
+apiVersion: shotgate.dev/v1alpha1
 kind: QuantumWorkflow
 metadata:
   name: bell-state
@@ -72,8 +72,8 @@ jobs:
 ```
 
 ```console
-$ qforge run examples/bell-state/workflow.yaml
-──────────────────────── qforge :: bell-state ────────────────────────
+$ shotgate run examples/bell-state/workflow.yaml
+──────────────────────── shotgate :: bell-state ────────────────────────
  job: bell-pair · aer_simulator · 8192 shots
  ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
  ┃ Assertion           ┃ Result ┃ Detail                              ┃
@@ -85,30 +85,37 @@ $ qforge run examples/bell-state/workflow.yaml
  PASSED · 5/5 assertions · 0.214s
 ```
 
-## Quickstart (no host installs — Podman only)
+## Quickstart (no host installs — pull and run)
 
-Everything runs in a container; nothing touches your host Python.
-
-```bash
-# Build the runtime image (qiskit + aer baked in)
-make build
-
-# Run an example workflow as a CI quality gate
-make run WORKFLOW=examples/bell-state/workflow.yaml
-
-# Run the test suite in the container
-make test
-```
-
-Prefer raw Podman? The Makefile is a thin wrapper:
+The primary path is to **pull the published image** and gate a workflow — nothing is
+built locally and nothing touches your host Python:
 
 ```bash
-podman build -t qforge:dev .
 # --userns=keep-id --user maps you through the container's user namespace so the
 # JUnit report is written back owned by you (the image runs as a non-root user).
 podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
-  -v "$PWD:/work:Z" -w /work qforge:dev \
-  run examples/ghz-state/workflow.yaml --junit report.xml
+  -v "$PWD:/work:Z" -w /work \
+  ghcr.io/coldqubit/shotgate:latest \
+  run examples/bell-state/workflow.yaml --junit report.xml
+```
+
+Exit code `0` = all assertions passed, `1` = a gate failed, `2` = bad config — drop it
+straight into any pipeline. For the **cloud/QPU path**, use the IBM-enabled variant and
+pass a token:
+
+```bash
+podman run --rm -e SHOTGATE_IBM_TOKEN \
+  -v "$PWD:/work:Z" -w /work \
+  ghcr.io/coldqubit/shotgate:latest-ibm \
+  run examples/bell-state-hardware/workflow.yaml --backend ibm
+```
+
+### Build from source (contributors / air-gapped runners)
+
+```bash
+make build         # podman build -t shotgate:dev .
+make run WORKFLOW=examples/bell-state/workflow.yaml
+make test          # full test suite in a container
 ```
 
 For **hardware-isolated** runs (each pipeline in a throwaway KVM micro-VM), see
@@ -127,7 +134,7 @@ For **hardware-isolated** runs (each pipeline in a throwaway KVM micro-VM), see
 
 Full reference: [`docs/assertions.md`](docs/assertions.md). The statistical core is pure
 Python (no SciPy) — including a from-scratch χ² survival function via the regularised
-incomplete gamma function. See [`src/qforge/validation/metrics.py`](src/qforge/validation/metrics.py).
+incomplete gamma function. See [`src/shotgate/validation/metrics.py`](src/shotgate/validation/metrics.py).
 
 ## Architecture at a glance
 
@@ -137,7 +144,7 @@ flowchart LR
         wf["workflow.yaml<br/>(quantum workflow as code)"]
         qasm["circuit.qasm"]
     end
-    subgraph qforge["qforge (in a Podman container)"]
+    subgraph shotgate["shotgate (in a Podman container)"]
         cfg["Schema / validation<br/>(pydantic)"]
         ld["Circuit loader"]
         be["Backend registry"]
@@ -162,8 +169,8 @@ This is what lets the same artifact run in a 30 MB CI container and against a re
 ## Repository layout
 
 ```text
-qforge/
-├── src/qforge/            # the package (validation core, backends, runner, CLI)
+shotgate/
+├── src/shotgate/            # the package (validation core, backends, runner, CLI)
 ├── examples/              # runnable workflows: bell, ghz, grover
 ├── tests/                 # unit tests (core) + integration tests (gated on aer)
 ├── infra/
@@ -171,18 +178,30 @@ qforge/
 │   └── qemu/              # ephemeral KVM/QEMU runner (cloud-init)
 ├── docs/                  # architecture, pipeline schema, ADRs, specs, diagrams
 ├── .github/workflows/     # Podman-based CI + release
-├── Containerfile          # the qforge runtime image
+├── Containerfile          # the shotgate runtime image
 └── Makefile               # Podman/QEMU wrappers — no host installs
 ```
+
+## Backends
+
+| Provider | Status |
+| --- | --- |
+| `local-aer` (Qiskit Aer simulator) | **Working**, default, baked into the image |
+| `ibm` (IBM Quantum via Qiskit Runtime) | **Implemented, not yet validated on real hardware** — see [hardware validation plan](docs/hardware-validation.md) |
+| `braket` (AWS Braket) | **Planned** (not selectable yet) |
+| Error mitigation ([Mitiq](https://mitiq.readthedocs.io/)) | **Planned** |
 
 ## Roadmap
 
 - **v0.1 (now):** YAML workflows, local Aer backend, χ²/TVD/fidelity/structural oracles,
   JUnit/JSON/MD reporters, Podman + KVM/QEMU isolation, Terraform module.
-- **v0.2:** IBM Quantum & AWS Braket backends hardened; noise-model simulation; error
-  mitigation via [Mitiq](https://mitiq.readthedocs.io/); cost/queue-aware scheduling.
-- **v0.3:** circuit fixtures & property-based generation; multi-backend differential testing;
-  Helm chart; OpenTelemetry export for the telemetry layer.
+- **v0.2:** **Validate the statistical gates against real quantum hardware** (IBM Quantum
+  first, via the hardened `ibm` backend — see [`docs/hardware-validation.md`](docs/hardware-validation.md));
+  published GHCR image with an IBM-enabled variant; GitLab & Jenkins references;
+  noise-model simulation; a minimal **AWS Braket** backend.
+- **v0.3:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/); circuit fixtures &
+  property-based generation; multi-backend differential testing; Helm chart; **optional**
+  OpenTelemetry exporter for the telemetry layer (kept out of the core dependencies).
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 
@@ -191,11 +210,22 @@ See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and r
 Contributions welcome — start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Report vulnerabilities per [`SECURITY.md`](SECURITY.md).
 
+## Maintainer
+
+Built and maintained by **[coldqubit](https://github.com/coldqubit)** — an independent
+quantum-projects organization ([@morph-eos](https://github.com/morph-eos)). shotgate is the
+name of this project; *coldqubit* is who builds it.
+
 ## License
 
-[MIT](LICENSE) © qforge contributors.
+[GNU AGPL-3.0-or-later](LICENSE) © coldqubit.
+
+shotgate is free and open source. The AGPL's network-copyleft is deliberate: anyone
+who distributes shotgate **or runs a modified version as a hosted/SaaS service** must
+release their source under the same license. You may use it freely (including
+commercially) — you may not make it closed-source.
 
 > **Note on prior art:** the existing `coveooss/terraform-provider-quantum` is unrelated to
-> quantum circuits (it manipulates JSON). qforge is, to our knowledge, the first maintained,
+> quantum circuits (it manipulates JSON). shotgate is, to our knowledge, the first maintained,
 > container-native attempt to bring statistical quantum-circuit validation into mainstream
 > CI/CD and IaC workflows.

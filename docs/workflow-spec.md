@@ -1,13 +1,13 @@
-# Workflow Specification — `qforge.dev/v1alpha1`
+# Workflow Specification — `shotgate.dev/v1alpha1`
 
-A qforge workflow is a strict YAML document. Unknown fields are rejected so typos
+A shotgate workflow is a strict YAML document. Unknown fields are rejected so typos
 fail fast. The schema is the single source of truth in
-[`src/qforge/config.py`](../src/qforge/config.py).
+[`src/shotgate/config.py`](../src/shotgate/config.py).
 
 ## Top-level document
 
 ```yaml
-apiVersion: qforge.dev/v1alpha1   # required, pinned
+apiVersion: shotgate.dev/v1alpha1   # required, pinned
 kind: QuantumWorkflow             # required
 metadata: { ... }                 # required
 defaults: { ... }                 # optional — backend defaults for all jobs
@@ -16,7 +16,7 @@ jobs: [ ... ]                     # required, >= 1
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `apiVersion` | string | yes | Must equal `qforge.dev/v1alpha1`. |
+| `apiVersion` | string | yes | Must equal `shotgate.dev/v1alpha1`. |
 | `kind` | string | yes | Must equal `QuantumWorkflow`. |
 | `metadata` | object | yes | See below. |
 | `defaults` | object | no | `{ backend: BackendSpec }` inherited by jobs. |
@@ -59,13 +59,13 @@ Exactly one of `path` or `inline` must be set.
 | `path` | string | — | File path, resolved **relative to the workflow file**. |
 | `inline` | string | — | OpenQASM source embedded in the YAML. |
 
-If the loaded circuit has no classical bits, qforge appends `measure_all()`.
+If the loaded circuit has no classical bits, shotgate appends `measure_all()`.
 
 ### `backend`
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `provider` | `local-aer` \| `ibm` \| `braket` | `local-aer` | Execution target. |
+| `provider` | `local-aer` \| `ibm` | `local-aer` | Execution target. Braket is planned (roadmap); selecting an unimplemented provider fails schema validation. |
 | `shots` | int | `4096` | 1–1,000,000. |
 | `seed` | int | — | Determinism for simulators. |
 | `name` | string | — | Device/backend name (cloud providers). |
@@ -77,7 +77,7 @@ only `backend: { shots: 1024 }` keeps the default `provider` and `seed`.
 
 ## CLI overrides
 
-`--backend` and `--shots` on `qforge run` override every job at runtime — handy for
+`--backend` and `--shots` on `shotgate run` override every job at runtime — handy for
 re-running a simulator suite against real hardware without editing YAML.
 
 ## Full annotated example

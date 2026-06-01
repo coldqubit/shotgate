@@ -1,4 +1,4 @@
-# Contributing to qforge
+# Contributing to shotgate
 
 Thanks for helping build the missing CI/CD layer for quantum software. This project
 favors small, well-tested, well-reasoned changes.
@@ -43,7 +43,7 @@ pytest -q
 
 ## Adding an assertion oracle
 
-1. Add a metric to `src/qforge/validation/metrics.py` (pure Python, unit-tested).
+1. Add a metric to `src/shotgate/validation/metrics.py` (pure Python, unit-tested).
 2. Add a pydantic model in `validation/assertions.py` with a unique `type` literal and
    an `evaluate(counts, shots) -> AssertionResult`.
 3. Append it to the `Assertion` union and `ASSERTION_TYPES`.
@@ -52,7 +52,7 @@ pytest -q
 
 ## Adding a backend
 
-1. Implement `Backend` in `src/qforge/backends/<provider>.py`; import the SDK **lazily**
+1. Implement `Backend` in `src/shotgate/backends/<provider>.py`; import the SDK **lazily**
    inside methods and gate `is_available()` on `importlib.util.find_spec`.
 2. Register `"module:Class"` in `backends/registry.py`.
 3. Add an optional extra in `pyproject.toml`.

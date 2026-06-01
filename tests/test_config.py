@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from qforge.config import BackendSpec, load_workflow, parse_workflow
+from shotgate.config import BackendSpec, load_workflow, parse_workflow
 
 VALID = {
-    "apiVersion": "qforge.dev/v1alpha1",
+    "apiVersion": "shotgate.dev/v1alpha1",
     "kind": "QuantumWorkflow",
     "metadata": {"name": "demo"},
     "defaults": {"backend": {"provider": "local-aer", "shots": 2048, "seed": 1}},
@@ -74,7 +74,7 @@ def test_duplicate_job_names_rejected():
 
 
 def test_unknown_api_version_rejected():
-    doc = {**VALID, "apiVersion": "qforge.dev/v2"}
+    doc = {**VALID, "apiVersion": "shotgate.dev/v2"}
     with pytest.raises(ValidationError):
         parse_workflow(doc)
 
@@ -98,7 +98,7 @@ def test_load_workflow_from_disk(tmp_path: Path):
     wf_file.write_text(
         textwrap.dedent(
             """
-            apiVersion: qforge.dev/v1alpha1
+            apiVersion: shotgate.dev/v1alpha1
             kind: QuantumWorkflow
             metadata:
               name: from-disk

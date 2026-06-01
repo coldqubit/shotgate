@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Workflow orchestration: load → execute → validate → report.
 
 The :class:`Runner` ties the pieces together. It is deliberately backend- and
@@ -14,11 +16,11 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from qforge.backends.registry import get_backend
-from qforge.circuits.loader import load_circuit
-from qforge.config import BackendSpec, LoadedWorkflow
-from qforge.telemetry import circuit_metrics
-from qforge.validation.assertions import AssertionResult
+from shotgate.backends.registry import get_backend
+from shotgate.circuits.loader import load_circuit
+from shotgate.config import BackendSpec, LoadedWorkflow
+from shotgate.telemetry import circuit_metrics
+from shotgate.validation.assertions import AssertionResult
 
 
 @dataclass

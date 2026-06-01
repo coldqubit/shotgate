@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
 """Declarative, statistically-grounded assertions over quantum measurement counts.
 
 Each assertion is a Pydantic model (so it is self-validating when parsed from a
@@ -14,7 +16,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from qforge.validation import metrics
+from shotgate.validation import metrics
 
 
 @dataclass

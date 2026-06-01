@@ -1,4 +1,6 @@
-"""Load quantum circuits from a :class:`~qforge.config.CircuitSpec`.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 coldqubit
+"""Load quantum circuits from a :class:`~shotgate.config.CircuitSpec`.
 
 OpenQASM (2.0 or 3.0) is the interchange format: it is portable across SDKs and
 keeps workflows free of executable Python, which matters for a tool that runs
@@ -11,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from qforge.config import CircuitSpec
+from shotgate.config import CircuitSpec
 
 
 def load_circuit(spec: CircuitSpec, base_dir: Path) -> Any:

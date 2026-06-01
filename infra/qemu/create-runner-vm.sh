@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# create-runner-vm.sh — boot an ephemeral, hardware-isolated qforge runner.
+# create-runner-vm.sh — boot an ephemeral, hardware-isolated shotgate runner.
 #
 # Why a VM?  CI for quantum circuits should be reproducible and disposable. This
 # script boots a throwaway Fedora Cloud micro-VM with KVM acceleration, shares the
-# repository into it over virtio-9p, and runs qforge *inside Podman inside the VM*.
+# repository into it over virtio-9p, and runs shotgate *inside Podman inside the VM*.
 # Nothing is installed on the host except qemu; the base cloud image is never
 # mutated (we boot a copy-on-write overlay) and the whole environment is destroyed
 # on teardown.
@@ -35,8 +35,8 @@ BASE_IMG="${CACHE_DIR}/base.qcow2"
 OVERLAY_IMG="${CACHE_DIR}/overlay.qcow2"
 SEED_ISO="${CACHE_DIR}/seed.iso"
 
-log() { printf '\033[1;35m[qforge-vm]\033[0m %s\n' "$*"; }
-die() { printf '\033[1;31m[qforge-vm] ERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+log() { printf '\033[1;35m[shotgate-vm]\033[0m %s\n' "$*"; }
+die() { printf '\033[1;31m[shotgate-vm] ERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
 require_kvm() {
   [[ -w /dev/kvm ]] || die "KVM not available (/dev/kvm not writable). Enable virtualization."
@@ -92,16 +92,16 @@ render_seed_iso() {
 
 boot_vm() {
   log "booting VM (KVM, ${VM_CPUS} vCPU, ${VM_MEM_MB} MiB) — sharing repo over virtio-9p"
-  log "the guest will: mount the repo, build the qforge image, run '${WORKFLOW}', then poweroff"
+  log "the guest will: mount the repo, build the shotgate image, run '${WORKFLOW}', then poweroff"
   qemu-system-x86_64 \
-    -name qforge-runner \
+    -name shotgate-runner \
     -machine type=q35,accel=kvm \
     -cpu host -smp "${VM_CPUS}" -m "${VM_MEM_MB}" \
     -nographic -serial mon:stdio \
     -drive if=virtio,file="${OVERLAY_IMG}",format=qcow2 \
     -drive if=virtio,file="${SEED_ISO}",format=raw,readonly=on \
     -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
-    -virtfs local,path="${REPO_ROOT}",mount_tag=qforge,security_model=mapped-xattr,id=qforge \
+    -virtfs local,path="${REPO_ROOT}",mount_tag=shotgate,security_model=mapped-xattr,id=shotgate \
     -no-reboot
 
   if [[ -f "${REPO_ROOT}/report.xml" ]]; then
@@ -122,7 +122,7 @@ cmd_up() {
 cmd_down() {
   log "removing VM artifacts"
   rm -f "${OVERLAY_IMG}" "${SEED_ISO}"
-  rm -f "${REPO_ROOT}/.qforge-vm-done"
+  rm -f "${REPO_ROOT}/.shotgate-vm-done"
   log "base image kept at ${BASE_IMG} (delete ${CACHE_DIR} to remove it)"
 }
 

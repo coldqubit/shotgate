@@ -1,4 +1,4 @@
-apiVersion: qforge.dev/v1alpha1
+apiVersion: shotgate.dev/v1alpha1
 kind: QuantumWorkflow
 metadata:
   name: bell-state
