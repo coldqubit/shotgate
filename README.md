@@ -232,11 +232,14 @@ See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and r
 Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Report vulnerabilities per [`SECURITY.md`](SECURITY.md).
 
-## Maintainer
+## Maintainers
 
-Built and maintained by [coldqubit](https://github.com/coldqubit), a personal handle for one
-maintainer's quantum side projects (see [@morph-eos](https://github.com/morph-eos)). shotgate is
-the project; coldqubit is the handle that maintains it.
+shotgate is an independent open-source project, developed in the open under the
+[coldqubit](https://github.com/coldqubit) project home. It is maintained today by one
+maintainer; co-maintainers and new contributors are welcome. See
+[MAINTAINERS.md](MAINTAINERS.md) for the current roster and how to join it,
+[GOVERNANCE.md](GOVERNANCE.md) for how decisions are made, and
+[CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 ## License
 

@@ -1,3 +1,9 @@
-# Code owners. shotgate is currently maintained by a single owner.
-# (Swap in @coldqubit/<team> handles here if/when teams are created.)
-*   @morph-eos
+# Code owners for shotgate. The project is developed under the coldqubit project home
+# and is maintained today by one person; MAINTAINERS.md is the source of truth for the
+# current roster, and GOVERNANCE.md for how that roster changes.
+#
+# Ownership points at the @coldqubit/maintainers team rather than any personal account,
+# so review requests track the maintainer role, not an individual. Create that team in
+# the coldqubit organization on GitHub (members = the people in MAINTAINERS.md) for
+# these entries to resolve.
+*   @coldqubit/maintainers

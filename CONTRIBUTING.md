@@ -64,7 +64,19 @@ pytest -q
 - Conventional-ish commit subjects (`feat:`, `fix:`, `docs:`, `ci:`) appreciated.
 - Update [`CHANGELOG.md`](CHANGELOG.md) under "Unreleased".
 
-## DCO
+## Developer Certificate of Origin (DCO)
 
-By contributing you agree your contribution is licensed under the project's
-[MIT License](LICENSE).
+Contributions are accepted under the [Developer Certificate of Origin](https://developercertificate.org/)
+1.1: you certify that you wrote the change, or otherwise have the right to submit it
+under the project's [Apache-2.0 License](LICENSE). You assert this by signing off each
+commit, which `git commit -s` appends automatically:
+
+```text
+Signed-off-by: Your Name <you@example.com>
+```
+
+Use a real name and a reachable email; the commit trailer is the one place your identity
+is recorded. Commits without a sign-off are asked to amend (`git commit --amend -s`, or
+`git rebase --signoff` for a branch). Inbound contributions carry the same Apache-2.0
+terms the project ships under (Apache-2.0 section 5), so no separate license assignment
+is required.

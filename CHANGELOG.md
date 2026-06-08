@@ -26,6 +26,13 @@ All notable changes to this project are documented here. The format is based on
 - **Honest extras.** `braket` and `mitigation` are marked *planned* and removed from the
   installable `all` extra, since no Braket backend or Mitiq integration ships yet.
   `--backend braket` now fails fast at schema validation with a clear message.
+- **Project identity and governance made consistent.** Committed files refer to the
+  project home as `coldqubit` and to the maintainer *role* rather than to a personal
+  account: the README maintainer note was rewritten, [`CODEOWNERS`](CODEOWNERS) now
+  points at the `@coldqubit/maintainers` team, and the contribution terms were aligned.
+  The `CONTRIBUTING.md` inbound-license statement, which incorrectly named the MIT
+  License, now correctly states Apache-2.0 and is expressed as a Developer Certificate of
+  Origin (DCO) sign-off.
 
 ### Added
 
@@ -41,6 +48,10 @@ All notable changes to this project are documented here. The format is based on
   for real-device runs, plus a documented simulator-vs-QPU threshold split.
 - **`docs/hardware-validation.md`**: a step-by-step plan and acceptance matrix for
   validating the statistical gates on real IBM quantum hardware (v0.2 milestone).
+- **`GOVERNANCE.md` and `MAINTAINERS.md`**: how decisions are made (lazy consensus,
+  Architecture Decision Records for substantial changes, single maintainer today and
+  structured to grow) and who maintains the project, including the concrete path for a
+  co-maintainer to join.
 
 > The `ibm` backend remains **implemented but not yet validated on real hardware**.
 
