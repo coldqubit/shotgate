@@ -1,7 +1,8 @@
 # Getting Started
 
 This walkthrough takes you from zero to a passing quantum quality gate in a few
-minutes, using only Podman (no host Python, qiskit, or terraform).
+minutes. Section 1 uses Podman with no host Python; Section 2 uses a pip install of the
+`shotgate` CLI and pytest plugin. The two paths produce identical results.
 
 ## Prerequisites
 
@@ -11,7 +12,7 @@ minutes, using only Podman (no host Python, qiskit, or terraform).
 
 ## 1. Run your first gate (pull the image)
 
-No build step — pull the published image and run an example:
+No build step is required: pull the published image and run an example:
 
 ```bash
 podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
@@ -25,7 +26,27 @@ You'll see a Rich table of assertion results and the process will exit `0`. A JU
 qiskit + the Aer simulator, so the default `local-aer` backend works fully offline.
 
 > **Contributor build (optional).** To develop shotgate itself or run on an air-gapped
-> runner, build locally instead: `make build` then `make run WORKFLOW=…`.
+> runner, build locally instead: `make build` then `make run WORKFLOW=...`.
+
+## 2. Run it from pip (CLI and pytest plugin)
+
+If you prefer an existing Python environment to a container, install the package with the
+backend extra you need. This exposes the `shotgate` CLI and registers a pytest plugin:
+
+```bash
+pip install 'shotgate[aer]'                       # CLI + local Aer simulator
+shotgate run examples/bell-state/workflow.yaml --junit report.xml
+```
+
+The pytest plugin emits one pytest item per declared assertion. Point it at a workflow with
+`--shotgate`, or let it auto-collect files named exactly `workflow.yaml`:
+
+```bash
+pytest --shotgate examples/bell-state/workflow.yaml
+```
+
+A workflow whose backend dependencies are missing skips with a reason naming the extra to
+install, rather than erroring.
 
 ## 3. Read the workflow
 
@@ -82,7 +103,7 @@ podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
 ```
 
 The `ibm` backend is **implemented but not yet validated on real hardware**. Loosen
-thresholds for device noise (the `bell-state-hardware` example already does) — see the
+thresholds for device noise (the `bell-state-hardware` example already does), see the
 [hardware validation plan](hardware-validation.md) and the
 [pipeline guide](pipeline.md#1-the-hybrid-pipeline).
 

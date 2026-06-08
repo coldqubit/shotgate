@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Relicensed from AGPL-3.0-or-later to Apache-2.0.** The `LICENSE` file now carries the
+  verbatim Apache License 2.0 text, every `src/shotgate/**/*.py` SPDX header reads
+  `Apache-2.0`, and `pyproject.toml` declares `license = "Apache-2.0"` with the
+  `License :: OSI Approved :: Apache Software License` classifier. Apache-2.0 is permissive:
+  use, modification, and redistribution are allowed for any purpose, including commercial and
+  closed-source, provided the license and attribution notices are retained. The previous
+  network-copyleft (source-disclosure for hosted modified versions) no longer applies.
 - **Renamed the project from `qforge` to `shotgate`.** The name `qforge` was already
   taken (PyPI/crates) and raised a VS Code marketplace trademark concern. The package
   (`src/shotgate`), CLI program, container image, environment variables

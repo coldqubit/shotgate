@@ -52,7 +52,7 @@ FROM docker.io/library/python:${PYTHON_VERSION}-slim AS runtime
 
 LABEL org.opencontainers.image.title="shotgate" \
       org.opencontainers.image.description="Container-native CI/CD quality gates for quantum circuits" \
-      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.source="https://github.com/coldqubit/shotgate"
 
 ENV PATH="/opt/venv/bin:$PATH" \

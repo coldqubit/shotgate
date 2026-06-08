@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 coldqubit
 """Reporters: turn a :class:`~shotgate.runner.WorkflowReport` into CI-friendly output.
 
