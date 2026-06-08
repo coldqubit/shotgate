@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 coldqubit
 """Backend registry with lazy, dependency-free dispatch.
 
@@ -19,6 +19,17 @@ _REGISTRY: dict[str, str] = {
     "local-aer": "shotgate.backends.local_aer:LocalAerBackend",
     "ibm": "shotgate.backends.ibm_runtime:IBMRuntimeBackend",
 }
+
+# provider name -> pip extra that supplies its dependencies
+_PROVIDER_EXTRA: dict[str, str] = {
+    "local-aer": "aer",
+    "ibm": "ibm",
+}
+
+
+def extra_for_provider(provider: str) -> str:
+    """Return the pip extra (``shotgate[<extra>]``) that supplies a provider's deps."""
+    return _PROVIDER_EXTRA.get(provider, provider)
 
 
 def _load_class(provider: str) -> type[Backend]:
@@ -42,9 +53,13 @@ def get_backend(spec: BackendSpec) -> Backend:
     """
     backend_cls = _load_class(spec.provider)
     if not backend_cls.is_available():
+        extra = extra_for_provider(spec.provider)
         raise BackendUnavailableError(
             f"backend {spec.provider!r} is selected but its dependencies are not "
-            f"installed; install the matching extra, e.g. pip install 'shotgate[aer]'"
+            f"installed. Install the matching extra to use shotgate from a pip "
+            f"install (CLI or pytest plugin): pip install 'shotgate[{extra}]'. "
+            f"The published image ghcr.io/coldqubit/shotgate bakes the aer backend "
+            f"in (use the :latest-ibm tag for ibm)."
         )
     return backend_cls(name=spec.name, options=spec.options)
 
@@ -68,6 +83,7 @@ def register_backend(provider: str, target: str) -> None:
 __all__ = [
     "BackendUnavailableError",
     "available_backends",
+    "extra_for_provider",
     "get_backend",
     "register_backend",
 ]
