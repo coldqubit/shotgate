@@ -3,7 +3,7 @@
 # Copy this into your own repo. It PULLS the published image (no build step) and runs
 # the gate as a container job, emitting a JUnit report so the stage turns red when a
 # statistical assertion fails. Exit-code contract: 0 = pass, 1 = a gate failed,
-# 2 = bad config — identical to the GitHub Actions and Jenkins references.
+# 2 = bad config. The contract matches the GitHub Actions and Jenkins references.
 
 stages:
   - quantum
@@ -39,3 +39,19 @@ quantum-gate:
 #       junit: report.xml
 #   rules:
 #     - if: '$SHOTGATE_IBM_TOKEN'
+
+# Pip alternative (no image pull): install the package and gate with the CLI or the
+# pytest plugin instead of pulling the container image.
+#
+# quantum-gate-pip:
+#   stage: quantum
+#   image: "python:3.12-slim"
+#   script:
+#     - pip install "shotgate[aer]"
+#     - shotgate run "$WORKFLOW" --junit report.xml          # CLI path
+#     # or one pytest item per assertion (the pytest plugin):
+#     - pytest --shotgate "$WORKFLOW" --junitxml=report.xml
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: report.xml

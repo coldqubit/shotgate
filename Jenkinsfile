@@ -3,7 +3,7 @@
 // PULLS the published image and runs the gate via the container, then publishes the
 // JUnit report. A failed statistical assertion makes shotgate exit 1, which fails the
 // stage (and, via junit, marks the build UNSTABLE/FAILED). Exit-code contract:
-// 0 = pass, 1 = a gate failed, 2 = bad config — identical across GitHub/GitLab/Jenkins.
+// 0 = pass, 1 = a gate failed, 2 = bad config. The contract matches GitHub/GitLab/Jenkins.
 //
 // Requires a container engine (podman or docker) on the agent.
 
@@ -49,3 +49,12 @@ pipeline {
 //         run examples/bell-state-hardware/workflow.yaml --backend ibm --junit report.xml
 //     '''
 //   }
+
+// Pip alternative (no image pull): install the package and gate with the CLI or the
+// pytest plugin instead of pulling the container image.
+//
+//   sh '''
+//     pip install "shotgate[aer]"
+//     shotgate run "$WORKFLOW" --junit report.xml          # CLI path
+//     pytest --shotgate "$WORKFLOW" --junitxml=report.xml  # pytest plugin path
+//   '''

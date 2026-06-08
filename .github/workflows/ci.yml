@@ -5,8 +5,8 @@ name: ci
 # installed onto the runner directly.
 #
 # NOTE: This is shotgate's OWN repository CI, so it builds the image from source to
-# test the code under change. CONSUMERS should instead *pull* the published image —
-# `podman run ghcr.io/coldqubit/shotgate:latest run workflow.yaml` — as shown in
+# test the code under change. CONSUMERS should instead *pull* the published image
+# (`podman run ghcr.io/coldqubit/shotgate:latest run workflow.yaml`), as shown in
 # README.md and the GitLab/Jenkins references in docs/pipeline.md.
 
 on:
@@ -28,12 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: ruff + core unit tests (containerized)
+      - name: ruff + mypy + core unit tests (containerized)
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
             docker.io/library/python:3.12-slim bash -euc "
               pip install -q -e '.[dev]'
               ruff check src tests
+              mypy
               pytest -q -m 'not integration' --junitxml=core-junit.xml
             "
 
@@ -81,6 +82,38 @@ jobs:
           path: |
             report-*.xml
             integration-junit.xml
+
+  pip-consumer-path:
+    name: pip path (CLI + pytest plugin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: pip install and exercise the CLI and pytest plugin (containerized)
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/library/python:3.12-slim bash -euc "
+              pip install -q '.[aer,dev]'
+              # The pytest11 entry point must expose --shotgate after a pip install.
+              pytest --help 2>/dev/null | grep -q -- '--shotgate'
+              # CLI consumer path: gate a Bell workflow and emit a JUnit report.
+              shotgate run examples/bell-state/workflow.yaml --junit cli-junit.xml
+              # Plugin consumer path: in an isolated directory (free of this repo's
+              # pytest testpaths), each assertion of the workflow becomes one pytest
+              # item. pytest exits non-zero if nothing is collected or a gate fails.
+              cp -r examples/bell-state /tmp/gate
+              cd /tmp/gate
+              pytest -q --shotgate workflow.yaml --junitxml=/work/plugin-junit.xml
+            "
+
+      - name: Upload pip-path reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-path-junit
+          path: |
+            cli-junit.xml
+            plugin-junit.xml
 
   terraform:
     name: terraform fmt + validate
