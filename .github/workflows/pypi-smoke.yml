@@ -1,0 +1,53 @@
+name: pypi-smoke
+
+# Post-release consumer check: install shotgate FROM PYPI (not from this checkout)
+# on a clean runner and exercise both supported consumer paths, the CLI gate and
+# the pytest plugin. Dispatch it manually after a release, optionally pinning the
+# version to verify.
+#
+# The checkout is used only for the example workflows; the package under test
+# comes from the index.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Exact version to verify (empty = latest)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  consumer-paths:
+    name: pip install from PyPI + CLI + pytest plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
+      - name: Install from PyPI and exercise the CLI and pytest plugin
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          podman run --rm -v "$PWD/examples:/ex:ro" -e REQUESTED_VERSION \
+            docker.io/library/python:3.12-slim bash -euc '
+              SPEC="shotgate[aer]"
+              [ -n "$REQUESTED_VERSION" ] && SPEC="shotgate[aer]==$REQUESTED_VERSION"
+              pip install -q --no-cache-dir "$SPEC" pytest
+              echo "--- installed:"
+              pip show shotgate | sed -n "1,2p"
+              echo "--- CLI gate (exit 0 expected):"
+              shotgate run /ex/bell-state/workflow.yaml --junit /tmp/junit.xml --markdown /tmp/summary.md
+              cat /tmp/summary.md
+              echo "--- pytest plugin (entry point + collection):"
+              pytest --help 2>/dev/null | grep -q -- "--shotgate"
+              cp -r /ex/bell-state /tmp/gate && cd /tmp/gate
+              pytest -q --shotgate workflow.yaml
+            '

@@ -18,7 +18,7 @@ and the container-first reproducibility exist so that the project does not depen
 one person remaining available.
 
 Reach the maintainers through [GitHub issues](https://github.com/coldqubit/shotgate/issues),
-or at `coldqubit@morpheos.it` for private matters. Security reports follow
+or at `info@coldqubit.org` for private matters. Security reports follow
 [SECURITY.md](SECURITY.md).
 
 ## Becoming a maintainer

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/shotgate-logomark.svg" alt="shotgate logomark" width="96" height="96">
+<img src="https://raw.githubusercontent.com/coldqubit/shotgate/main/docs/assets/shotgate-logomark.svg" alt="shotgate logomark" width="96" height="96">
 
 # shotgate
 
@@ -15,7 +15,7 @@
 
 <br/>
 
-<img src="docs/assets/bell-state-demo.svg" alt="shotgate run on the bell-state example: five statistical assertions (chi-square, TVD, Hellinger fidelity, allowed-states leakage, marginal probability) pass against the local-aer simulator, exit 0" width="760">
+<img src="https://raw.githubusercontent.com/coldqubit/shotgate/main/docs/assets/bell-state-demo.svg" alt="shotgate run on the bell-state example: five statistical assertions (chi-square, TVD, Hellinger fidelity, allowed-states leakage, marginal probability) pass against the local-aer simulator, exit 0" width="760">
 
 <sub>Representative output of <code>shotgate run examples/bell-state/workflow.yaml</code>.</sub>
 

@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shotgate"
-version = "0.1.0"
+version = "0.1.1"
 description = "Container-native CI/CD quality gates for quantum circuits: statistically validate probabilistic output across simulators and QPUs."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "coldqubit", email = "coldqubit@morpheos.it" }]
+authors = [{ name = "coldqubit", email = "info@coldqubit.org" }]
 keywords = [
   "quantum-computing", "devops", "ci-cd", "qiskit", "testing",
   "infrastructure-as-code", "quantum-devops", "statistical-testing",

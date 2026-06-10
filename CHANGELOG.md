@@ -8,6 +8,28 @@ All notable changes to this project are documented here. The format is based on
 
 *Nothing yet.*
 
+## [0.1.1] - 2026-06-11
+
+### Changed
+
+- **Contact email** in package metadata and `MAINTAINERS.md` is now `info@coldqubit.org`
+  (was `coldqubit@morpheos.it`).
+- **README images use absolute URLs** (raw.githubusercontent.com) so the logomark and the
+  terminal demo render on the PyPI project page, which resolves the README standalone.
+- **Registry resilience in CI and release pipelines**: base images are pre-pulled with
+  exponential backoff (5 attempts) and fall back to the same official image on
+  `public.ecr.aws`, after Docker Hub was unreachable from a runner for over 3 minutes
+  on 2026-06-10 and failed a main-branch CI run.
+- **Dependencies**: qiskit constraint widened to `>=1.2,<3` (integration suite passes on
+  qiskit 2.x); GitHub Actions bumped (checkout v6, upload-artifact v7, download-artifact v8,
+  action-gh-release v3).
+
+### Added
+
+- **shotgate logomark** at the top of the README (`docs/assets/shotgate-logomark.svg`).
+- **`pypi-smoke` workflow** (manual dispatch): installs the published package from PyPI on a
+  clean runner and exercises the CLI gate and the pytest plugin, as a post-release check.
+
 ## [0.1.0] - 2026-06-10
 
 > First public, tagged release. The codebase began on 2026-06-01 under the name `qforge`
@@ -99,5 +121,6 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/coldqubit/shotgate/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/coldqubit/shotgate/releases/tag/v0.1.0
