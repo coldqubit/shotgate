@@ -6,10 +6,16 @@
 
 *Statistically validate the probabilistic output of quantum programs across simulators and real quantum processing units (QPUs), defined as code.*
 
-[![CI](https://img.shields.io/badge/CI-podman-892CA0)](.github/workflows/ci.yml)
+[![CI](https://github.com/coldqubit/shotgate/actions/workflows/ci.yml/badge.svg)](https://github.com/coldqubit/shotgate/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#roadmap)
+
+<br/>
+
+<img src="docs/assets/bell-state-demo.svg" alt="shotgate run on the bell-state example: five statistical assertions (chi-square, TVD, Hellinger fidelity, allowed-states leakage, marginal probability) pass against the local-aer simulator, exit 0" width="760">
+
+<sub>Representative output of <code>shotgate run examples/bell-state/workflow.yaml</code>.</sub>
 
 </div>
 
@@ -66,17 +72,36 @@ jobs: [
 
 ```console
 $ shotgate run examples/bell-state/workflow.yaml
-──────────────────────── shotgate :: bell-state ────────────────────────
+─────────────────────────── shotgate :: bell-state ───────────────────────────
  job: bell-pair · aer_simulator · 8192 shots
- ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
- ┃ Assertion           ┃ Result ┃ Detail                              ┃
- ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
- │ chi-square p >= 0.01│  PASS  │ chi-square=0.41 dof=1 p-value=0.52  │
- │ TVD <= 0.03         │  PASS  │ total variation distance 0.0043     │
- │ leakage <= 0.0      │  PASS  │ support leakage 0.0000              │
- └─────────────────────┴────────┴─────────────────────────────────────┘
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃ Assertion                 ┃ Result ┃ Detail                                        ┃
+ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+ │ chi-square p >= 0.01      │  PASS  │ chi-square=0.410 dof=1 p-value=0.5220          │
+ │ TVD <= 0.03               │  PASS  │ total variation distance 0.0043 (<= 0.03)     │
+ │ fidelity >= 0.99          │  PASS  │ Hellinger fidelity 1.0000 (>= 0.99)           │
+ │ leakage <= 0.0            │  PASS  │ support leakage 0.0000 (<= 0.0)               │
+ │ P(00) >= 0.45 and <= 0.55 │  PASS  │ P(00) = 0.4957                                │
+ └───────────────────────────┴────────┴───────────────────────────────────────────────┘
  PASSED · 5/5 assertions · 0.214s
 ```
+
+The same run drops into a pipeline through the Markdown reporter (`--markdown`), rendered
+as a step summary or a PR comment:
+
+> ## shotgate: `bell-state` — ✅ passed
+>
+> - Jobs: **1**, failed: **0**
+> - Assertions: **5**, failed: **0**
+> - Duration: **0.214s**
+>
+> | Job | Backend | Shots | Assertion | Result | Detail |
+> | --- | --- | --- | --- | --- | --- |
+> | `bell-pair` | aer_simulator | 8192 | chi-square p >= 0.01 | ✅ | chi-square=0.410 dof=1 p-value=0.5220 (>= alpha=0.01) |
+> | `bell-pair` | aer_simulator | 8192 | TVD <= 0.03 | ✅ | total variation distance 0.0043 (<= 0.03) |
+> | `bell-pair` | aer_simulator | 8192 | fidelity >= 0.99 | ✅ | Hellinger fidelity 1.0000 (>= 0.99) |
+> | `bell-pair` | aer_simulator | 8192 | leakage <= 0.0 | ✅ | support leakage 0.0000 (<= 0.0) |
+> | `bell-pair` | aer_simulator | 8192 | P(00) >= 0.45 and <= 0.55 | ✅ | P(00) = 0.4957 |
 
 ## Install and run
 

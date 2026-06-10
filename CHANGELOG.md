@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [0.1.0] - 2026-06-10
+
+> First public, tagged release. The codebase began on 2026-06-01 under the name `qforge`
+> and was renamed to `shotgate`; it had no prior git tag, PyPI release, or published
+> container image, so this is the project's first release of record. The capability
+> baseline (workflows, oracles, backends, CLI, reporters, IaC, isolation) is listed under
+> **Core capabilities** below; the entries above it are what changed on the way to release.
+
 ### Changed
 
 - **Relicensed from AGPL-3.0-or-later to Apache-2.0.** The `LICENSE` file now carries the
@@ -52,16 +62,18 @@ All notable changes to this project are documented here. The format is based on
   Architecture Decision Records for substantial changes, single maintainer today and
   structured to grow) and who maintains the project, including the concrete path for a
   co-maintainer to join.
+- **Automated PyPI publishing** via trusted publishing (OIDC, no stored token): the tagged
+  release pipeline builds the sdist + wheel and publishes them to PyPI alongside the GHCR
+  image and the GitHub Release, so `pip install shotgate[aer]` resolves from a tag.
+- **README terminal visual** (`docs/assets/bell-state-demo.svg`): a branded render of the
+  `examples/bell-state` gate output (five passing oracles), plus a live CI status badge.
 
 > The `ibm` backend remains **implemented but not yet validated on real hardware**.
 
-## [0.1.0] - 2026-06-01
+### Core capabilities
 
-> Initial release, published under the project's original name **`qforge`** (the
-> workflow API version was `qforge.dev/v1alpha1`). Renamed to `shotgate` post-release;
-> see [Unreleased].
-
-### Added
+> The feature baseline, first built under the name `qforge` (workflow API `qforge.dev/v1alpha1`,
+> since renamed to `shotgate.dev/v1alpha1`).
 
 - **Declarative workflows** (`qforge.dev/v1alpha1`): strict, Kubernetes-style YAML
   schema for "quantum workflow as code" with workflow-level backend defaults.

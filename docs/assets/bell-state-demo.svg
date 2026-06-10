@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace" role="img" aria-label="shotgate run on the bell-state example: five statistical assertions pass against the local-aer simulator">
+  <!-- window -->
+  <rect x="1" y="1" width="958" height="358" rx="14" fill="#0C0A12" stroke="rgba(255,121,79,0.22)" stroke-width="1.5"/>
+  <!-- title bar -->
+  <path d="M1 15 a14 14 0 0 1 14 -14 h930 a14 14 0 0 1 14 14 v25 h-958 z" fill="#16131F"/>
+  <line x1="1" y1="40" x2="959" y2="40" stroke="rgba(244,242,250,0.08)" stroke-width="1"/>
+  <circle cx="26" cy="20" r="6" fill="#FF5C72"/>
+  <circle cx="48" cy="20" r="6" fill="#F5B13D"/>
+  <circle cx="70" cy="20" r="6" fill="#3FD98A"/>
+  <text x="480" y="25" text-anchor="middle" font-size="12.5" fill="#847E9B">examples/bell-state &#183; shotgate</text>
+
+  <!-- command -->
+  <text x="34" y="76" font-size="14">
+    <tspan fill="#FF794F" font-weight="600">$ </tspan><tspan fill="#F4F2FA">shotgate run examples/bell-state/workflow.yaml</tspan>
+  </text>
+
+  <!-- rich rule: shotgate :: bell-state -->
+  <line x1="34" y1="104" x2="380" y2="104" stroke="rgba(63,217,138,0.45)" stroke-width="1"/>
+  <text x="480" y="109" text-anchor="middle" font-size="13.5" fill="#3FD98A" font-weight="700">shotgate :: bell-state</text>
+  <line x1="580" y1="104" x2="926" y2="104" stroke="rgba(63,217,138,0.45)" stroke-width="1"/>
+
+  <!-- table title -->
+  <text x="34" y="138" font-size="12.5" fill="#BCB6CF">job: bell-pair  &#183;  aer_simulator  &#183;  8192 shots</text>
+
+  <!-- table frame -->
+  <rect x="34" y="150" width="892" height="150" rx="6" fill="none" stroke="rgba(244,242,250,0.10)" stroke-width="1"/>
+  <line x1="34" y1="176" x2="926" y2="176" stroke="rgba(244,242,250,0.10)" stroke-width="1"/>
+  <line x1="410" y1="150" x2="410" y2="300" stroke="rgba(244,242,250,0.07)" stroke-width="1"/>
+  <line x1="486" y1="150" x2="486" y2="300" stroke="rgba(244,242,250,0.07)" stroke-width="1"/>
+
+  <!-- header -->
+  <text x="48"  y="169" font-size="12" fill="#847E9B" font-weight="600">Assertion</text>
+  <text x="448" y="169" font-size="12" fill="#847E9B" font-weight="600" text-anchor="middle">Result</text>
+  <text x="500" y="169" font-size="12" fill="#847E9B" font-weight="600">Detail</text>
+
+  <!-- rows -->
+  <g font-size="12.5">
+    <text x="48" y="196" fill="#34D8C8">chi-square p &gt;= 0.01</text>
+    <text x="448" y="196" fill="#3FD98A" font-weight="700" text-anchor="middle">PASS</text>
+    <text x="500" y="196" fill="#847E9B" font-size="11.5">chi-square=0.410 dof=1 p-value=0.5220 (&gt;= alpha=0.01)</text>
+
+    <text x="48" y="218" fill="#34D8C8">TVD &lt;= 0.03</text>
+    <text x="448" y="218" fill="#3FD98A" font-weight="700" text-anchor="middle">PASS</text>
+    <text x="500" y="218" fill="#847E9B" font-size="11.5">total variation distance 0.0043 (&lt;= 0.03)</text>
+
+    <text x="48" y="240" fill="#34D8C8">fidelity &gt;= 0.99</text>
+    <text x="448" y="240" fill="#3FD98A" font-weight="700" text-anchor="middle">PASS</text>
+    <text x="500" y="240" fill="#847E9B" font-size="11.5">Hellinger fidelity 1.0000 (&gt;= 0.99)</text>
+
+    <text x="48" y="262" fill="#34D8C8">leakage &lt;= 0.0</text>
+    <text x="448" y="262" fill="#3FD98A" font-weight="700" text-anchor="middle">PASS</text>
+    <text x="500" y="262" fill="#847E9B" font-size="11.5">support leakage 0.0000 (&lt;= 0.0)</text>
+
+    <text x="48" y="284" fill="#34D8C8">P(00) &gt;= 0.45 and &lt;= 0.55</text>
+    <text x="448" y="284" fill="#3FD98A" font-weight="700" text-anchor="middle">PASS</text>
+    <text x="500" y="284" fill="#847E9B" font-size="11.5">P(00) = 0.4957</text>
+  </g>
+
+  <!-- verdict -->
+  <text x="34" y="330" font-size="13.5">
+    <tspan fill="#3FD98A" font-weight="700">PASSED</tspan><tspan fill="#BCB6CF"> &#183; 5/5 assertions &#183; 0.214s &#183; exit 0</tspan>
+  </text>
+</svg>
