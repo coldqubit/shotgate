@@ -26,7 +26,7 @@ jobs:
     name: lint + core tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -55,7 +55,7 @@ jobs:
     name: build image + integration + example gates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -99,7 +99,7 @@ jobs:
     name: pip path (CLI + pytest plugin)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -137,7 +137,7 @@ jobs:
     name: terraform fmt + validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Pull terraform image (retry + mirror fallback)
         run: |
