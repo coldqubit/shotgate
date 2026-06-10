@@ -19,6 +19,8 @@ defaults:
     provider: ibm
     shots: 4096
     # name: ibm_brisbane   # pin a device, or omit to use least_busy
+    # options:
+    #   instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/<account>:<id>::"
 
 jobs:
   - name: bell-pair-qpu

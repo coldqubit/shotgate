@@ -24,16 +24,33 @@ and crosstalk shift the distribution. Validating on hardware therefore means two
 ## 1. Obtain access and a token
 
 1. Create an account at the [IBM Quantum Platform](https://quantum.cloud.ibm.com/).
-2. Copy your API token from the dashboard.
-3. Export it for shotgate (never commit it):
+2. Create an API key from the dashboard (it is shown once: store it in a password
+   manager). This is a 44-character IBM Cloud API key.
+3. Copy your **instance CRN** from the [Instances](https://quantum.cloud.ibm.com/instances)
+   page (format `crn:v1:bluemix:public:quantum-computing:<region>:a/<account>:<id>::`).
+   On the Open Plan you have exactly one instance; the CRN pins the service to it and
+   avoids any account-default ambiguity.
+4. Export the key for shotgate (never commit it) and put the CRN in the workflow:
 
    ```bash
-   export SHOTGATE_IBM_TOKEN="<your token>"
+   export SHOTGATE_IBM_TOKEN="<your API key>"
    ```
 
-   The backend reads, in order: `backend.options.token`, `SHOTGATE_IBM_TOKEN`,
-   `QISKIT_IBM_TOKEN`. The current Runtime channel is `ibm_quantum_platform` (the legacy
-   `ibm_quantum` channel was removed); override via `backend.options.channel` if needed.
+   ```yaml
+   defaults:
+     backend:
+       provider: ibm
+       shots: 4096
+       options:
+         instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/…::"
+   ```
+
+   The backend reads the token, in order, from: `backend.options.token`,
+   `SHOTGATE_IBM_TOKEN`, `QISKIT_IBM_TOKEN`. The instance comes from
+   `backend.options.instance` (omit it to let the service auto-select among the
+   instances visible to the key). The current Runtime channel is
+   `ibm_quantum_platform` (the legacy `ibm_quantum` channel was removed); override via
+   `backend.options.channel` if needed.
 
 ## 2. Select a backend (device)
 
