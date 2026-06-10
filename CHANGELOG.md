@@ -12,8 +12,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
-- **Contact email** in package metadata and `MAINTAINERS.md` is now `info@coldqubit.org`
-  (was `coldqubit@morpheos.it`).
+- **Contact email** in package metadata and `MAINTAINERS.md` is now `info@coldqubit.org`.
 - **README images use absolute URLs** (raw.githubusercontent.com) so the logomark and the
   terminal demo render on the PyPI project page, which resolves the README standalone.
 - **Registry resilience in CI and release pipelines**: base images are pre-pulled with
