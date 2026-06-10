@@ -20,6 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
       - name: Build sdist + wheel (containerized)
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
@@ -40,6 +46,12 @@ jobs:
     needs: build-dist
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
 
       - name: Compute image refs
         id: meta

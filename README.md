@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/shotgate-logomark.svg" alt="shotgate logomark" width="96" height="96">
+
 # shotgate
 
 **Container-native CI/CD quality gates for quantum circuits.**

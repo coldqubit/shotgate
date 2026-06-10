@@ -28,6 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
       - name: ruff + mypy + core unit tests (containerized)
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
@@ -50,6 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
 
       - name: Build shotgate runtime image
         run: podman build -t shotgate:ci .
@@ -89,6 +101,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
       - name: pip install and exercise the CLI and pytest plugin (containerized)
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
@@ -120,6 +138,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pull terraform image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/hashicorp/terraform:latest \
+            public.ecr.aws/hashicorp/terraform:latest
 
       - name: Format check
         run: |
