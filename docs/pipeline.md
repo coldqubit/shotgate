@@ -27,7 +27,7 @@ flowchart LR
 1. **Pre-merge / every PR → simulator.** Fast, free, deterministic with a seed. Runs
    the full assertion suite on `local-aer`. This is the gate that blocks merges.
 2. **Post-merge / on-demand → real hardware.** Gated behind branch or label because
-   QPU time is scarce and queued. Looser thresholds account for device noise.
+   quantum processing unit (QPU) time is scarce and queued. Looser thresholds account for device noise.
 
 ## 2. Stage contract
 
@@ -81,7 +81,7 @@ Ready-to-copy references live in the repo root:
 
 > shotgate's *own* repo CI ([`ci.yml`](../.github/workflows/ci.yml)) builds the image
 > from source because it tests the source; **consumers pull the published image** as
-> above.
+> the snippets in this section do.
 
 ### GitLab CI
 

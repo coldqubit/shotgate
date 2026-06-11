@@ -8,7 +8,8 @@ part of your infrastructure.
 > **Design choice.** We deliberately ship a *module that orchestrates the shotgate
 > container* rather than a bespoke Go provider. It needs no compilation, no plugin
 > registry, and keeps the single source of truth (the validation logic) in one place.
-> A native provider can come later (see [ADR-0003](../../docs/adr/0003-container-and-vm-isolation.md));
+> A native provider can come later (see the Architecture Decision Record (ADR)
+> [ADR-0003](../../docs/adr/0003-container-and-vm-isolation.md));
 > the workflow contract stays identical.
 
 ## Usage
@@ -25,7 +26,8 @@ module "bell_state_gate" {
 }
 ```
 
-Run a real QPU by passing a token (kept out of state via `sensitive`):
+Run a real quantum processing unit (QPU) by passing a token (kept out of state via
+`sensitive`):
 
 ```hcl
 module "qpu_gate" {

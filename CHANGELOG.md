@@ -6,8 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-11
+
 ### Added
 
+- **Three Architecture Decision Records.** ADR-0004 (rename `qforge` to `shotgate`,
+  including the breaking `apiVersion` change), ADR-0005 (license MIT to
+  AGPL-3.0-or-later to Apache-2.0, and the DCO inbound policy), and ADR-0006
+  (`chi_square` simulator-only, noise-aware hardware thresholds), completing the
+  ADR series against the GOVERNANCE.md criteria.
 - **Docker Hub repository page sync.** After mirroring images, the `dockerhub-mirror`
   workflow now pushes the repository README and the project tagline to the Docker Hub
   repository description, so the Hub listing tracks the source. The step is non-fatal:
@@ -119,7 +126,7 @@ All notable changes to this project are documented here. The format is based on
   moved to the new name. The canonical home is `github.com/coldqubit/shotgate` and the
   published image is `ghcr.io/coldqubit/shotgate`.
 - **Pull-first usage.** Documentation now leads with `podman run
-  ghcr.io/coldqubit/shotgate …`; building from source is the contributor fallback.
+  ghcr.io/coldqubit/shotgate ...`; building from source is the contributor fallback.
 - **Honest extras.** `braket` and `mitigation` are marked *planned* and removed from the
   installable `all` extra, since no Braket backend or Mitiq integration ships yet.
   `--backend braket` now fails fast at schema validation with a clear message.
@@ -140,7 +147,7 @@ All notable changes to this project are documented here. The format is based on
 - **Hardened IBM/QPU backend**: robust counts extraction from named classical registers
   (with a clear error on unexpected result shapes), corrected Runtime channel default,
   a token-gated smoke test, and an `[ibm]`-baked image variant (build arg
-  `SHOTGATE_EXTRAS="aer,ibm"`, published as the `:…-ibm` image tag).
+  `SHOTGATE_EXTRAS="aer,ibm"`, published as the `:...-ibm` image tag).
 - **Noise-tolerant example** (`examples/bell-state-hardware/`) with relaxed thresholds
   for real-device runs, plus a documented simulator-vs-QPU threshold split.
 - **`docs/hardware-validation.md`**: a step-by-step plan and acceptance matrix for
@@ -186,7 +193,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/coldqubit/shotgate/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/coldqubit/shotgate/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/coldqubit/shotgate/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/coldqubit/shotgate/compare/v0.1.0...v0.1.1

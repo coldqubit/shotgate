@@ -18,7 +18,7 @@ jobs: [ ... ]                     # required, >= 1
 | --- | --- | --- | --- |
 | `apiVersion` | string | yes | Must equal `shotgate.dev/v1alpha1`. |
 | `kind` | string | yes | Must equal `QuantumWorkflow`. |
-| `metadata` | object | yes | See below. |
+| `metadata` | object | yes | See [`metadata`](#metadata). |
 | `defaults` | object | no | `{ backend: BackendSpec }` inherited by jobs. |
 | `jobs` | list | yes | One or more jobs; names must be unique. |
 

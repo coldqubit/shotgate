@@ -7,7 +7,7 @@
 | [Pipeline Schema](pipeline.md) | How shotgate gates a CI/CD pipeline; stage contract; exit codes. |
 | [Workflow Specification](workflow-spec.md) | The `shotgate.dev/v1alpha1` YAML schema, field by field. |
 | [Assertion Catalog](assertions.md) | The statistical oracles, with the math and threshold guidance. |
-| [Hardware Validation Plan](hardware-validation.md) | v0.2 runbook to validate the gates on a real IBM QPU. |
+| [Hardware Validation Plan](hardware-validation.md) | v0.2 milestone: runbook and measured `ibm_fez` baseline (2026-06-11). |
 | [Motivation](motivation.md) | The market/community gap shotgate fills, with sources. |
 | [ADRs](adr/) | Architecture Decision Records and their rationale. |
 | [Diagrams](diagrams/) | Mermaid sources for the architecture and pipeline diagrams. |

@@ -25,7 +25,9 @@ and not sensitive to shot count.
   max_distance: 0.03
 ```
 
-Guidance: simulator (noiseless) → `0.01–0.03`; noisy hardware → `0.05–0.15`.
+Typical thresholds: `0.01–0.03` on a noiseless simulator, `0.05–0.15` on noisy
+hardware (the measured ibm_fez Bell TVD was 0.1284 at 4096 shots; see the
+[hardware baseline](hardware-validation.md#9-measured-baseline-ibm_fez-2026-06-11)).
 
 ---
 
@@ -65,6 +67,7 @@ counts came from $q$.
 ```
 
 Notes & caveats:
+
 - This is the formal hypothesis test used in the quantum-testing literature as an
   oracle. A **smaller** `significance` (e.g. `0.01`) makes the gate more permissive
   (rejects only strong evidence of mismatch), reducing flakiness.

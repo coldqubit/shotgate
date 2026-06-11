@@ -2,7 +2,8 @@
 
 > **Goal of this milestone:** *validate the statistical gates against real quantum
 > hardware.* shotgate's oracles are proven against the Aer simulator; this plan
-> exercises them end-to-end on a real IBM QPU through the hardened `ibm` backend.
+> exercises them end-to-end on a real IBM quantum processing unit (QPU) through the
+> hardened `ibm` backend.
 >
 > **Status: VALIDATED on real hardware.** On 2026-06-11 the three hardware gates ran
 > on `ibm_fez` (156-qubit Heron r2, Open Plan instance) at 4096 shots each, via the
@@ -16,8 +17,8 @@
 
 ## 0. Why a separate plan
 
-A noiseless simulator passes simulator-tight bounds (χ² p ≥ 0.01, TVD ≤ 0.03,
-fidelity ≥ 0.99). A real device will **not**: readout error, gate infidelity, decoherence,
+A noiseless simulator passes simulator-tight bounds (χ² p ≥ 0.01, total variation
+distance (TVD) ≤ 0.03, fidelity ≥ 0.99). A real device will **not**: readout error, gate infidelity, decoherence,
 and crosstalk shift the distribution. Validating on hardware therefore means two things:
 
 1. The **plumbing** works: submit, transpile to the device ISA, retrieve counts from the
@@ -46,7 +47,7 @@ and crosstalk shift the distribution. Validating on hardware therefore means two
        provider: ibm
        shots: 4096
        options:
-         instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/…::"
+         instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/...::"
    ```
 
    The backend reads the token, in order, from: `backend.options.token`,
@@ -78,8 +79,8 @@ podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
   small shot counts first. Keep circuits ≤ 3 qubits for these examples.
 - **Cost:** under the IBM Quantum open plan, usage is metered in execution time and
   subject to a monthly allotment; small jobs (2–3 qubits, ≤ 4096 shots) are cheap but not
-  free of quota. Budget a handful of jobs for the full matrix below. Confirm current plan
-  limits on the IBM dashboard before a batch run.
+  free of quota. Budget a handful of jobs for the full section-5 matrix. Confirm current
+  plan limits on the IBM dashboard before a batch run.
 
 ## 4. Noise-aware acceptance criteria
 
@@ -100,13 +101,15 @@ structural oracles instead.
 | **Grover-2** | P(`11`) ≥ | 0.99 | **0.70** |
 | | leakage ≤ | 0.01 | **0.30** |
 
-Rationale: a 2-qubit Bell pair on a good device typically lands at fidelity ≈ 0.9–0.98;
-GHZ-3 and Grover-2 add depth/two-qubit gates and degrade further. The bounds above aim to
-pass a healthy device while still catching a genuinely broken circuit or mis-mapped qubits.
+These bounds assume that a 2-qubit Bell pair on a good device typically lands at
+fidelity ≈ 0.9–0.98, and that GHZ-3 and Grover-2 add depth and two-qubit gates and
+degrade further. They aim to pass a healthy device while still catching a genuinely
+broken circuit or mis-mapped qubits.
 
-The `examples/bell-state-hardware/workflow.yaml` already encodes the Bell hardware
-profile. Create `*-hardware` variants for GHZ and Grover from the table above before the
-run.
+The three `*-hardware` examples (`examples/bell-state-hardware`,
+`examples/ghz-state-hardware`, `examples/grover-2q-hardware`) encode these hardware
+profiles; they shipped with v0.2.0 and are the workflows the `hardware-validation`
+CI job runs.
 
 ## 5. Validation matrix
 

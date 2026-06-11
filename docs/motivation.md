@@ -7,14 +7,14 @@ point to a real, currently-unmet need, and how shotgate is positioned against th
 
 Quantum tooling is mature at the **bottom** of the stack (writing and running
 circuits) and immature at the **DevOps** layer (orchestration, automated testing,
-infrastructure-as-code). The "write a circuit" problem is solved by excellent SDKs
+infrastructure-as-code). The "write a circuit" problem is solved by mature SDKs
 (Qiskit, Cirq, PennyLane, pytket, Q#) and cloud access via IBM Quantum, AWS Braket,
 and Azure Quantum. What's missing is everything a software-delivery org expects
 *around* that core.
 
 | Layer | State of the art |
 | --- | --- |
-| Circuit authoring / simulation | **Mature** (Qiskit, Cirq, Aer, …) |
+| Circuit authoring / simulation | **Mature** (Qiskit, Cirq, Aer, ...) |
 | Cloud execution | **Mature** (IBM, Braket, Azure) |
 | Error mitigation | **Emerging** (Mitiq) |
 | **Statistical testing in CI/CD** | **Research prototypes only** |
@@ -31,7 +31,7 @@ validation and error mitigation strategies in CI/CD pipelines,"* and that
 
 **2. The correct techniques exist only as academic prototypes.** The research
 literature has converged on statistical oracles (chi-square goodness-of-fit, total
-variation distance, Hellinger fidelity) and on the reality of *flaky* quantum tests
+variation distance (TVD), Hellinger fidelity) and on the reality of *flaky* quantum tests
 (one study executes a Qiskit test suite 10,000× across 23 releases to characterize
 flakiness). Frameworks like QUTest, QuCheck, and QUT implement statistical and
 probabilistic assertions. **But these live in papers and prototypes, not in a
@@ -39,7 +39,7 @@ maintained, container-native tool wired into mainstream CI/CD.**
 
 **3. Infrastructure-as-Code can't describe quantum workloads.** DevOps analyses note
 that *"Terraform modules and Helm charts may need support for quantum backends,
-simulators…"*, i.e. they don't today. The one Terraform "quantum" provider in the
+simulators..."*, i.e. they don't today. The one Terraform "quantum" provider in the
 wild (`coveooss/terraform-provider-quantum`) is unrelated to circuits; it manipulates
 JSON. The IaC space for real quantum workloads is empty.
 

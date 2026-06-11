@@ -3,7 +3,7 @@
 """Backend abstraction.
 
 A backend executes a circuit and returns measurement counts. The interface is
-intentionally minimal so new providers (local simulators, IBM, AWS Braket, …) can
+intentionally minimal so new providers (local simulators, IBM, AWS Braket, ...) can
 be added without touching the runner or the validation core. Heavy SDKs are
 imported lazily inside concrete backends, never at module import time.
 """

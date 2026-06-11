@@ -1,7 +1,8 @@
 # Solution Architecture
 
-> Status: `v0.1` (alpha). This document describes the design, its rationale, and
-> the extension points that keep shotgate "minimal but scalable".
+> Status: `0.2.x` (alpha; oracles validated on `ibm_fez`, 2026-06-11). This document
+> describes the design, its rationale, and the extension points that keep shotgate
+> "minimal but scalable".
 
 ## 1. Problem statement
 
@@ -13,7 +14,7 @@ native way to gate on this. Three concrete gaps follow:
    checks that are either flaky or meaningless.
 2. **No "workflow as code".** There is no declarative, reviewable artifact that says
    *"this circuit, on this backend, must satisfy these statistical properties"*.
-3. **No IaC / isolation story.** Terraform/Helm can't describe quantum workloads, and
+3. **No Infrastructure-as-Code (IaC) / isolation story.** Terraform/Helm can't describe quantum workloads, and
    running untrusted circuits in CI lacks an isolation model.
 
 shotgate addresses all three with one composable tool.
@@ -22,7 +23,7 @@ shotgate addresses all three with one composable tool.
 
 | Principle | Consequence in the codebase |
 | --- | --- |
-| **Statistically correct by construction** | Oracles are χ², TVD, Hellinger fidelity, not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/shotgate/validation/metrics.py)). |
+| **Statistically correct by construction** | Oracles are χ², total variation distance (TVD), Hellinger fidelity, not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/shotgate/validation/metrics.py)). |
 | **Core is dependency-light** | The validation core imports only the standard library + pydantic. No quantum SDK is needed to parse a workflow or compute a metric. |
 | **Backends are lazy & pluggable** | Heavy SDKs (qiskit, braket) are imported only when a backend actually runs. New providers register a `"module:Class"` string. |
 | **Everything runs in a container** | The unit of execution is the shotgate image. The host needs only Podman (and optionally QEMU). |
@@ -65,7 +66,7 @@ flowchart TB
 
 **Dependency direction is strictly downward.** `report` and `runner` depend on the
 core; the core never imports the execution layer. This is what lets the same wheel
-run a 30 MB metrics-only container and a full QPU job.
+run a 30 MB metrics-only container and a full quantum processing unit (QPU) job.
 
 ## 4. Execution data flow
 
@@ -116,7 +117,8 @@ flowchart LR
 | 2 | Rootless Podman, non-root image user | Shared/hardened CI runners. |
 | 3 | Ephemeral Fedora micro-VM (`infra/qemu`) | Untrusted circuits; VM-grade stage isolation. |
 
-See [ADR-0003](adr/0003-container-and-vm-isolation.md).
+See the Architecture Decision Record (ADR)
+[ADR-0003](adr/0003-container-and-vm-isolation.md).
 
 ## 6. Security model
 
@@ -130,7 +132,7 @@ See [ADR-0003](adr/0003-container-and-vm-isolation.md).
 
 ## 7. Extension points (how it scales)
 
-| To add… | Do this | Touches the core? |
+| To add... | Do this | Touches the core? |
 | --- | --- | --- |
 | A new **assertion oracle** | Add a pydantic model with a unique `type` literal + `evaluate()`, append to the `Assertion` union and `ASSERTION_TYPES` | No core math beyond a new `metrics` fn |
 | A new **backend** | Implement `Backend`, register `"module:Class"` in the registry, add an optional extra | No |
@@ -140,7 +142,7 @@ See [ADR-0003](adr/0003-container-and-vm-isolation.md).
 Because the contract between layers is small (a `BackendResult` of counts, an
 `AssertionResult` of pass/fail+metrics), each layer evolves independently.
 
-## 8. Non-goals (v0.1)
+## 8. Non-goals (as of 0.2.x)
 
 - Circuit *synthesis* or optimization (that's the SDKs' job).
 - Full quantum-state tomography assertions (planned; counts-based oracles first).
