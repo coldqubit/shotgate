@@ -161,10 +161,11 @@ jobs:
             echo "pip install https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/shotgate-${V}-py3-none-any.whl"
             echo '```'
             echo
-            echo "**Container** (GHCR; add the \`-ibm\` tag suffix for the QPU-capable variant):"
+            echo "**Container** (GHCR, canonical; add the \`-ibm\` tag suffix for the QPU-capable variant):"
             echo '```bash'
             echo "podman pull ghcr.io/${GITHUB_REPOSITORY}:${V}"
             echo "podman run --rm -v \"\$PWD:/work:Z\" -w /work ghcr.io/${GITHUB_REPOSITORY}:${V} run examples/bell-state/workflow.yaml"
+            echo "# also mirrored to Docker Hub:  docker.io/${GITHUB_REPOSITORY}:${V}"
             echo '```'
             echo
             echo "---"

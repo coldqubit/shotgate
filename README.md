@@ -91,7 +91,7 @@ $ shotgate run examples/bell-state/workflow.yaml
 The same run drops into a pipeline through the Markdown reporter (`--markdown`), rendered
 as a step summary or a PR comment:
 
-> ## shotgate: `bell-state` — ✅ passed
+> ## shotgate: `bell-state` (✅ passed)
 >
 > - Jobs: **1**, failed: **0**
 > - Assertions: **5**, failed: **0**
@@ -132,6 +132,10 @@ podman run --rm -e SHOTGATE_IBM_TOKEN \
   ghcr.io/coldqubit/shotgate:latest-ibm \
   run examples/bell-state-hardware/workflow.yaml --backend ibm
 ```
+
+The same images are mirrored to Docker Hub if you prefer it: swap the registry prefix for
+`docker.io/coldqubit/shotgate` (tags `latest`, `latest-ibm`, and each version). GHCR is the
+canonical registry; the Docker Hub copy is a convenience mirror.
 
 ### Path B: pip (CLI and pytest plugin)
 

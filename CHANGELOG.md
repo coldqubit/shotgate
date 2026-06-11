@@ -6,7 +6,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Added
+
+- **Docker Hub repository page sync.** After mirroring images, the `dockerhub-mirror`
+  workflow now pushes the repository README and the project tagline to the Docker Hub
+  repository description, so the Hub listing tracks the source. The step is non-fatal:
+  a description-API failure never blocks the image mirror or the release.
+
+### Changed
+
+- **Docker Hub mirroring is a reusable, dispatchable workflow.** The mirror moved from an
+  inline release job to `dockerhub-mirror.yml` (`workflow_call` from the release plus
+  `workflow_dispatch` to back-fill any version), with credentials read from the
+  `dockerhub` environment (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, optional
+  `DOCKERHUB_NAMESPACE`) instead of repository secrets.
+- **Reporter copy uses ASCII separators.** The Markdown summary title format is now
+  ``## shotgate: `name` (status)``, the no-assertion row prints `n/a`, and the plain
+  console fallback separates label and message with a colon; previously all three used
+  an em-dash. JUnit and JSON payloads are unchanged.
 
 ## [0.2.1] - 2026-06-11
 

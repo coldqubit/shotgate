@@ -1,14 +1,23 @@
 name: dockerhub-mirror
 
-# Mirror an already-published GHCR image set to Docker Hub. GHCR stays the
-# canonical registry; Docker Hub is a convenience mirror for discovery and the
-# familiar `docker pull`. Runs on release (via workflow_call from release.yml)
-# and on demand (workflow_dispatch) to re-mirror or back-fill any version.
+# Mirror an already-published GHCR image set to Docker Hub, then sync this repo's
+# README and tagline onto the Docker Hub repository page so the listing matches the
+# source. GHCR stays the canonical registry; Docker Hub is a convenience mirror for
+# discovery and the familiar `docker pull`. Runs on release (via workflow_call from
+# release.yml) and on demand (workflow_dispatch) to re-mirror or back-fill any version.
 #
 # Credentials live in the `dockerhub` environment: DOCKERHUB_USERNAME and
 # DOCKERHUB_TOKEN (a Docker Hub access token), and optionally DOCKERHUB_NAMESPACE
 # to push under a Hub organization instead of the username. Absent credentials
 # (a fork), the mirror step is skipped rather than failing.
+#
+# The README sync uses peter-evans/dockerhub-description, which drives the Docker
+# Hub HTTP API. That API accepts a personal access token only if it is scoped
+# read/write/delete; if DOCKERHUB_TOKEN is scoped narrower, set
+# DOCKERHUB_DESCRIPTION_PASSWORD in the `dockerhub` environment (the account
+# password or a read/write/delete token) and it is used in preference. The sync
+# step is non-fatal (`continue-on-error`): a description failure never blocks the
+# image mirror or the release.
 
 on:
   workflow_dispatch:
@@ -36,6 +45,17 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_NAMESPACE }}
     steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute Docker Hub repository
+        id: hub
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        run: |
+          # Namespace defaults to the Hub username; DOCKERHUB_NAMESPACE overrides
+          # it to push under a Hub organization. Same rule as the mirror step.
+          NS="${DOCKERHUB_NAMESPACE:-$DOCKERHUB_USERNAME}"
+          echo "repository=${NS,,}/shotgate" >> "$GITHUB_OUTPUT"
+
       - name: Mirror the version, latest, and -ibm tags
         if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         env:
@@ -43,13 +63,11 @@ jobs:
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
           VERSION: ${{ inputs.version }}
+          HUB_REPO: ${{ steps.hub.outputs.repository }}
         run: |
           V="${VERSION#v}"                      # tolerate a leading 'v'
           GHCR="ghcr.io/${REPO,,}"
-          # Docker Hub namespace defaults to the Hub username; override with the
-          # DOCKERHUB_NAMESPACE secret to push under a Hub organization.
-          NS="${DOCKERHUB_NAMESPACE:-$DOCKERHUB_USERNAME}"
-          DH="docker.io/${NS,,}/shotgate"
+          DH="docker.io/${HUB_REPO}"
           echo "$GH_TOKEN" | podman login ghcr.io -u "$ACTOR" --password-stdin
           echo "$DOCKERHUB_TOKEN" | podman login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
           for tag in "$V" latest "${V}-ibm" latest-ibm; do
@@ -58,3 +76,16 @@ jobs:
             podman push "${DH}:${tag}"
           done
           echo "Mirrored ${GHCR}:{${V},latest,${V}-ibm,latest-ibm} -> ${DH}"
+
+      # Keep the Docker Hub repository page in sync with the source: the repo
+      # README becomes the full description, the project tagline the short one.
+      - name: Sync Docker Hub README and short description
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        continue-on-error: true
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_DESCRIPTION_PASSWORD || secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ steps.hub.outputs.repository }}
+          short-description: "Container-native CI/CD quality gates for quantum circuits"
+          readme-filepath: ./README.md
