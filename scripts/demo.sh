@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# demo.sh — build the shotgate image and run every example workflow as a gate.
+# demo.sh: build the shotgate image and run every example workflow as a gate.
 # Pure Podman; nothing is installed on the host.
 #
 #   ./scripts/demo.sh
@@ -21,7 +21,7 @@ USERMAP=(--userns=keep-id --user "$(id -u):$(id -g)")
 
 rc=0
 for wf in examples/*/workflow.yaml; do
-  # Skip hardware examples — they target a real QPU and need SHOTGATE_IBM_TOKEN.
+  # Skip hardware examples: they target a real QPU and need SHOTGATE_IBM_TOKEN.
   case "${wf}" in
     *-hardware/*) echo "==> skipping ${wf} (needs a real QPU / token)"; continue ;;
   esac

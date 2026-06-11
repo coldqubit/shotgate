@@ -33,7 +33,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    subgraph stage["shotgate run &lt;workflow&gt; — a single pipeline stage"]
+    subgraph stage["shotgate run &lt;workflow&gt;: a single pipeline stage"]
         direction TB
         in["INPUTS<br/>• workflow.yaml<br/>• circuit.qasm<br/>• env: tokens (optional)<br/>• flags: --backend --shots"]
         proc["PROCESS<br/>load → execute → validate → benchmark"]
@@ -60,7 +60,7 @@ flowchart TB
 The gate is **the same container on every platform**: pull
 `ghcr.io/coldqubit/shotgate:latest`, run the workflow, emit a JUnit report, and let the
 exit code fail the stage. The **exit-code contract (0 / 1 / 2) is identical across
-GitHub Actions, GitLab CI, and Jenkins** — only the YAML/Groovy wrapper differs.
+GitHub Actions, GitLab CI, and Jenkins**: only the YAML/Groovy wrapper differs.
 
 Ready-to-copy references live in the repo root:
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) ·

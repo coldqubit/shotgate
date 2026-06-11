@@ -14,5 +14,5 @@
 
 Infrastructure docs live next to the code they describe:
 
-- [Terraform module](../infra/terraform/README.md) — quantum workflow as code.
-- [KVM/QEMU runner](../infra/qemu/README.md) — ephemeral VM isolation tier.
+- [Terraform module](../infra/terraform/README.md): quantum workflow as code.
+- [KVM/QEMU runner](../infra/qemu/README.md): ephemeral VM isolation tier.

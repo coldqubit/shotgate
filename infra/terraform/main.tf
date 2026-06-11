@@ -1,4 +1,4 @@
-# shotgate IaC module — declare a quantum CI workflow as code.
+# shotgate IaC module: declare a quantum CI workflow as code.
 #
 # This expresses "run quantum workflow X, on backend Y, with Z shots, and gate on
 # the statistical result" as a Terraform resource. Execution is delegated to the
@@ -53,7 +53,7 @@ resource "terraform_data" "quantum_workflow" {
 
       echo "shotgate exit code: $rc"
       if [ "$SHOTGATE_FAIL" = "1" ] && [ "$rc" -ne 0 ]; then
-        echo "quantum assertions failed — failing terraform apply" >&2
+        echo "quantum assertions failed; failing terraform apply" >&2
         exit "$rc"
       fi
     EOT

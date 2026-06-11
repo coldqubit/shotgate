@@ -1,4 +1,4 @@
-# Workflow Specification — `shotgate.dev/v1alpha1`
+# Workflow Specification: `shotgate.dev/v1alpha1`
 
 A shotgate workflow is a strict YAML document. Unknown fields are rejected so typos
 fail fast. The schema is the single source of truth in
@@ -10,7 +10,7 @@ fail fast. The schema is the single source of truth in
 apiVersion: shotgate.dev/v1alpha1   # required, pinned
 kind: QuantumWorkflow             # required
 metadata: { ... }                 # required
-defaults: { ... }                 # optional — backend defaults for all jobs
+defaults: { ... }                 # optional: backend defaults for all jobs
 jobs: [ ... ]                     # required, >= 1
 ```
 
@@ -56,8 +56,8 @@ Exactly one of `path` or `inline` must be set.
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `format` | `qasm2` \| `qasm3` | `qasm2` | OpenQASM dialect. |
-| `path` | string | — | File path, resolved **relative to the workflow file**. |
-| `inline` | string | — | OpenQASM source embedded in the YAML. |
+| `path` | string | none | File path, resolved **relative to the workflow file**. |
+| `inline` | string | none | OpenQASM source embedded in the YAML. |
 
 If the loaded circuit has no classical bits, shotgate appends `measure_all()`.
 
@@ -67,8 +67,8 @@ If the loaded circuit has no classical bits, shotgate appends `measure_all()`.
 | --- | --- | --- | --- |
 | `provider` | `local-aer` \| `ibm` | `local-aer` | Execution target. Braket is planned (roadmap); selecting an unimplemented provider fails schema validation. |
 | `shots` | int | `4096` | 1–1,000,000. |
-| `seed` | int | — | Determinism for simulators. |
-| `name` | string | — | Device/backend name (cloud providers). |
+| `seed` | int | none | Determinism for simulators. |
+| `name` | string | none | Device/backend name (cloud providers). |
 | `options` | map | `{}` | Provider-specific (e.g. `{ channel, instance, token }`). |
 
 **Defaults merge semantics:** a job inherits every `defaults.backend` field it does
@@ -77,7 +77,7 @@ only `backend: { shots: 1024 }` keeps the default `provider` and `seed`.
 
 ## CLI overrides
 
-`--backend` and `--shots` on `shotgate run` override every job at runtime — handy for
+`--backend` and `--shots` on `shotgate run` override every job at runtime, handy for
 re-running a simulator suite against real hardware without editing YAML.
 
 ## Full annotated example

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 coldqubit
-"""shotgate — container-native CI/CD quality gates for quantum circuits.
+"""shotgate: container-native CI/CD quality gates for quantum circuits.
 
 shotgate validates the *probabilistic* output of quantum circuits using statistical
 oracles (total variation distance, Hellinger fidelity, chi-square goodness-of-fit)

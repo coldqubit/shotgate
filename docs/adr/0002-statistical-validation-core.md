@@ -7,8 +7,8 @@
 
 Quantum programs are probabilistic; exact-equality assertions are either flaky or
 vacuous. The academic literature (χ²-as-oracle, QUTest, QuCheck, QUT) establishes the
-correct techniques — total variation distance, Hellinger fidelity, chi-square
-goodness-of-fit — but they live in research prototypes, not in production CI tooling.
+correct techniques (total variation distance, Hellinger fidelity, chi-square
+goodness-of-fit), but they live in research prototypes, not in production CI tooling.
 Meanwhile DevOps writers repeatedly note that quantum CI "lacks robust test
 frameworks" and needs "specialized validation… in CI/CD pipelines".
 

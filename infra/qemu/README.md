@@ -15,7 +15,7 @@ host (qemu) ──► KVM micro-VM (Fedora Cloud, cloud-init) ──► Podman �
 - A writable `/dev/kvm` (hardware virtualization enabled).
 - `qemu-system-x86_64` on the host.
 - `podman` on the host (used as a fallback to build the cloud-init seed ISO when
-  `cloud-localds`/`genisoimage` are absent — keeping with "no host installs").
+  `cloud-localds`/`genisoimage` are absent, keeping with "no host installs").
 
 ## Usage
 
@@ -33,7 +33,7 @@ make vm-down
 ## What happens
 
 1. **Fetch** the Fedora Cloud base image (cached in `infra/qemu/.cache/`).
-2. **Overlay** a copy-on-write qcow2 so the base is never mutated — the VM is disposable.
+2. **Overlay** a copy-on-write qcow2 so the base is never mutated: the VM is disposable.
 3. **Seed** a cloud-init NoCloud ISO (`user-data` + `meta-data`) with the chosen workflow.
 4. **Boot** with `-machine accel=kvm`, sharing the repo read/write over `virtio-9p`.
 5. Inside the guest, cloud-init installs Podman, builds the shotgate image, runs the

@@ -25,7 +25,7 @@ jobs:
       - type: chi_square
         expected: { "00": 0.5, "11": 0.5 }
         significance: 0.01
-      # Distance-based oracle — robust and shot-count agnostic.
+      # Distance-based oracle, robust and shot-count agnostic.
       - type: distribution_tvd
         expected: { "00": 0.5, "11": 0.5 }
         max_distance: 0.03

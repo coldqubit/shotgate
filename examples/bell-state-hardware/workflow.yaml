@@ -4,9 +4,9 @@ metadata:
   name: bell-state-hardware
   description: >-
     Bell-state gate with NOISE-TOLERANT thresholds for execution on a real QPU.
-    Requires an IBM token (SHOTGATE_IBM_TOKEN) — running this on local-aer would
+    Requires an IBM token (SHOTGATE_IBM_TOKEN); running this on local-aer would
     pass trivially. See docs/hardware-validation.md for the threshold rationale and
-    the simulator-vs-QPU split. Note: chi_square is intentionally omitted here —
+    the simulator-vs-QPU split. Note: chi_square is intentionally omitted here,
     with thousands of shots it over-rejects under coherent device noise; distance-
     and fidelity-based oracles are the right gates for hardware.
   labels:

@@ -1,4 +1,4 @@
-# shotgate runtime image — built and run with Podman (rootless-friendly).
+# shotgate runtime image, built and run with Podman (rootless-friendly).
 #
 # Multi-stage:
 #   builder  -> installs shotgate + the Aer simulator into an isolated venv

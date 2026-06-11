@@ -6,8 +6,8 @@
 ## Context
 
 shotgate sits at an immature intersection (quantum × DevOps) where the "right" design
-is not yet settled by convention. Decisions — why statistical oracles, why containers,
-why a Terraform module instead of a provider — need to be legible to contributors and
+is not yet settled by convention. Decisions (why statistical oracles, why containers,
+why a Terraform module instead of a provider) need to be legible to contributors and
 to our future selves.
 
 ## Decision

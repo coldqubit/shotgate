@@ -20,7 +20,7 @@ QISKIT = importlib.util.find_spec("qiskit") is not None
 
 
 # --------------------------------------------------------------------------- #
-# Error / disambiguation paths — pure Python, no SDK required.
+# Error / disambiguation paths: pure Python, no SDK required.
 # --------------------------------------------------------------------------- #
 
 
@@ -102,7 +102,7 @@ def test_extract_counts_against_real_databin():
     assert sum(counts.values()) == 1024
     assert set(counts) <= {"00", "11"}
 
-    # measure_all() produces a register named "meas" — still handled.
+    # measure_all() produces a register named "meas", still handled.
     qc2 = QuantumCircuit(2)
     qc2.h(0)
     qc2.cx(0, 1)
@@ -112,7 +112,7 @@ def test_extract_counts_against_real_databin():
 
 
 # --------------------------------------------------------------------------- #
-# Real-hardware smoke test — only runs when a token is present.
+# Real-hardware smoke test: only runs when a token is present.
 # --------------------------------------------------------------------------- #
 
 

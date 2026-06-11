@@ -1,5 +1,5 @@
 #cloud-config
-# shotgate ephemeral runner — provisions Podman, runs the workflow inside a
+# shotgate ephemeral runner: provisions Podman, runs the workflow inside a
 # container, writes the report back to the shared repo, then powers off.
 # @@WORKFLOW@@ is substituted by create-runner-vm.sh at boot time.
 

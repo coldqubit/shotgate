@@ -6,7 +6,7 @@
 ## 1. Problem statement
 
 Quantum programs are probabilistic. The same circuit, executed twice, returns
-different shot counts. Classical CI/CD — built on deterministic equality — has no
+different shot counts. Classical CI/CD, built on deterministic equality, has no
 native way to gate on this. Three concrete gaps follow:
 
 1. **No statistical quality gate.** Teams hand-roll ad-hoc `assert counts["00"] > N`
@@ -22,7 +22,7 @@ shotgate addresses all three with one composable tool.
 
 | Principle | Consequence in the codebase |
 | --- | --- |
-| **Statistically correct by construction** | Oracles are χ², TVD, Hellinger fidelity — not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/shotgate/validation/metrics.py)). |
+| **Statistically correct by construction** | Oracles are χ², TVD, Hellinger fidelity, not equality. The χ² survival function is implemented from first principles ([`metrics.py`](../src/shotgate/validation/metrics.py)). |
 | **Core is dependency-light** | The validation core imports only the standard library + pydantic. No quantum SDK is needed to parse a workflow or compute a metric. |
 | **Backends are lazy & pluggable** | Heavy SDKs (qiskit, braket) are imported only when a backend actually runs. New providers register a `"module:Class"` string. |
 | **Everything runs in a container** | The unit of execution is the shotgate image. The host needs only Podman (and optionally QEMU). |
@@ -33,13 +33,13 @@ shotgate addresses all three with one composable tool.
 
 ```mermaid
 flowchart TB
-    subgraph CoreLayer["Validation core — no quantum SDK required"]
+    subgraph CoreLayer["Validation core: no quantum SDK required"]
         config["config.py<br/>Workflow schema (pydantic)"]
         assertions["validation/assertions.py<br/>Oracle models + evaluate()"]
         metrics["validation/metrics.py<br/>TVD · Hellinger · χ² (incomplete gamma)"]
     end
 
-    subgraph ExecLayer["Execution layer — SDKs imported lazily"]
+    subgraph ExecLayer["Execution layer: SDKs imported lazily"]
         loader["circuits/loader.py<br/>OpenQASM → circuit"]
         registry["backends/registry.py<br/>provider → Backend"]
         base["backends/base.py<br/>Backend ABC + BackendResult"]
@@ -120,7 +120,7 @@ See [ADR-0003](adr/0003-container-and-vm-isolation.md).
 
 ## 6. Security model
 
-- **No executable circuits.** Circuits are OpenQASM, parsed by qiskit's QASM reader —
+- **No executable circuits.** Circuits are OpenQASM, parsed by qiskit's QASM reader,
   not `eval`'d Python.
 - **Strict schema.** Unknown fields are rejected, preventing silent misconfiguration.
 - **Secrets never touch disk.** Cloud tokens come from env vars / container `-e`; the

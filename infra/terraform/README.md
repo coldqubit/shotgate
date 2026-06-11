@@ -1,8 +1,8 @@
-# shotgate Terraform module — quantum workflow as code
+# shotgate Terraform module: quantum workflow as code
 
 Declare a quantum CI/CD quality gate as a Terraform resource. The module runs a
 shotgate workflow inside a container and (optionally) fails `terraform apply` when the
-statistical assertions don't hold — making quantum validation a versioned, planned
+statistical assertions don't hold, making quantum validation a versioned, planned
 part of your infrastructure.
 
 > **Design choice.** We deliberately ship a *module that orchestrates the shotgate
@@ -40,7 +40,7 @@ module "qpu_gate" {
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `workflow` | string | — | Workflow YAML path, relative to `project_dir`. |
+| `workflow` | string | none | Workflow YAML path, relative to `project_dir`. |
 | `project_dir` | string | `"."` | Directory mounted into the container. |
 | `image` | string | `"shotgate:dev"` | shotgate image to run. |
 | `backend` | string | `"local-aer"` | `local-aer` \| `ibm` (Braket planned). |

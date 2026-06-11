@@ -1,7 +1,7 @@
 # Example: gate a Terraform apply on a quantum workflow's statistical assertions.
 #
 #   terraform init
-#   terraform apply        # builds nothing classical — it validates a Bell state
+#   terraform apply        # builds nothing classical, it validates a Bell state
 #
 # Requires the shotgate image to exist locally (make build) and Podman on the host.
 

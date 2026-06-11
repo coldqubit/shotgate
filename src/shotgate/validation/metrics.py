@@ -177,7 +177,7 @@ def chi_square_test(counts: Counts, expected: Distribution) -> tuple[float, int,
 
     Returns ``(statistic, degrees_of_freedom, p_value)``. A large p-value means we
     *fail to reject* the null hypothesis that the observed counts were drawn from
-    the expected distribution — i.e. the circuit behaves as specified.
+    the expected distribution, i.e. the circuit behaves as specified.
     """
     statistic, dof = chi_square_statistic(counts, expected)
     p_value = chi2_sf(statistic, dof)

@@ -20,9 +20,9 @@ A noiseless simulator passes simulator-tight bounds (χ² p ≥ 0.01, TVD ≤ 0.
 fidelity ≥ 0.99). A real device will **not**: readout error, gate infidelity, decoherence,
 and crosstalk shift the distribution. Validating on hardware therefore means two things:
 
-1. The **plumbing** works — submit, transpile to the device ISA, retrieve counts from the
+1. The **plumbing** works: submit, transpile to the device ISA, retrieve counts from the
    right classical register, and surface them through the JUnit/JSON reports.
-2. The **thresholds** are calibrated — gates pass on a healthy device and fail on a broken
+2. The **thresholds** are calibrated: gates pass on a healthy device and fail on a broken
    one, using noise-aware bounds (see [§4](#4-noise-aware-acceptance-criteria)).
 
 ## 1. Obtain access and a token
@@ -85,7 +85,7 @@ podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
 
 Per example, the simulator profile is tight; the **hardware profile** is what should pass
 on a healthy current-generation device. Treat these as starting points and tighten once a
-device baseline is measured. `chi_square` is intentionally **dropped on hardware** — with
+device baseline is measured. `chi_square` is intentionally **dropped on hardware**: with
 thousands of shots it over-rejects under coherent device error; use distance/fidelity/
 structural oracles instead.
 
@@ -132,8 +132,8 @@ A device run **passes validation** when, for every example:
    Grover's `11` is the modal outcome).
 
 A run is **informative-fail** (expected, not a shotgate bug) when plumbing succeeds but a
-gate fails *because the device is noisier than the profile* — this calibrates thresholds.
-A run is a **defect** when plumbing fails (extraction error, wrong register, crash) — file
+gate fails *because the device is noisier than the profile*: this calibrates thresholds.
+A run is a **defect** when plumbing fails (extraction error, wrong register, crash): file
 an issue with the `job_id` and `report.json`.
 
 ## 7. Reading results back

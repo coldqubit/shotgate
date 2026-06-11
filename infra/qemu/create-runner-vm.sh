@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# create-runner-vm.sh — boot an ephemeral, hardware-isolated shotgate runner.
+# create-runner-vm.sh: boot an ephemeral, hardware-isolated shotgate runner.
 #
 # Why a VM?  CI for quantum circuits should be reproducible and disposable. This
 # script boots a throwaway Fedora Cloud micro-VM with KVM acceleration, shares the
@@ -80,7 +80,7 @@ render_seed_iso() {
     genisoimage -quiet -output "${SEED_ISO}" -volid cidata -joliet -rock \
       "${tmp}/user-data" "${tmp}/meta-data"
   else
-    # No host ISO tooling — build the seed in an ephemeral Alpine container.
+    # No host ISO tooling: build the seed in an ephemeral Alpine container.
     log "no host ISO tool; building seed.iso in a container"
     "${PODMAN}" run --rm -v "${tmp}:/seed:Z" docker.io/library/alpine:3.20 sh -c \
       "apk add --no-cache cdrkit >/dev/null && \
@@ -91,7 +91,7 @@ render_seed_iso() {
 }
 
 boot_vm() {
-  log "booting VM (KVM, ${VM_CPUS} vCPU, ${VM_MEM_MB} MiB) — sharing repo over virtio-9p"
+  log "booting VM (KVM, ${VM_CPUS} vCPU, ${VM_MEM_MB} MiB), sharing repo over virtio-9p"
   log "the guest will: mount the repo, build the shotgate image, run '${WORKFLOW}', then poweroff"
   qemu-system-x86_64 \
     -name shotgate-runner \

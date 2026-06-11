@@ -1,11 +1,11 @@
-%% shotgate component architecture — render with the Mermaid CLI or any Mermaid viewer.
+%% shotgate component architecture: render with the Mermaid CLI or any Mermaid viewer.
 flowchart TB
-    subgraph CoreLayer["Validation core — no quantum SDK required"]
+    subgraph CoreLayer["Validation core: no quantum SDK required"]
         config["config.py\nWorkflow schema (pydantic)"]
         assertions["validation/assertions.py\nOracle models + evaluate()"]
-        metrics["validation/metrics.py\nTVD - Hellinger - chi-square"]
+        metrics["validation/metrics.py\nTVD · Hellinger · chi-square"]
     end
-    subgraph ExecLayer["Execution layer — SDKs imported lazily"]
+    subgraph ExecLayer["Execution layer: SDKs imported lazily"]
         loader["circuits/loader.py\nOpenQASM to circuit"]
         registry["backends/registry.py\nprovider to Backend"]
         aer["local_aer.py"]

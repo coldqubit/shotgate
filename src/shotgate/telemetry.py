@@ -3,8 +3,8 @@
 """Lightweight circuit/execution telemetry for benchmarking and observability.
 
 These metrics (width, depth, gate composition, wall-clock runtime) let teams track
-regressions across commits — e.g. a transpiler change that doubles two-qubit gate
-count — directly from CI. The functions duck-type Qiskit circuits and therefore do
+regressions across commits (e.g. a transpiler change that doubles two-qubit gate
+count) directly from CI. The functions duck-type Qiskit circuits and therefore do
 not import any quantum SDK themselves.
 """
 

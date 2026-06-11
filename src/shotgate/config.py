@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 coldqubit
-"""Declarative workflow schema — "quantum workflow as code".
+"""Declarative workflow schema: "quantum workflow as code".
 
 A shotgate workflow is a Kubernetes-style YAML document validated by these Pydantic
 models. Keeping the schema strict (``extra="forbid"``) means typos in a workflow
@@ -45,7 +45,7 @@ KIND = "QuantumWorkflow"
 
 # Only providers with an implemented backend are selectable. Braket is planned
 # (roadmap) and intentionally excluded so a workflow can't request a backend that
-# does not exist — selecting it fails fast at schema validation.
+# does not exist; selecting it fails fast at schema validation.
 ProviderName = Literal["local-aer", "ibm"]
 
 

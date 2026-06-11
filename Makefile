@@ -1,4 +1,4 @@
-# shotgate — Podman/QEMU task runner.
+# shotgate: Podman/QEMU task runner.
 #
 # Everything runs in containers or VMs; nothing is installed on the host.
 # Override any variable on the command line, e.g.  make run WORKFLOW=examples/ghz-state/workflow.yaml
@@ -14,7 +14,7 @@ MOUNT       := -v "$(CURDIR):/work:Z" -w /work
 RUN         := $(PODMAN) run --rm $(MOUNT)
 
 # Map the invoking host user through the container's user namespace so that
-# report files written to the bind mount are owned by you — while the image
+# report files written to the bind mount are owned by you, while the image
 # keeps its non-root default user. The standard Podman idiom for this case.
 USERMAP     := --userns=keep-id --user $(shell id -u):$(shell id -g)
 

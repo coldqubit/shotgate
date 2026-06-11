@@ -96,7 +96,7 @@ def to_markdown(report: WorkflowReport) -> str:
     """Markdown summary suitable for a GitHub Actions step summary or PR comment."""
     status = "✅ passed" if report.passed else "❌ failed"
     lines = [
-        f"## shotgate: `{report.name}` — {status}",
+        f"## shotgate: `{report.name}` ({status})",
         "",
         f"- Jobs: **{len(report.jobs)}**, "
         f"failed: **{sum(1 for j in report.jobs if not j.passed)}**",
@@ -117,7 +117,7 @@ def to_markdown(report: WorkflowReport) -> str:
         if not job.assertions:
             lines.append(
                 f"| `{job.name}` | {job.backend_name} | {job.shots} "
-                f"| _(none)_ | — | no assertions declared |"
+                f"| _(none)_ | n/a | no assertions declared |"
             )
         for assertion in job.assertions:
             mark = "✅" if assertion.passed else "❌"
@@ -177,7 +177,7 @@ def _render_plain(report: WorkflowReport) -> None:
             print(f"    ERROR: {job.error}")
         for assertion in job.assertions:
             mark = "PASS" if assertion.passed else "FAIL"
-            print(f"    [{mark}] {assertion.label} — {assertion.message}")
+            print(f"    [{mark}] {assertion.label}: {assertion.message}")
 
 
 __all__ = ["render_console", "to_json", "to_junit_xml", "to_markdown"]

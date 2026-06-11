@@ -15,7 +15,7 @@ acknowledge within 72 hours and to provide a remediation timeline after triage.
 
 ## Security model (what to attack / what we defend)
 
-- **Untrusted circuits.** Circuits are OpenQASM parsed by qiskit's QASM reader — not
+- **Untrusted circuits.** Circuits are OpenQASM parsed by qiskit's QASM reader, not
   `eval`'d Python. For circuits from untrusted sources, use the **VM isolation tier**
   (`infra/qemu`), which runs the workflow in an ephemeral KVM micro-VM.
 - **Secrets.** Provider tokens are read from environment variables / container `-e`

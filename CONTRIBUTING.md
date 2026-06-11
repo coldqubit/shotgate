@@ -7,11 +7,11 @@ favors small, well-tested, well-reasoned changes.
 
 - Be kind; follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 - Discuss non-trivial changes in an issue first (especially new assertion oracles or
-  backends — they have design implications).
+  backends, which have design implications).
 - Keep the **validation core dependency-free** (standard library + pydantic). Quantum
   SDKs are optional extras, imported lazily inside backends only.
 
-## Development workflow (containers only — no host installs)
+## Development workflow (containers only, no host installs)
 
 Everything runs through Podman via the `Makefile`:
 

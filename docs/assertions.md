@@ -11,7 +11,7 @@ union of their supports; bitstring keys are whitespace-stripped before compariso
 
 ---
 
-## `distribution_tvd` — Total Variation Distance
+## `distribution_tvd`: Total Variation Distance
 
 $$ \mathrm{TVD}(p, q) = \tfrac{1}{2} \sum_{x \in \mathcal{D}} |p(x) - q(x)| \in [0, 1] $$
 
@@ -29,7 +29,7 @@ Guidance: simulator (noiseless) → `0.01–0.03`; noisy hardware → `0.05–0.
 
 ---
 
-## `hellinger_fidelity` — Classical Fidelity
+## `hellinger_fidelity`: Classical Fidelity
 
 With the Bhattacharyya coefficient $\mathrm{BC}(p,q) = \sum_x \sqrt{p(x)\,q(x)}$,
 
@@ -47,7 +47,7 @@ single-number "closeness" score to track across commits.
 
 ---
 
-## `chi_square` — Pearson Goodness-of-Fit
+## `chi_square`: Pearson Goodness-of-Fit
 
 With $N$ shots, expected counts $E_x = N q(x)$ and observed $O_x = N p(x)$:
 
@@ -55,7 +55,7 @@ $$ \chi^2 = \sum_{x \in \mathcal{D}} \frac{(O_x - E_x)^2}{E_x}, \qquad \mathrm{d
 
 The p-value is the chi-square survival function $Q(\mathrm{dof}/2,\ \chi^2/2)$,
 computed from the regularised incomplete gamma function (no SciPy). Passes when
-**p-value $\ge$ `significance`** — i.e. we *fail to reject* the hypothesis that the
+**p-value $\ge$ `significance`**, i.e. we *fail to reject* the hypothesis that the
 counts came from $q$.
 
 ```yaml
@@ -69,14 +69,14 @@ Notes & caveats:
   oracle. A **smaller** `significance` (e.g. `0.01`) makes the gate more permissive
   (rejects only strong evidence of mismatch), reducing flakiness.
 - Outcomes expected with probability 0 but observed (leakage) push the statistic up
-  and the p-value down — the test correctly fails. (Internally, expected counts are
+  and the p-value down, so the test correctly fails. (Internally, expected counts are
   floored at a tiny epsilon to keep the statistic finite.)
 - Classical validity expects $E_x \gtrsim 5$ per category; with many categories and
   few shots, prefer `distribution_tvd`.
 
 ---
 
-## `state_probability` — Marginal Outcome Probability
+## `state_probability`: Marginal Outcome Probability
 
 Bounds the measured probability of a single basis state $s$: $p(s)$.
 
@@ -98,7 +98,7 @@ required. Ideal for amplitude-amplification checks (e.g. Grover's marked state).
 
 ---
 
-## `allowed_states` — Structural / Leakage Oracle
+## `allowed_states`: Structural / Leakage Oracle
 
 Bounds the probability mass measured **outside** an allowed support set:
 
@@ -111,7 +111,7 @@ $$ \text{leakage} = \sum_{x \notin S} p(x) $$
 ```
 
 Passes when $\text{leakage} \le$ `max_leakage`. Encodes structural truths
-independent of exact probabilities — a perfect GHZ state only occupies the all-zero
+independent of exact probabilities: a perfect GHZ state only occupies the all-zero
 and all-one corners; anything else is error/leakage.
 
 ---
@@ -126,7 +126,7 @@ and all-one corners; anything else is error/leakage.
 | Forbid impossible outcomes / bound error | `allowed_states` |
 
 A robust suite combines a **distance** oracle, a **hypothesis test**, and a
-**structural** oracle — as the [Bell example](../examples/bell-state/workflow.yaml) does.
+**structural** oracle, as the [Bell example](../examples/bell-state/workflow.yaml) does.
 
 ## Setting thresholds (statistical reality)
 
@@ -134,4 +134,4 @@ Sampling noise scales like $1/\sqrt{N}$. Per-bitstring standard error is roughly
 $\sqrt{p(1-p)/N}$; at $N=8192$ and $p=0.5$ that's $\approx 0.0055$. Set distance
 thresholds a few standard errors above expected noise, and prefer fixed `seed`s on
 simulators to make pre-merge gates deterministic. Reserve looser thresholds for real
-hardware, where device error — not sampling — dominates.
+hardware, where device error, not sampling, dominates.
