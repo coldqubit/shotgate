@@ -40,14 +40,14 @@ jobs:
             docker.io/library/python:3.12-slim bash -euc '
               SPEC="shotgate[aer]"
               [ -n "$REQUESTED_VERSION" ] && SPEC="shotgate[aer]==$REQUESTED_VERSION"
-              # A freshly released version can take a few minutes to appear in the
-              # PyPI /simple/ index that pip reads, even after the files are live
-              # and the JSON API shows them. Retry so dispatching right after a
-              # release does not fail on index propagation lag.
-              for attempt in 1 2 3 4 5 6; do
+              # A freshly released version can lag for several minutes in the PyPI
+              # /simple/ index that pip reads, even after the files are live and the
+              # per-release JSON shows them (observed ~10 min on 2026-06-11). Retry
+              # generously so dispatching right after a release tolerates the lag.
+              for attempt in $(seq 1 20); do
                 pip install -q --no-cache-dir "$SPEC" pytest && break
-                echo "install attempt ${attempt} failed (index may be propagating); retrying in 30s" >&2
-                sleep 30
+                echo "install attempt ${attempt}/20 failed (index may be propagating); retrying in 45s" >&2
+                sleep 45
               done
               pip show shotgate >/dev/null  # fail the step if all attempts failed
               echo "--- installed:"
