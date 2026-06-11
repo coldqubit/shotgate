@@ -4,9 +4,11 @@
 > hardware.* shotgate's oracles are proven against the Aer simulator; this plan
 > exercises them end-to-end on a real IBM QPU through the hardened `ibm` backend.
 >
-> **Status:** groundwork only. The `ibm` backend is **implemented but not yet validated
-> on hardware**. No QPU runs have been performed. This document is the runbook a
-> maintainer follows once a token is available.
+> **Status: VALIDATED on real hardware.** On 2026-06-11 the three hardware gates ran
+> on `ibm_fez` (156-qubit Heron r2, Open Plan instance) at 4096 shots each, via the
+> `hardware-validation` GitHub workflow installing `shotgate[ibm]==0.1.1` from PyPI.
+> All gates passed; measured values in [section 9](#9-measured-baseline-ibm_fez-2026-06-11).
+> This document remains the runbook for re-running the validation on any device.
 
 ---
 
@@ -143,8 +145,48 @@ an issue with the `job_id` and `report.json`.
 
 ## 8. Definition of done for v0.2
 
-- [ ] Bell / GHZ / Grover each run on at least one real IBM device and produce reports.
-- [ ] Hardware-profile thresholds calibrated so healthy-device runs pass reproducibly.
-- [ ] A documented device baseline (fidelity per example) committed for regression tracking.
-- [ ] The `ibm` backend label updated from "not yet validated" to "validated on \<device\>,
-      \<date\>" in the README backends table and `CHANGELOG.md`.
+- [x] Bell / GHZ / Grover each run on at least one real IBM device and produce reports.
+- [x] Hardware-profile thresholds calibrated so healthy-device runs pass reproducibly
+      (all three section-4 profiles passed on first run; margins in section 9).
+- [x] A documented device baseline (fidelity per example) committed for regression tracking
+      (section 9).
+- [x] The `ibm` backend label updated from "not yet validated" to "validated on `ibm_fez`,
+      2026-06-11" in the README backends table and `CHANGELOG.md`.
+
+## 9. Measured baseline (ibm_fez, 2026-06-11)
+
+Device: `ibm_fez` (156-qubit Heron r2), Open Plan instance, channel
+`ibm_quantum_platform`, transpilation `optimization_level=1`, 4096 shots per job,
+package `shotgate[ibm]==0.1.1` installed from PyPI on a clean CI runner
+([`hardware-validation` workflow](../.github/workflows/hardware-validation.yml)).
+Each job consumed 3 s of QPU time (9 s total, against the Open Plan allotment of
+10 min/month). Wall-clock per gate is queue-dominated: 1003 s (Bell), 303 s (GHZ),
+18 s (Grover).
+
+| Gate | Oracle | Measured | Threshold | Margin |
+| --- | --- | --- | --- | --- |
+| Bell (`d8l4labnn5bs738rk2s0`) | TVD | **0.1284** | <= 0.15 | 0.0216 |
+| | Hellinger fidelity | **0.8716** | >= 0.85 | 0.0216 |
+| | support leakage | **0.1284** | <= 0.15 | 0.0216 |
+| GHZ-3 (`d8l4t5032u0s73f9gmn0`) | TVD | **0.1536** | <= 0.20 | 0.0464 |
+| | Hellinger fidelity | **0.8463** | >= 0.80 | 0.0463 |
+| | support leakage | **0.1536** | <= 0.20 | 0.0464 |
+| Grover-2 (`d8l4vgj2d42s73cavamg`) | P(`11`) | **0.8357** | >= 0.70 | 0.1357 |
+| | support leakage | **0.1643** | <= 0.30 | 0.1357 |
+
+Raw counts (sanity check: dominant outcomes match theory in every case):
+
+- **Bell:** `00`: 1793, `11`: 1777, `10`: 318, `01`: 208. Valid-state mass 0.8716;
+  the `10` excess over `01` (318 vs 208) is consistent with asymmetric readout error.
+- **GHZ-3:** `000`: 1784, `111`: 1683, `110`: 319, `001`: 236, rest < 25 each.
+  Valid-state mass 0.8464. The two dominant error states differ from `000`/`111` by
+  one bit flip, as expected from single-qubit readout/decay error; the
+  two-or-more-bit-flip states are an order of magnitude rarer.
+- **Grover-2:** `11`: 3423 (P = 0.8357), `10`: 425, `01`: 190, `00`: 58. The marked
+  state is the modal outcome by a factor of 8 over the next state.
+
+Observations for threshold tuning: the Bell TVD margin (0.0216) is the tightest of
+the matrix. On a noisier device or a bad calibration day the Bell gate is the most
+likely informative-fail; GHZ and Grover have comfortable headroom. No defect-class
+failures occurred: counts extraction, register selection, and all three report
+formats worked on the first hardware contact.

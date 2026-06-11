@@ -102,9 +102,10 @@ podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
   run examples/bell-state-hardware/workflow.yaml --backend ibm
 ```
 
-The `ibm` backend is **implemented but not yet validated on real hardware**. Loosen
-thresholds for device noise (the `bell-state-hardware` example already does), see the
-[hardware validation plan](hardware-validation.md) and the
+The `ibm` backend is **validated on real hardware** (`ibm_fez`, 2026-06-11: the Bell,
+GHZ, and Grover hardware gates all passed at 4096 shots; measured baseline in the
+[hardware validation plan](hardware-validation.md)). Loosen thresholds for device noise
+(the `*-hardware` examples already do), and see the
 [pipeline guide](pipeline.md#1-the-hybrid-pipeline).
 
 ## 6. Run with VM-grade isolation (optional)

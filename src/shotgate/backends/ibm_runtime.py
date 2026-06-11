@@ -9,8 +9,9 @@ environment variable. Nothing is ever written to disk by shotgate.
 This backend is optional; install it with ``pip install shotgate[ibm]`` or use the
 ``ghcr.io/coldqubit/shotgate:<ver>-ibm`` image variant.
 
-Status: **implemented but not yet validated on real hardware.** See
-``docs/hardware-validation.md`` for the plan to exercise it on an IBM QPU.
+Status: **validated on real hardware** (``ibm_fez``, 2026-06-11: Bell, GHZ, and
+Grover hardware gates passed at 4096 shots). See ``docs/hardware-validation.md``
+for the runbook and the measured baseline.
 """
 
 from __future__ import annotations

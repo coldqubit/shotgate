@@ -8,6 +8,29 @@ All notable changes to this project are documented here. The format is based on
 
 *Nothing yet.*
 
+## [0.2.0] - 2026-06-11
+
+### Added
+
+- **Hardware validation on a real QPU.** The Bell, GHZ, and Grover hardware gates ran on
+  `ibm_fez` (156-qubit Heron r2) at 4096 shots each through the `ibm` backend and all
+  passed: Bell TVD 0.1284 (<= 0.15), Hellinger fidelity 0.8716 (>= 0.85); GHZ TVD 0.1536
+  (<= 0.20), fidelity 0.8463 (>= 0.80); Grover P(11) = 0.8357 (>= 0.70). Measured baseline,
+  raw counts, and job ids are recorded in `docs/hardware-validation.md` section 9. Total
+  QPU usage: 9 s.
+- **Hardware example gates** `examples/ghz-state-hardware` and `examples/grover-2q-hardware`
+  with the noise-aware thresholds from the validation plan (chi_square stays
+  simulator-only because it over-rejects under coherent device noise).
+- **`hardware-validation` workflow** (manual dispatch): installs `shotgate[ibm]` from PyPI
+  on a clean runner, pins the requested device (input, default `ibm_fez`), runs the three
+  hardware gates against the real QPU, and uploads JUnit/JSON/Markdown reports.
+
+### Changed
+
+- The `ibm` backend status moved from "implemented but not yet validated on real hardware"
+  to "validated on real hardware" in the README backends table, the backend docstring,
+  `docs/getting-started.md`, and the hardware validation plan.
+
 ## [0.1.1] - 2026-06-11
 
 ### Changed
@@ -120,6 +143,7 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/coldqubit/shotgate/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/coldqubit/shotgate/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/coldqubit/shotgate/releases/tag/v0.1.0

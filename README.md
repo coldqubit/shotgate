@@ -236,21 +236,23 @@ shotgate/
 | Provider | Status |
 | --- | --- |
 | `local-aer` (Qiskit Aer simulator) | **Working**, default, baked into the image |
-| `ibm` (IBM Quantum via Qiskit Runtime) | **Implemented, not yet validated on real hardware** (see [hardware validation plan](docs/hardware-validation.md)) |
+| `ibm` (IBM Quantum via Qiskit Runtime) | **Validated on real hardware** (`ibm_fez`, 2026-06-11: Bell/GHZ/Grover gates passed at 4096 shots; [measured baseline](docs/hardware-validation.md)) |
 | `braket` (AWS Braket) | **Planned** (not selectable yet) |
 | Error mitigation ([Mitiq](https://mitiq.readthedocs.io/)) | **Planned** |
 
 ## Roadmap
 
-- **v0.1 (now):** YAML workflows, local Aer backend, χ²/TVD/fidelity/structural oracles,
-  JUnit/JSON/MD reporters, Podman and KVM/QEMU isolation, Terraform module, pytest plugin.
-- **v0.2:** validate the statistical gates against real quantum hardware (IBM Quantum first, via
-  the hardened `ibm` backend; see [`docs/hardware-validation.md`](docs/hardware-validation.md)),
-  a published GHCR image with an IBM-enabled variant, GitLab and Jenkins references, noise-model
-  simulation, and a minimal AWS Braket backend.
-- **v0.3:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/), circuit fixtures and
-  property-based generation, multi-backend differential testing, a Helm chart, and an optional
-  OpenTelemetry exporter for the telemetry layer (kept out of the core dependencies).
+- **v0.1:** YAML workflows, local Aer backend, χ²/TVD/fidelity/structural oracles,
+  JUnit/JSON/MD reporters, Podman and KVM/QEMU isolation, Terraform module, pytest plugin,
+  PyPI package, published GHCR image with an IBM-enabled variant.
+- **v0.2 (now):** statistical gates **validated against real quantum hardware** (`ibm_fez`,
+  2026-06-11, Bell/GHZ/Grover at 4096 shots; measured baseline and runbook in
+  [`docs/hardware-validation.md`](docs/hardware-validation.md)), hardware example gates for
+  GHZ and Grover, and a dispatchable QPU validation workflow.
+- **v0.3:** noise-model simulation, a minimal AWS Braket backend, error mitigation via
+  [Mitiq](https://mitiq.readthedocs.io/), circuit fixtures and property-based generation,
+  multi-backend differential testing, a Helm chart, and an optional OpenTelemetry exporter
+  for the telemetry layer (kept out of the core dependencies).
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 
