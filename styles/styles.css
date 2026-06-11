@@ -1,0 +1,22 @@
+/* ============================================================================
+   coldqubit / shotgate, design system entry point
+   ----------------------------------------------------------------------------
+   The canonical stylesheet for consumers: link this ONE file and you get
+     1. fonts.css            the brand faces (swap point for self-hosting)
+     2. colors_and_type.css  the full token layer (color, type, spacing,
+                             radii, elevation, motion, motif) + light theme
+     3. components.css       the canonical component classes (buttons, badges,
+                             chips, cards, callouts, code, console, inputs)
+
+   Surface-specific stylesheets are intentionally NOT imported here, they are
+   scoped to their own surfaces and linked by those pages directly:
+     - preview/card.css        design-system reference cards
+     - social/cards.css        repo / OpenGraph social cards
+     - ui_kits/docs/docs.css   the docs reader
+   (The landing and dashboard kits keep their surface styles inline in their
+    own index.html — no separate stylesheet.)
+   ============================================================================ */
+
+@import url('fonts.css');
+@import url('colors_and_type.css');
+@import url('components.css');

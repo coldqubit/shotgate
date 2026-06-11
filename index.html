@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-project="shotgate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shotgate · CI/CD quality gates for quantum circuits</title>
+<meta name="description" content="shotgate brings statistical quality gates to quantum software in CI/CD: validate the probabilistic output of quantum programs across simulators and real QPUs, defined entirely as code.">
+<meta name="theme-color" content="#0C0A12">
+<link rel="canonical" href="https://shotgate.coldqubit.org/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="shotgate by coldqubit">
+<meta property="og:title" content="shotgate · CI/CD quality gates for quantum circuits">
+<meta property="og:description" content="Statistically validate the probabilistic output of quantum programs, across simulators and real QPUs, defined entirely as code.">
+<meta property="og:url" content="https://shotgate.coldqubit.org/">
+<meta property="og:image" content="https://shotgate.coldqubit.org/assets/favicon/shotgate-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/svg+xml" href="assets/shotgate-logomark.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/shotgate-32.png">
+<link rel="apple-touch-icon" href="assets/favicon/shotgate-180.png">
+<link rel="stylesheet" href="styles/styles.css">
+<link rel="stylesheet" href="styles/site.css">
+</head>
+<body>
+  <nav class="topnav" id="topnav">
+    <div class="wrap topnav-inner">
+      <span class="topnav-brand">
+        <img src="assets/shotgate-logomark.svg" alt="shotgate" width="30" height="30">
+        <span class="topnav-name">shotgate</span>
+      </span>
+      <div class="topnav-links">
+        <a href="#how">How it works</a>
+        <a href="#oracles">Oracles</a>
+        <a href="#backends">Backends</a>
+        <a href="#ci">CI</a>
+        <a class="ext-link" href="https://github.com/coldqubit/shotgate/tree/main/docs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+          Docs
+        </a>
+      </div>
+      <a class="gh-link" href="https://github.com/coldqubit/shotgate" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="lattice"></div>
+    <div class="glow"></div>
+    <div class="wrap hero-inner">
+      <div>
+        <span class="kicker"><span class="tick"></span>Quantum × DevOps · a coldqubit project</span>
+        <h1>shotgate</h1>
+        <p class="tagline">CI/CD <span class="a">quality gates</span> for quantum circuits. Statistically validate probabilistic output, across simulators and real QPUs, defined entirely as code.</p>
+        <div class="hero-badges">
+          <span class="badge"><span class="k">CI</span><span class="v violet">podman</span></span>
+          <span class="badge"><span class="k">license</span><span class="v blue">Apache-2.0</span></span>
+          <span class="badge"><span class="k">python</span><span class="v blue">3.10+</span></span>
+          <span class="badge"><span class="k">status</span><span class="v amber">alpha</span></span>
+        </div>
+      </div>
+
+      <div class="terminal-window hero-term">
+        <div class="terminal-bar">
+          <span class="terminal-dots"><i></i><i></i><i></i></span>
+          <span class="terminal-title">zsh · shotgate</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line"><span class="tok-prompt">$ </span><span id="typed"></span><span class="terminal-cursor" id="cursor"></span></div>
+          <div id="report" hidden>
+            <div class="console" style="border: none; padding: 10px 0 0;">
+              <div class="console-rule">shotgate :: bell-state</div>
+              <div class="console-meta">job: bell-pair <span class="console-sep">·</span> aer_simulator <span class="console-sep">·</span> 8192 shots</div>
+              <table>
+                <thead><tr><th>Assertion</th><th>Result</th><th>Detail</th></tr></thead>
+                <tbody>
+                  <tr><td>chi-square p ≥ 0.01</td><td class="res">PASS</td><td class="det">χ²=0.41 dof=1 p=0.52</td></tr>
+                  <tr><td>TVD ≤ 0.03</td><td class="res">PASS</td><td class="det">distance 0.0043</td></tr>
+                  <tr><td>leakage ≤ 0.0</td><td class="res">PASS</td><td class="det">support leakage 0.0000</td></tr>
+                </tbody>
+              </table>
+              <div class="console-verdict"><span class="ok">PASSED</span> <span class="console-sep">·</span> 3/3 assertions <span class="console-sep">·</span> 0.214s <span class="console-sep">·</span> exit 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker"><span class="tick"></span>How it works</span>
+        <h2>Declare. Run. Gate.</h2>
+      </div>
+      <div class="how">
+        <div class="code">
+          <div class="code-bar"><span class="code-dot"></span><span class="code-name">workflow.yaml</span><span class="code-tag">shotgate.dev/v1alpha1</span></div>
+          <pre><span class="tok-k">apiVersion</span><span class="tok-p">:</span> <span class="tok-s">shotgate.dev/v1alpha1</span>
+<span class="tok-k">kind</span><span class="tok-p">:</span> <span class="tok-s">QuantumWorkflow</span>
+<span class="tok-k">metadata</span><span class="tok-p">:</span>
+  <span class="tok-k">name</span><span class="tok-p">:</span> <span class="tok-s">bell-state</span>
+<span class="tok-k">jobs</span><span class="tok-p">:</span>
+  <span class="tok-p">-</span> <span class="tok-k">name</span><span class="tok-p">:</span> <span class="tok-s">bell-pair</span>
+    <span class="tok-k">circuit</span><span class="tok-p">:</span> <span class="tok-s">circuits/bell.qasm</span>
+    <span class="tok-k">shots</span><span class="tok-p">:</span> <span class="tok-n">8192</span>
+    <span class="tok-k">assertions</span><span class="tok-p">:</span>
+      <span class="tok-p">-</span> <span class="tok-k">type</span><span class="tok-p">:</span> <span class="tok-s">chi_square</span>  <span class="tok-c"># χ² goodness-of-fit</span>
+        <span class="tok-k">significance</span><span class="tok-p">:</span> <span class="tok-n">0.01</span>
+      <span class="tok-p">-</span> <span class="tok-k">type</span><span class="tok-p">:</span> <span class="tok-s">tvd</span>
+        <span class="tok-k">bound</span><span class="tok-p">:</span> <span class="tok-n">0.03</span></pre>
+        </div>
+        <div class="steps">
+          <div class="step"><span class="n">01</span><div><h4>Declare gates as YAML</h4><p>Circuits, shots, and statistical assertions live in a <code>QuantumWorkflow</code> file, versioned next to your code.</p></div></div>
+          <div class="step"><span class="n">02</span><div><h4>Run in a container</h4><p><code>podman pull</code> and go: pinned dependencies, no host Python, identical locally and in CI.</p></div></div>
+          <div class="step"><span class="n">03</span><div><h4>Gate the pipeline</h4><p>Verdicts map to exit codes; a failed assertion fails the build. JUnit XML output drops into any CI dashboard.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="oracles">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker"><span class="tick"></span>Assertion oracles</span>
+        <h2>Statistics, not snapshots.</h2>
+        <p>Quantum output is probabilistic; exact-match testing is meaningless. Each oracle bounds a distribution property instead.</p>
+      </div>
+      <div class="oracles">
+        <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit against the expected distribution; gate on a p-value vs. your significance level.</p><div class="card-foot">significance: 0.01</div></div>
+        <div class="card"><span class="sym">δ</span><h4>tvd</h4><p>Total variation distance between observed and expected counts, bounded above. The default oracle.</p><div class="card-foot">bound: 0.03</div></div>
+        <div class="card"><span class="sym">∉</span><h4>leakage</h4><p>Probability mass observed outside the expected support set; catches states that should never appear.</p><div class="card-foot">bound: 0.0</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="backends">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker"><span class="tick"></span>Backends</span>
+        <h2>Simulators first. Hardware next.</h2>
+      </div>
+      <div class="backends">
+        <div class="be-row"><span class="be-name">local-aer</span><span class="be-desc">Qiskit Aer simulator, baked into the image. Default, fully offline.</span><span class="chip working"><span class="dot"></span>WORKING</span></div>
+        <div class="be-row"><span class="be-name">ibm</span><span class="be-desc">IBM Quantum via Qiskit Runtime. Implemented; not yet validated on real hardware.</span><span class="chip alpha"><span class="dot"></span>ALPHA</span></div>
+        <div class="be-row"><span class="be-name">braket</span><span class="be-desc">AWS Braket devices and simulators.</span><span class="chip planned"><span class="dot"></span>PLANNED</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="ci">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker"><span class="tick"></span>Drop-in CI gating</span>
+        <h2>One job. Three exit codes.</h2>
+      </div>
+      <div class="ci">
+        <div class="code">
+          <div class="code-bar"><span class="code-dot"></span><span class="code-name">.github/workflows/quantum.yml</span><span class="code-tag">GitHub Actions</span></div>
+          <pre><span class="tok-k">jobs</span><span class="tok-p">:</span>
+  <span class="tok-k">validate-circuits</span><span class="tok-p">:</span>
+    <span class="tok-k">runs-on</span><span class="tok-p">:</span> <span class="tok-s">ubuntu-latest</span>
+    <span class="tok-k">container</span><span class="tok-p">:</span> <span class="tok-s">ghcr.io/coldqubit/shotgate:latest</span>
+    <span class="tok-k">steps</span><span class="tok-p">:</span>
+      <span class="tok-p">-</span> <span class="tok-k">uses</span><span class="tok-p">:</span> <span class="tok-s">actions/checkout@v4</span>
+      <span class="tok-p">-</span> <span class="tok-k">run</span><span class="tok-p">:</span> <span class="tok-s">shotgate run workflow.yaml --junit report.xml</span></pre>
+        </div>
+        <div class="exitcodes">
+          <div class="exit e0"><span class="code-n">0</span><p>All assertions passed. The pipeline proceeds.</p></div>
+          <div class="exit e1"><span class="code-n">1</span><p>A statistical gate failed. The build stops here.</p></div>
+          <div class="exit e2"><span class="code-n">2</span><p>Bad configuration or runtime error, fix the workflow, not the circuit.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <span class="lockup">
+        <img src="assets/shotgate-logomark.svg" height="30" width="30" alt="">
+        <span class="lockup-text"><span class="lockup-name" style="font-size: 19px;">shotgate</span><span class="lockup-sub">by coldqubit</span></span>
+      </span>
+      <div class="right">
+        <a href="https://github.com/coldqubit/shotgate">GitHub</a>
+        <a href="https://github.com/coldqubit/shotgate/tree/main/docs">Docs</a>
+        <a href="https://coldqubit.org">coldqubit</a>
+        <span>Apache-2.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/site.js"></script>
+</body>
+</html>

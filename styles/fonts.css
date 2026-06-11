@@ -1,0 +1,23 @@
+/* ============================================================================
+   coldqubit / shotgate, brand fonts · TERMINAL-FORWARD
+   ----------------------------------------------------------------------------
+   Display  : IBM Plex Mono  (the terminal IS the brand; headlines in mono)
+   Body/UI  : IBM Plex Sans  (open, infrastructural; same superfamily)
+   Mono     : IBM Plex Mono  (code, YAML, kickers, badges, console)
+
+   One superfamily, two faces. Keep headlines terse; mono runs wide.
+
+   CURRENTLY LOADED FROM GOOGLE FONTS (the source repo ships no webfonts).
+   This file is the single swap point: to self-host, drop the .woff2 files
+   into ./fonts/ and replace the @import below with @font-face rules, e.g.
+
+     @font-face {
+       font-family: 'IBM Plex Mono';
+       src: url('fonts/IBMPlexMono-SemiBold.woff2') format('woff2');
+       font-weight: 600; font-display: swap;
+     }
+
+   Nothing else needs to change: every token references the family names only.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');

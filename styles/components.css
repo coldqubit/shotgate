@@ -1,0 +1,280 @@
+/* ============================================================================
+   coldqubit / shotgate, components.css
+   ----------------------------------------------------------------------------
+   The canonical, shared component layer. One implementation of every brand
+   primitive; the preview cards, UI kits, and the React components in
+   components/ all consume THESE classes. 100% token-driven: no raw hex values.
+
+   Contents: focus ring · kicker · buttons · shields badges · status chips ·
+   cards · callouts · code block · console (Rich) report · inputs.
+   ============================================================================ */
+
+/* ---- brand lockup (logomark tile + HTML name) -------------------------------
+   The wordmark is ALWAYS built in live HTML, never baked into an SVG <text>
+   (webfonts don't load inside <img>, which renders the name in a fallback
+   face). Navbars use the bare logomark; lockups are for footers, cards,
+   social, splash surfaces. Scale by setting font-size on .lockup-name. */
+.lockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+.lockup img, .lockup svg { display: block; }
+.lockup .lockup-text { display: flex; flex-direction: column; gap: 4px; }
+.lockup .lockup-name { font-family: var(--font-mono); font-weight: var(--weight-semibold); font-size: 22px; letter-spacing: -0.03em; line-height: 1; color: var(--text); white-space: nowrap; }
+.lockup .lockup-sub { font-family: var(--font-mono); font-size: 9px; font-weight: var(--weight-medium); letter-spacing: 0.26em; text-transform: uppercase; color: var(--text-muted); line-height: 1; white-space: nowrap; }
+
+/* ---- top nav (canonical, NO pills, NO CTA buttons) ---------------------------
+   Sticky blurred bar: bare logomark + scroll-reveal project name + mono links.
+   Nothing sells from the chrome: the content demonstrates, links navigate.
+   The name fades in only once the hero's big name has scrolled away
+   (IntersectionObserver toggles .scrolled on .topnav), so exactly one big
+   project name is on screen at a time. */
+.topnav { position: sticky; top: 0; z-index: 20; background: color-mix(in oklab, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+.topnav-inner { display: flex; align-items: center; gap: 26px; height: 66px; }
+.topnav-brand { display: flex; align-items: center; gap: 12px; }
+.topnav-brand img { display: block; }
+.topnav-name { font-family: var(--font-display); font-weight: var(--weight-semibold); font-size: 19px; letter-spacing: -0.03em; color: var(--text); white-space: nowrap; opacity: 0; transform: translateY(6px); transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); pointer-events: none; }
+.topnav.scrolled .topnav-name { opacity: 1; transform: translateY(0); pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .topnav-name { transition: none; transform: none; } }
+.topnav-links { display: flex; gap: 22px; margin-left: auto; font-family: var(--font-mono); font-size: 14px; color: var(--text-secondary); }
+.topnav-links a { white-space: nowrap; }
+.topnav-links a:hover { color: var(--text); }
+
+/* ---- accent link (mono arrow link, reads the project accent) ---------------- */
+.plink { font-family: var(--font-mono); font-size: 13px; color: var(--accent); border: 1px solid var(--border-interactive); border-radius: var(--radius-sm); padding: 7px 12px; display: inline-flex; align-items: center; gap: 7px; }
+.plink:hover { border-color: var(--accent); background: var(--project-accent-bg); }
+.plink .arr { color: var(--text-faint); }
+
+/* ---- focus (README: violet border + 3px glow ring, always visible) -------- */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--violet-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--violet-glow);
+  border-radius: var(--radius-xs);
+}
+
+/* ---- kicker, the signature mono section label ------------------------------ */
+.kicker {
+  font: var(--text-kicker);
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.kicker .tick { width: 18px; height: 1px; background: currentColor; display: inline-block; }
+
+/* ---- buttons --------------------------------------------------------------- */
+.btn {
+  font: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-sm);
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  transition: all var(--dur) var(--ease-out);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn svg { width: 17px; height: 17px; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-hover); box-shadow: var(--glow-violet); transform: translateY(-1px); }
+.btn-primary:active { background: var(--primary-press); transform: translateY(0); }
+.btn-secondary { background: var(--bg-raised); color: var(--text); border-color: var(--border-interactive); }
+.btn-secondary:hover { background: var(--ink-600); border-color: var(--ink-400); }
+.btn-ghost { background: transparent; color: var(--text-secondary); }
+.btn-ghost:hover { color: var(--text); background: var(--bg-elevated); }
+.btn-mono { font-family: var(--font-mono); font-weight: var(--weight-medium); background: transparent; color: var(--accent); border-color: var(--border-interactive); }
+.btn-mono:hover { border-color: var(--accent); color: var(--project-accent-bright); }
+
+/* ---- shields.io-style split badges ----------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: stretch;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  height: 22px;
+  line-height: 22px;
+}
+.badge .k { background: var(--badge-label-bg); color: var(--badge-label-fg); padding: 0 8px; display: flex; align-items: center; }
+.badge .v { padding: 0 8px; display: flex; align-items: center; color: var(--on-primary); font-weight: var(--weight-semibold); }
+/* value-side semantic tones (or pass an explicit background inline) */
+.badge .v.violet { background: var(--violet-600); }
+.badge .v.blue   { background: var(--badge-blue); }
+.badge .v.green  { background: var(--green-500); }
+.badge .v.amber  { background: var(--amber-500); }
+.badge .v.cyan   { background: var(--cyan-600); }
+.badge .v.red    { background: var(--red-500); }
+
+/* ---- status chips (terminal verdicts + availability) ------------------------ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.chip.pass    { background: var(--green-bg); color: var(--green-400); border-color: color-mix(in oklab, var(--green-400) 30%, transparent); }
+.chip.working { background: var(--green-bg); color: var(--green-300); border-color: color-mix(in oklab, var(--green-400) 25%, transparent); }
+.chip.fail    { background: var(--red-bg); color: var(--red-400); border-color: color-mix(in oklab, var(--red-400) 30%, transparent); }
+.chip.error   { background: color-mix(in oklab, var(--red-400) 18%, transparent); color: var(--red-300); border-color: color-mix(in oklab, var(--red-400) 40%, transparent); }
+.chip.alpha,
+.chip.planned { background: var(--amber-bg); color: var(--amber-400); border-color: color-mix(in oklab, var(--amber-400) 30%, transparent); }
+.chip.muted   { background: var(--bg-raised); color: var(--text-muted); border-color: var(--ink-600); border-style: dashed; }
+.chip.muted .dot { background: var(--text-faint); }
+[data-theme="light"] .chip.pass,
+[data-theme="light"] .chip.working { color: var(--green-500); }
+[data-theme="light"] .chip.fail,
+[data-theme="light"] .chip.error   { color: var(--red-500); }
+[data-theme="light"] .chip.alpha,
+[data-theme="light"] .chip.planned { color: var(--amber-500); }
+
+/* ---- cards ------------------------------------------------------------------ */
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.card:hover { border-color: var(--border-interactive); box-shadow: var(--shadow-md); }
+.card.glow { border-color: transparent; box-shadow: var(--glow-violet); }
+.card .card-ico {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--violet-800);
+  color: var(--violet-200);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.card .card-ico svg { width: 20px; height: 20px; stroke: currentColor; }
+.card.glow .card-ico { background: var(--violet-600); color: var(--on-primary); }
+.card h4 { font: var(--text-h4); font-family: var(--font-display); color: var(--text); margin: 0 0 6px; }
+.card p { font: var(--text-small); color: var(--text-muted); margin: 0; line-height: 1.55; }
+.card .card-foot { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-faint); font: var(--text-code-sm); color: var(--text-faint); }
+
+/* ---- callouts (info / warn / brand note) ------------------------------------- */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.callout .callout-ico { flex-shrink: 0; width: 20px; height: 20px; }
+.callout .callout-ico svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+.callout .callout-body { font: var(--text-small); color: var(--text-secondary); }
+.callout .callout-body b, .callout .callout-body strong { color: var(--text); font-weight: var(--weight-semibold); }
+.callout code { font-family: var(--font-mono); font-size: 0.92em; color: var(--cyan-300); background: var(--bg-sunken); padding: 1px 5px; border-radius: var(--radius-xs); }
+[data-theme="light"] .callout code { color: var(--violet-700); }
+.callout.info { border-left: 2px solid var(--cyan-400); }
+.callout.info .callout-ico { color: var(--cyan-400); }
+.callout.warn { border-left: 2px solid var(--amber-400); }
+.callout.warn .callout-ico { color: var(--amber-400); }
+.callout.note { border-left: 2px solid var(--violet-500); }
+.callout.note .callout-ico { color: var(--violet-300); }
+
+/* ---- code block --------------------------------------------------------------- */
+.code {
+  background: var(--bg-code);
+  border: 1px solid var(--ink-600);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  color: var(--fg-2);
+}
+.code .code-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--ink-700);
+  background: var(--ink-850);
+}
+.code .code-bar .code-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-500); flex-shrink: 0; }
+.code .code-bar .code-name { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); white-space: nowrap; }
+.code .code-bar .code-tag { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--violet-300); border: 1px solid var(--ink-600); border-radius: var(--radius-xs); padding: 2px 6px; white-space: nowrap; }
+.code pre { margin: 0; padding: 14px 16px; font: var(--text-code); white-space: pre; overflow-x: auto; }
+/* syntax tint (YAML / shell) */
+.code .tok-k { color: var(--violet-300); }  /* key / keyword   */
+.code .tok-s { color: var(--green-300); }   /* string / value  */
+.code .tok-n { color: var(--cyan-300); }    /* number          */
+.code .tok-c { color: var(--fg-4); }        /* comment         */
+.code .tok-p { color: var(--fg-2); }        /* punctuation     */
+.code .tok-prompt { color: var(--cyan-400); } /* $ shell prompt */
+.code .tok-flag { color: var(--violet-300); } /* --flags        */
+
+/* ---- console (Rich) verdict report ---------------------------------------------- */
+.console {
+  background: var(--bg-code);
+  border: 1px solid var(--ink-600);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-2);
+}
+.console .console-rule { display: flex; align-items: center; gap: 10px; color: var(--green-400); font-weight: var(--weight-semibold); letter-spacing: 0.04em; margin-bottom: 8px; white-space: nowrap; }
+.console .console-rule::before, .console .console-rule::after { content: ""; height: 1px; background: var(--ink-600); flex: 1; }
+.console .console-rule.fail { color: var(--red-400); }
+.console .console-meta { color: var(--fg-3); margin-bottom: 10px; }
+.console .console-sep { color: var(--ink-400); }
+.console table { border-collapse: collapse; font-size: 12px; margin: 4px 0 10px; }
+.console th, .console td { padding: 4px 14px; border: 1px solid var(--ink-700); text-align: left; }
+.console th { color: var(--fg-3); font-weight: var(--weight-medium); }
+.console th:first-child, .console td:first-child { color: var(--cyan-300); }
+.console td.res { text-align: center; font-weight: var(--weight-semibold); color: var(--green-400); }
+.console td.res.fail { color: var(--red-400); }
+.console td.det { color: var(--fg-3); }
+.console .console-verdict .ok { color: var(--green-400); font-weight: var(--weight-bold); }
+.console .console-verdict .bad { color: var(--red-400); font-weight: var(--weight-bold); }
+
+/* ---- terminal window (hero artifact) ----------------------------------------------- */
+.terminal-window {
+  background: var(--bg-code);
+  border: 1px solid var(--ink-600);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.terminal-window .terminal-bar { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--ink-700); background: var(--ink-850); }
+.terminal-window .terminal-dots { display: flex; gap: 6px; }
+.terminal-window .terminal-dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--ink-500); }
+.terminal-window .terminal-title { font: var(--text-code-sm); color: var(--fg-3); white-space: nowrap; }
+.terminal-window .terminal-body { padding: 16px 18px; font-family: var(--font-mono); font-size: 13px; line-height: 1.75; color: var(--fg-2); }
+.terminal-window .terminal-line .tok-prompt { color: var(--cyan-400); }
+.terminal-window .terminal-cursor { display: inline-block; width: 8px; height: 15px; background: var(--cyan-400); vertical-align: text-bottom; animation: sg-blink 1s steps(2) infinite; }
+@keyframes sg-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .terminal-window .terminal-cursor { animation: none; } }
+
+/* ---- inputs ----------------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing: var(--label-tracking); }
+.input {
+  width: 100%;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-interactive);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font: var(--text-code-sm);
+  color: var(--text);
+}
+.input::placeholder { color: var(--text-faint); }
+.input:focus, .input:focus-visible { border-color: var(--violet-500); box-shadow: 0 0 0 3px var(--violet-glow); outline: none; }
+.input-prefix { display: flex; align-items: center; background: var(--bg-sunken); border: 1px solid var(--border-interactive); border-radius: var(--radius-sm); overflow: hidden; }
+.input-prefix > span { padding: 0 10px; color: var(--cyan-400); font-family: var(--font-mono); font-size: 13px; border-right: 1px solid var(--ink-600); align-self: stretch; display: flex; align-items: center; }
+.input-prefix > input { flex: 1; background: transparent; border: none; padding: 10px 12px; color: var(--text); font: var(--text-code-sm); min-width: 0; }
+.input-prefix > input:focus { outline: none; }
+.input-prefix:focus-within { border-color: var(--violet-500); box-shadow: 0 0 0 3px var(--violet-glow); }

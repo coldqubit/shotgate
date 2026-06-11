@@ -1,0 +1,326 @@
+/* ============================================================================
+   coldqubit, foundational design tokens (shared by every product, incl. shotgate)
+   colors_and_type.css
+   ----------------------------------------------------------------------------
+   A dark-first, terminal-native system for the quantum × DevOps junction.
+   Fonts load via fonts.css (imported by styles.css); see that file to self-host.
+   ============================================================================ */
+
+:root {
+  /* ---------------------------------------------------------------------------
+     1. CORE PALETTE
+     Cryostat ink (cool, violet-tinted darks), quantum violet primary, cryo-cyan
+     accent, and terminal-semantic signal colors lifted from the Rich console
+     output (green PASS / red FAIL / cyan assertion / amber missing-deps).
+     --------------------------------------------------------------------------- */
+
+  /* Cryostat neutrals, page → surface → raised → borders. Cool blue-violet cast. */
+  --ink-950: #08070D;   /* deepest void, full-bleed hero / footer            */
+  --ink-900: #0C0A12;   /* page background (dark default)                     */
+  --ink-850: #110E1A;   /* sunken wells, code blocks                          */
+  --ink-800: #16131F;   /* surface / card                                     */
+  --ink-750: #1B1727;   /* surface hover                                      */
+  --ink-700: #221D31;   /* raised surface / popover                           */
+  --ink-600: #2C2740;   /* strong border / divider on raised                  */
+  --ink-500: #3A3454;   /* interactive border                                 */
+  --ink-400: #4B4468;   /* faint outline                                      */
+
+  /* Foreground ramp (matches the Rich "dim" → bright hierarchy). */
+  --fg-1: #F4F2FA;      /* primary text, headings                             */
+  --fg-2: #BCB6CF;      /* secondary text, body on dark                       */
+  --fg-3: #847E9B;      /* muted / captions / "dim" detail column             */
+  --fg-4: #565070;      /* faint / disabled / placeholder                     */
+
+  /* Hairlines (use over arbitrary surfaces). */
+  --line: rgba(244, 242, 250, 0.09);
+  --line-strong: rgba(244, 242, 250, 0.16);
+  --line-faint: rgba(244, 242, 250, 0.05);
+
+  /* Quantum Violet, primary brand. A "photonic" magenta-violet (hue ~290°),
+     deliberately shifted clear of both the indigo dev-tool purples (Twitch,
+     HashiCorp) and the Podman badge hue — an unmistakably-ours primary. */
+  --violet-200: #EEC8F7;
+  --violet-300: #D97DEC;
+  --violet-400: #C94FE0;
+  --violet-500: #B630D0;   /* PRIMARY */
+  --violet-600: #9C2CA0;   /* deep brand */
+  --violet-700: #7A1F80;
+  --violet-800: #521457;
+  --violet-glow: rgba(182, 48, 208, 0.35);
+
+  /* Cryo Cyan, coldqubit's OWN project accent (also the Rich "cyan" column). */
+  --cyan-200: #B8F5EE;
+  --cyan-300: #7DF0E6;
+  --cyan-400: #34D8C8;   /* accent · coldqubit */
+  --cyan-500: #16B6A7;
+  --cyan-600: #0E8C81;
+  --cyan-glow: rgba(52, 216, 200, 0.30);
+  --cyan-bg: rgba(52, 216, 200, 0.10);
+
+  /* Solar Coral, shotgate's project accent: the hot "shot" against the cold cryo world. */
+  --coral-200: #FFD7C9;
+  --coral-300: #FFAD8F;
+  --coral-400: #FF794F;   /* accent · shotgate */
+  --coral-500: #E05C33;
+  --coral-600: #B04124;
+  --coral-glow: rgba(255, 121, 79, 0.30);
+  --coral-bg: rgba(255, 121, 79, 0.10);
+
+  /* Terminal semantics. */
+  --green-300: #7CF0B0;
+  --green-400: #3FD98A;   /* PASS */
+  --green-500: #21B870;
+  --green-700: #0F5C3A;
+  --green-bg: rgba(63, 217, 138, 0.12);
+
+  --red-300: #FF93A3;
+  --red-400: #FF5C72;     /* FAIL */
+  --red-500: #E63955;
+  --red-700: #7E1C2C;
+  --red-bg: rgba(255, 92, 114, 0.12);
+
+  --amber-300: #FFD584;
+  --amber-400: #F5B13D;   /* WARN / planned / missing-deps */
+  --amber-500: #E0941A;
+  --amber-bg: rgba(245, 177, 61, 0.12);
+
+  /* shields.io-style split badges (the repo's native badge language).
+     Label side is always dark slate, even on the light theme, like real shields. */
+  --badge-label-bg: #33303B;
+  --badge-label-fg: #D7D3E2;
+  --badge-blue: #2A6FDB;   /* shields' informational blue (license / python) */
+
+  /* ---------------------------------------------------------------------------
+     2. SEMANTIC SURFACE ALIASES (dark default)
+     --------------------------------------------------------------------------- */
+  --bg: var(--ink-900);
+  --bg-elevated: var(--ink-800);
+  --bg-raised: var(--ink-700);
+  --bg-sunken: var(--ink-850);
+  --bg-code: var(--ink-950);
+
+  --text: var(--fg-1);
+  --text-secondary: var(--fg-2);
+  --text-muted: var(--fg-3);
+  --text-faint: var(--fg-4);
+
+  --border: var(--line);
+  --border-interactive: var(--ink-500);
+
+  --primary: var(--violet-500);
+  --primary-hover: var(--violet-400);
+  --primary-press: var(--violet-600);
+  --on-primary: #FBF7FE;
+
+  /* ---------------------------------------------------------------------------
+     2b. PROJECT ACCENT ARCHITECTURE
+     Violet is the ECOSYSTEM BASE: every logo tile, every primary button,
+     "made by coldqubit". Each project then owns exactly ONE accent, used for
+     its logo glyph detail, kickers, links, and signal moments on its surfaces:
+
+       coldqubit (project home)  → cryo cyan    (locked: the orbit)
+       shotgate  (product 01)    → solar coral  (the gate bar / the "shot")
+       <next project>            → pick a new hue; green/red/amber are
+                                   reserved for PASS/FAIL/WARN, never accents.
+
+     Pages opt in with <html data-project="shotgate">; the default is the
+     project home. Everything downstream reads --accent.
+     --------------------------------------------------------------------------- */
+  --accent-coldqubit: var(--cyan-400);
+  --accent-shotgate: var(--coral-400);
+
+  --project-accent: var(--accent-coldqubit);
+  --project-accent-bright: var(--cyan-300);
+  --project-accent-deep: var(--cyan-600);
+  --project-accent-glow: var(--cyan-glow);
+  --project-accent-bg: var(--cyan-bg);
+
+  --accent: var(--project-accent);
+
+  /* ---------------------------------------------------------------------------
+     3. TYPOGRAPHY · TERMINAL-FORWARD
+     Display = IBM Plex Mono (the boldest read of "terminal-native": headlines
+               in mono, weight 600, tight tracking; keep headline copy terse)
+     Body/UI = IBM Plex Sans (open, infrastructural, same superfamily)
+     Mono    = IBM Plex Mono (code, YAML, kickers, badges, console output)
+     --------------------------------------------------------------------------- */
+  --font-display: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid size ramp, extracted so the `font` shorthands below stay simple
+     (clamp() math is kept out of the shorthand). Major-third-ish, technical density. */
+  --fs-display: clamp(2.8rem, 1.5rem + 4.2vw, 5rem);   /* @kind other */
+  --fs-h1: clamp(2.1rem, 1.4rem + 2.4vw, 3.25rem);     /* @kind other */
+  --fs-h2: clamp(1.6rem, 1.2rem + 1.4vw, 2.25rem);     /* @kind other */
+  --fs-h3: clamp(1.25rem, 1.05rem + 0.7vw, 1.6rem);    /* @kind other */
+  --fs-lead: clamp(1.075rem, 1rem + 0.4vw, 1.35rem);   /* @kind other */
+
+  /* Fluid type scale, major-third-ish, tuned for technical density.
+     Mono display: weight 600 max impact, slightly looser leading than a sans. */
+  --text-display: 600 var(--fs-display)/1.04 var(--font-display);
+  --text-h1: 600 var(--fs-h1)/1.08 var(--font-display);
+  --text-h2: 600 var(--fs-h2)/1.14 var(--font-display);
+  --text-h3: 600 var(--fs-h3)/1.2 var(--font-display);
+  --text-h4: 600 1.125rem/1.3 var(--font-sans);
+  --text-lead: 400 var(--fs-lead)/1.55 var(--font-sans);
+  --text-body: 400 1rem/1.65 var(--font-sans);
+  --text-body-sm: 400 0.9375rem/1.6 var(--font-sans);
+  --text-small: 400 0.8125rem/1.5 var(--font-sans);
+  --text-code: 500 0.875rem/1.6 var(--font-mono);
+  --text-code-sm: 500 0.8125rem/1.55 var(--font-mono);
+
+  /* Kicker / eyebrow, the signature mono label. */
+  --text-kicker: 500 0.75rem/1 var(--font-mono);
+  --kicker-tracking: 0.18em;
+  --label-tracking: 0.04em;
+
+  /* Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---------------------------------------------------------------------------
+     4. SPACING, 4px base grid
+     --------------------------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* ---------------------------------------------------------------------------
+     5. RADII, moderate on cards, crisp on terminal/code surfaces
+     --------------------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ---------------------------------------------------------------------------
+     6. ELEVATION, restrained shadows + optional accent glow
+     On a dark UI, elevation is carried mostly by border + a soft cast shadow.
+     Glow is reserved for primary buttons and live/active states, used sparingly.
+     --------------------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --glow-violet: 0 0 0 1px rgba(182, 48, 208, 0.4), 0 8px 30px var(--violet-glow);
+  --glow-cyan: 0 0 0 1px rgba(52, 216, 200, 0.35), 0 8px 30px var(--cyan-glow);
+  --glow-coral: 0 0 0 1px rgba(255, 121, 79, 0.35), 0 8px 30px var(--coral-glow);
+  --glow-accent: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent), 0 8px 30px var(--project-accent-glow);
+  --inset-top: inset 0 1px 0 rgba(244, 242, 250, 0.06);
+
+  /* ---------------------------------------------------------------------------
+     7. MOTION, confident, quick, no bounce. Terminal-like immediacy.
+     --------------------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);    /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --dur-fast: 120ms;                             /* @kind other */
+  --dur: 180ms;                                  /* @kind other */
+  --dur-slow: 320ms;                             /* @kind other */
+
+  /* ---------------------------------------------------------------------------
+     8. MOTIF, qubit-lattice dot grid (subtle background texture)
+     --------------------------------------------------------------------------- */
+  --dot-color: rgba(182, 48, 208, 0.10);
+  --dot-grid: radial-gradient(var(--dot-color) 1px, transparent 1px);
+  --dot-size: 22px;
+}
+
+/* Project accent switch: one attribute per page (or per subtree), everything
+   reads --accent. NOTE: --accent and --glow-accent are re-declared here so they
+   recompute when the attribute sits on a nested element (custom properties
+   resolve var() where they are DEFINED, not where they are used). */
+[data-project="shotgate"] {
+  --project-accent: var(--accent-shotgate);
+  --project-accent-bright: var(--coral-300);
+  --project-accent-deep: var(--coral-600);
+  --project-accent-glow: var(--coral-glow);
+  --project-accent-bg: var(--coral-bg);
+  --accent: var(--project-accent);
+  --glow-accent: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent), 0 8px 30px var(--project-accent-glow);
+}
+
+/* ============================================================================
+   LIGHT THEME, for documentation reading surfaces. Dark remains the brand
+   default; light is the calm long-form companion. Apply [data-theme="light"].
+   ============================================================================ */
+[data-theme="light"] {
+  --bg: #FBFAFD;
+  --bg-elevated: #FFFFFF;
+  --bg-raised: #FFFFFF;
+  --bg-sunken: #F2EFF7;
+  --bg-code: #16131F;          /* code stays dark even in light mode */
+
+  --text: #1B1727;
+  --text-secondary: #423B58;
+  --text-muted: #5F5878;   /* ≥5:1 on the light page bg */
+  --text-faint: #8780A0;
+
+  --border: rgba(27, 23, 39, 0.10);
+  --border-interactive: rgba(27, 23, 39, 0.22);
+
+  --primary: var(--violet-600);
+  --primary-hover: var(--violet-500);
+  --primary-press: var(--violet-700);
+  --on-primary: #FBF7FE;
+
+  --line: rgba(27, 23, 39, 0.10);
+  --line-strong: rgba(27, 23, 39, 0.18);
+  --line-faint: rgba(27, 23, 39, 0.05);
+
+  --dot-color: rgba(156, 44, 160, 0.08);
+  --shadow-md: 0 4px 16px rgba(40, 20, 60, 0.10);
+  --shadow-lg: 0 18px 50px rgba(40, 20, 60, 0.14);
+
+  /* Project accents darken for text-grade contrast on light surfaces. */
+  --project-accent: var(--cyan-600);
+  --project-accent-bright: var(--cyan-500);
+}
+[data-theme="light"][data-project="shotgate"],
+[data-theme="light"] [data-project="shotgate"] {
+  --project-accent: var(--coral-600);
+  --project-accent-bright: var(--coral-500);
+  --accent: var(--project-accent);
+}
+
+/* ============================================================================
+   SEMANTIC ELEMENT DEFAULTS, opt in by adding class .sg-type to a container,
+   or copy these rules into a reset. Kept as utility-ish classes so the tokens
+   above stay framework-agnostic.
+   ============================================================================ */
+.sg-type {
+  font: var(--text-body);
+  color: var(--text);
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.sg-type h1 { font: var(--text-h1); letter-spacing: -0.035em; color: var(--text); margin: 0; }
+.sg-type h2 { font: var(--text-h2); letter-spacing: -0.03em; color: var(--text); margin: 0; }
+.sg-type h3 { font: var(--text-h3); letter-spacing: -0.025em; color: var(--text); margin: 0; }
+.sg-type h4 { font: var(--text-h4); color: var(--text); margin: 0; }
+.sg-type p  { font: var(--text-body); color: var(--text-secondary); margin: 0; text-wrap: pretty; }
+.sg-type code, .sg-type kbd, .sg-type samp { font: var(--text-code); }
+
+.sg-display { font: var(--text-display); letter-spacing: -0.045em; color: var(--text); }
+.sg-lead { font: var(--text-lead); color: var(--text-secondary); text-wrap: pretty; }
+
+/* The signature kicker label. */
+.sg-kicker {
+  font: var(--text-kicker);
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-block;
+}
