@@ -44,12 +44,6 @@ jobs:
     name: publish container image to GHCR
     runs-on: ubuntu-latest
     needs: build-dist
-    # Mapped at job level so the optional Docker Hub step can guard on env (the
-    # secrets context is not available inside a step-level if:).
-    env:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_NAMESPACE }}
     steps:
       - uses: actions/checkout@v6
 
@@ -104,31 +98,16 @@ jobs:
           podman push "${IMG}:${VERSION}-ibm"
           podman push "${IMG}:latest-ibm"
 
-      # Optional Docker Hub mirror. GHCR is the canonical registry; this only runs
-      # when both DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets exist,
-      # so the release never fails for the absence of a Docker Hub account. To
-      # enable: create a Docker Hub repo and an access token, then add those two
-      # secrets. The Hub namespace defaults to the GitHub owner; override with the
-      # DOCKERHUB_NAMESPACE secret if your Hub org differs.
-      - name: Mirror images to Docker Hub (optional)
-        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
-        env:
-          VERSION: ${{ steps.meta.outputs.version }}
-          SHA: ${{ steps.meta.outputs.sha }}
-          DH_USER: ${{ env.DOCKERHUB_USERNAME }}
-          DH_TOKEN: ${{ env.DOCKERHUB_TOKEN }}
-          DH_NS: ${{ env.DOCKERHUB_NAMESPACE }}
-          GHCR_IMG: ${{ steps.meta.outputs.image }}
-          OWNER: ${{ github.repository_owner }}
-        run: |
-          NS="${DH_NS:-$OWNER}"
-          DH="docker.io/${NS,,}/shotgate"
-          echo "$DH_TOKEN" | podman login docker.io -u "$DH_USER" --password-stdin
-          # Retag the images already built above (no rebuild) and push the same set.
-          for tag in "$VERSION" "$SHA" latest "${VERSION}-ibm" latest-ibm; do
-            podman tag "${GHCR_IMG}:${tag}" "${DH}:${tag}"
-            podman push "${DH}:${tag}"
-          done
+  # Mirror the just-published GHCR images to Docker Hub (optional convenience
+  # registry). Delegated to the reusable dockerhub-mirror workflow, which is also
+  # dispatchable on its own to re-mirror any version. Skipped automatically when
+  # the dockerhub environment has no credentials.
+  mirror-dockerhub:
+    needs: publish-image
+    uses: ./.github/workflows/dockerhub-mirror.yml
+    with:
+      version: ${{ github.ref_name }}
+    secrets: inherit
 
   publish-pypi:
     name: publish to PyPI (trusted publishing)

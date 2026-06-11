@@ -1,0 +1,60 @@
+name: dockerhub-mirror
+
+# Mirror an already-published GHCR image set to Docker Hub. GHCR stays the
+# canonical registry; Docker Hub is a convenience mirror for discovery and the
+# familiar `docker pull`. Runs on release (via workflow_call from release.yml)
+# and on demand (workflow_dispatch) to re-mirror or back-fill any version.
+#
+# Credentials live in the `dockerhub` environment: DOCKERHUB_USERNAME and
+# DOCKERHUB_TOKEN (a Docker Hub access token), and optionally DOCKERHUB_NAMESPACE
+# to push under a Hub organization instead of the username. Absent credentials
+# (a fork), the mirror step is skipped rather than failing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to mirror from GHCR to Docker Hub (e.g. 0.2.1)"
+        required: true
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  mirror:
+    name: mirror GHCR -> Docker Hub
+    runs-on: ubuntu-latest
+    environment: dockerhub
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_NAMESPACE }}
+    steps:
+      - name: Mirror the version, latest, and -ibm tags
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          V="${VERSION#v}"                      # tolerate a leading 'v'
+          GHCR="ghcr.io/${REPO,,}"
+          # Docker Hub namespace defaults to the Hub username; override with the
+          # DOCKERHUB_NAMESPACE secret to push under a Hub organization.
+          NS="${DOCKERHUB_NAMESPACE:-$DOCKERHUB_USERNAME}"
+          DH="docker.io/${NS,,}/shotgate"
+          echo "$GH_TOKEN" | podman login ghcr.io -u "$ACTOR" --password-stdin
+          echo "$DOCKERHUB_TOKEN" | podman login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
+          for tag in "$V" latest "${V}-ibm" latest-ibm; do
+            podman pull "${GHCR}:${tag}"
+            podman tag "${GHCR}:${tag}" "${DH}:${tag}"
+            podman push "${DH}:${tag}"
+          done
+          echo "Mirrored ${GHCR}:{${V},latest,${V}-ibm,latest-ibm} -> ${DH}"
