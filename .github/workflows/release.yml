@@ -173,17 +173,18 @@ jobs:
           {
             echo "## Install ${GITHUB_REF_NAME}"
             echo
-            echo "Everything below is downloadable straight from GitHub. No PyPI or Docker Hub account is needed."
+            echo "The package is on **PyPI** and the image on the **GitHub Container Registry (GHCR)** for convenience (the usual one-liners below). If you would rather not use a package index at all, the wheel attached to this release and the GHCR image are both pullable straight from GitHub, no extra account needed."
             echo
-            echo "**Python package** (wheel + sdist attached to this release):"
+            echo "**Python package** (PyPI, or the attached wheel):"
             echo '```bash'
+            echo "pip install 'shotgate[aer]==${V}'"
+            echo "# or straight from this release, no index:"
             echo "pip install https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/shotgate-${V}-py3-none-any.whl"
-            echo "# or, from any index that mirrors it:  pip install 'shotgate[aer]==${V}'"
             echo '```'
             echo
-            echo "**Container** (published to GitHub Container Registry):"
+            echo "**Container** (GHCR; add the \`-ibm\` tag suffix for the QPU-capable variant):"
             echo '```bash'
-            echo "podman pull ghcr.io/${GITHUB_REPOSITORY}:${V}        # add -ibm for the QPU-capable variant"
+            echo "podman pull ghcr.io/${GITHUB_REPOSITORY}:${V}"
             echo "podman run --rm -v \"\$PWD:/work:Z\" -w /work ghcr.io/${GITHUB_REPOSITORY}:${V} run examples/bell-state/workflow.yaml"
             echo '```'
             echo
