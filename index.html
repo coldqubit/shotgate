@@ -32,10 +32,7 @@
         <a href="#oracles">Oracles</a>
         <a href="#backends">Backends</a>
         <a href="#ci">CI</a>
-        <a class="ext-link" href="https://github.com/coldqubit/shotgate/tree/main/docs">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
-          Docs
-        </a>
+        <a href="docs/">Docs</a>
       </div>
       <a class="gh-link" href="https://github.com/coldqubit/shotgate" aria-label="GitHub">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
@@ -52,11 +49,13 @@
         <span class="kicker"><span class="tick"></span>Quantum × DevOps · a coldqubit project</span>
         <h1>shotgate</h1>
         <p class="tagline">CI/CD <span class="a">quality gates</span> for quantum circuits. Statistically validate probabilistic output, across simulators and real QPUs, defined entirely as code.</p>
+        <!-- values are static fallbacks; js/site.js re-syncs them from the repo -->
         <div class="hero-badges">
-          <span class="badge"><span class="k">CI</span><span class="v violet">podman</span></span>
-          <span class="badge"><span class="k">license</span><span class="v blue">Apache-2.0</span></span>
-          <span class="badge"><span class="k">python</span><span class="v blue">3.10+</span></span>
-          <span class="badge"><span class="k">status</span><span class="v amber">alpha</span></span>
+          <span class="badge" id="b-ci"><span class="k">CI</span><span class="v violet">podman</span></span>
+          <span class="badge" id="b-release"><span class="k">release</span><span class="v violet">v0.2.2</span></span>
+          <span class="badge" id="b-license"><span class="k">license</span><span class="v blue">Apache-2.0</span></span>
+          <span class="badge" id="b-python"><span class="k">python</span><span class="v blue">3.10+</span></span>
+          <span class="badge" id="b-status"><span class="k">status</span><span class="v amber">alpha</span></span>
         </div>
       </div>
 
@@ -74,12 +73,14 @@
               <table>
                 <thead><tr><th>Assertion</th><th>Result</th><th>Detail</th></tr></thead>
                 <tbody>
-                  <tr><td>chi-square p ≥ 0.01</td><td class="res">PASS</td><td class="det">χ²=0.41 dof=1 p=0.52</td></tr>
-                  <tr><td>TVD ≤ 0.03</td><td class="res">PASS</td><td class="det">distance 0.0043</td></tr>
-                  <tr><td>leakage ≤ 0.0</td><td class="res">PASS</td><td class="det">support leakage 0.0000</td></tr>
+                  <tr><td>chi_square p ≥ 0.01</td><td class="res">PASS</td><td class="det">χ²=0.41 dof=1 p=0.52</td></tr>
+                  <tr><td>distribution_tvd ≤ 0.03</td><td class="res">PASS</td><td class="det">distance 0.0043</td></tr>
+                  <tr><td>hellinger_fidelity ≥ 0.99</td><td class="res">PASS</td><td class="det">fidelity 0.9999</td></tr>
+                  <tr><td>allowed_states ⊆ {00,11}</td><td class="res">PASS</td><td class="det">leakage 0.0000</td></tr>
+                  <tr><td>state_probability 00</td><td class="res">PASS</td><td class="det">0.4982 ∈ [0.45, 0.55]</td></tr>
                 </tbody>
               </table>
-              <div class="console-verdict"><span class="ok">PASSED</span> <span class="console-sep">·</span> 3/3 assertions <span class="console-sep">·</span> 0.214s <span class="console-sep">·</span> exit 0</div>
+              <div class="console-verdict"><span class="ok">PASSED</span> <span class="console-sep">·</span> 5/5 assertions <span class="console-sep">·</span> 0.214s <span class="console-sep">·</span> exit 0</div>
             </div>
           </div>
         </div>
@@ -100,15 +101,18 @@
 <span class="tok-k">kind</span><span class="tok-p">:</span> <span class="tok-s">QuantumWorkflow</span>
 <span class="tok-k">metadata</span><span class="tok-p">:</span>
   <span class="tok-k">name</span><span class="tok-p">:</span> <span class="tok-s">bell-state</span>
+<span class="tok-k">defaults</span><span class="tok-p">:</span>
+  <span class="tok-k">backend</span><span class="tok-p">:</span> <span class="tok-p">{</span> <span class="tok-k">provider</span><span class="tok-p">:</span> <span class="tok-s">local-aer</span><span class="tok-p">,</span> <span class="tok-k">shots</span><span class="tok-p">:</span> <span class="tok-n">8192</span> <span class="tok-p">}</span>
 <span class="tok-k">jobs</span><span class="tok-p">:</span>
   <span class="tok-p">-</span> <span class="tok-k">name</span><span class="tok-p">:</span> <span class="tok-s">bell-pair</span>
-    <span class="tok-k">circuit</span><span class="tok-p">:</span> <span class="tok-s">circuits/bell.qasm</span>
-    <span class="tok-k">shots</span><span class="tok-p">:</span> <span class="tok-n">8192</span>
+    <span class="tok-k">circuit</span><span class="tok-p">:</span> <span class="tok-p">{</span> <span class="tok-k">format</span><span class="tok-p">:</span> <span class="tok-s">qasm2</span><span class="tok-p">,</span> <span class="tok-k">path</span><span class="tok-p">:</span> <span class="tok-s">bell.qasm</span> <span class="tok-p">}</span>
     <span class="tok-k">assertions</span><span class="tok-p">:</span>
       <span class="tok-p">-</span> <span class="tok-k">type</span><span class="tok-p">:</span> <span class="tok-s">chi_square</span>  <span class="tok-c"># χ² goodness-of-fit</span>
+        <span class="tok-k">expected</span><span class="tok-p">:</span> <span class="tok-p">{</span> <span class="tok-s">"00"</span><span class="tok-p">:</span> <span class="tok-n">0.5</span><span class="tok-p">,</span> <span class="tok-s">"11"</span><span class="tok-p">:</span> <span class="tok-n">0.5</span> <span class="tok-p">}</span>
         <span class="tok-k">significance</span><span class="tok-p">:</span> <span class="tok-n">0.01</span>
-      <span class="tok-p">-</span> <span class="tok-k">type</span><span class="tok-p">:</span> <span class="tok-s">tvd</span>
-        <span class="tok-k">bound</span><span class="tok-p">:</span> <span class="tok-n">0.03</span></pre>
+      <span class="tok-p">-</span> <span class="tok-k">type</span><span class="tok-p">:</span> <span class="tok-s">allowed_states</span>  <span class="tok-c"># |01⟩,|10⟩ forbidden</span>
+        <span class="tok-k">states</span><span class="tok-p">:</span> <span class="tok-p">[</span><span class="tok-s">"00"</span><span class="tok-p">,</span> <span class="tok-s">"11"</span><span class="tok-p">]</span>
+        <span class="tok-k">max_leakage</span><span class="tok-p">:</span> <span class="tok-n">0.0</span></pre>
         </div>
         <div class="steps">
           <div class="step"><span class="n">01</span><div><h4>Declare gates as YAML</h4><p>Circuits, shots, and statistical assertions live in a <code>QuantumWorkflow</code> file, versioned next to your code.</p></div></div>
@@ -127,9 +131,11 @@
         <p>Quantum output is probabilistic; exact-match testing is meaningless. Each oracle bounds a distribution property instead.</p>
       </div>
       <div class="oracles">
-        <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit against the expected distribution; gate on a p-value vs. your significance level.</p><div class="card-foot">significance: 0.01</div></div>
-        <div class="card"><span class="sym">δ</span><h4>tvd</h4><p>Total variation distance between observed and expected counts, bounded above. The default oracle.</p><div class="card-foot">bound: 0.03</div></div>
-        <div class="card"><span class="sym">∉</span><h4>leakage</h4><p>Probability mass observed outside the expected support set; catches states that should never appear.</p><div class="card-foot">bound: 0.0</div></div>
+        <div class="card"><span class="sym">δ</span><h4>distribution_tvd</h4><p>Total variation distance between observed and expected counts, bounded above. Robust and shot-count agnostic.</p><div class="card-foot">max_distance: 0.03</div></div>
+        <div class="card"><span class="sym">F</span><h4>hellinger_fidelity</h4><p>Classical fidelity between the observed and expected distributions, bounded below.</p><div class="card-foot">min_fidelity: 0.99</div></div>
+        <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit against the expected distribution; gate on a p-value vs. your significance level.</p><div class="card-foot">significance: 0.01 · simulator-only</div></div>
+        <div class="card"><span class="sym">∉</span><h4>allowed_states</h4><p>Probability mass observed outside the allowed support set; catches states that should never appear.</p><div class="card-foot">max_leakage: 0.0</div></div>
+        <div class="card"><span class="sym">P</span><h4>state_probability</h4><p>Marginal probability of one outcome, held inside a window. The simplest hardware-friendly gate.</p><div class="card-foot">min: 0.45 · max: 0.55</div></div>
       </div>
     </div>
   </section>
@@ -138,12 +144,14 @@
     <div class="wrap">
       <div class="sec-head">
         <span class="kicker"><span class="tick"></span>Backends</span>
-        <h2>Simulators first. Hardware next.</h2>
+        <h2>Simulators first. Hardware: validated.</h2>
+        <p>v0.2 gates passed on a real QPU: Bell, GHZ, and Grover on <code class="mono">ibm_fez</code> at 4096 shots, 2026-06-11. The measured baseline lives in <a class="doclink" href="docs/#/hardware-validation">hardware-validation</a>.</p>
       </div>
       <div class="backends">
         <div class="be-row"><span class="be-name">local-aer</span><span class="be-desc">Qiskit Aer simulator, baked into the image. Default, fully offline.</span><span class="chip working"><span class="dot"></span>WORKING</span></div>
-        <div class="be-row"><span class="be-name">ibm</span><span class="be-desc">IBM Quantum via Qiskit Runtime. Implemented; not yet validated on real hardware.</span><span class="chip alpha"><span class="dot"></span>ALPHA</span></div>
-        <div class="be-row"><span class="be-name">braket</span><span class="be-desc">AWS Braket devices and simulators.</span><span class="chip planned"><span class="dot"></span>PLANNED</span></div>
+        <div class="be-row"><span class="be-name">ibm</span><span class="be-desc">IBM Quantum via Qiskit Runtime. Validated on real hardware: ibm_fez, Bell/GHZ/Grover at 4096 shots.</span><span class="chip working"><span class="dot"></span>VALIDATED</span></div>
+        <div class="be-row"><span class="be-name">braket</span><span class="be-desc">AWS Braket devices and simulators. Not selectable yet.</span><span class="chip planned"><span class="dot"></span>PLANNED</span></div>
+        <div class="be-row"><span class="be-name">mitiq</span><span class="be-desc">Error mitigation layer via Mitiq.</span><span class="chip planned"><span class="dot"></span>PLANNED</span></div>
       </div>
     </div>
   </section>
@@ -182,7 +190,7 @@
       </span>
       <div class="right">
         <a href="https://github.com/coldqubit/shotgate">GitHub</a>
-        <a href="https://github.com/coldqubit/shotgate/tree/main/docs">Docs</a>
+        <a href="docs/">Docs</a>
         <a href="https://coldqubit.org">coldqubit</a>
         <span>Apache-2.0</span>
       </div>
