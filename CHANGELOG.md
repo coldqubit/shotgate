@@ -8,6 +8,32 @@ All notable changes to this project are documented here. The format is based on
 
 *Nothing yet.*
 
+## [0.2.1] - 2026-06-11
+
+### Added
+
+- **Full oracle coverage on hardware.** A non-gating diagnostic example,
+  `bell-state-hardware-oracle-coverage`, runs all five oracles on one Bell circuit so
+  `chi_square` also has a real-QPU data point. Measured on `ibm_fez`: the four
+  distance/structural oracles passed while `chi_square` returned p-value 0.0000
+  (statistic 1.5e17, dof 3), confirming why it is simulator-only. Mechanism and numbers
+  in `docs/hardware-validation.md` section 9.
+- **GitHub-only install path in release notes.** Each release now documents installing the
+  attached wheel and pulling the GHCR image directly, so neither PyPI nor Docker Hub is
+  required to consume a release.
+- **Optional Docker Hub mirror** in the release pipeline. When the `DOCKERHUB_USERNAME` and
+  `DOCKERHUB_TOKEN` repository secrets are present, released images are mirrored to Docker
+  Hub alongside the canonical GHCR images; absent the secrets the step is skipped and the
+  release is unaffected.
+
+### Changed
+
+- **Portable device selection.** A pinned `ibm` device that the account or instance cannot
+  reach now raises a clear error listing the reachable real devices and pointing at the
+  `least_busy` default, instead of an opaque Qiskit lookup failure. The
+  `hardware-validation` workflow's device input now defaults to empty (`least_busy`) rather
+  than a pinned `ibm_fez`.
+
 ## [0.2.0] - 2026-06-11
 
 ### Added
@@ -143,7 +169,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/coldqubit/shotgate/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/coldqubit/shotgate/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/coldqubit/shotgate/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/coldqubit/shotgate/releases/tag/v0.1.0

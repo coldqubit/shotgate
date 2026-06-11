@@ -7,7 +7,9 @@
 > **Status: VALIDATED on real hardware.** On 2026-06-11 the three hardware gates ran
 > on `ibm_fez` (156-qubit Heron r2, Open Plan instance) at 4096 shots each, via the
 > `hardware-validation` GitHub workflow installing `shotgate[ibm]==0.1.1` from PyPI.
-> All gates passed; measured values in [section 9](#9-measured-baseline-ibm_fez-2026-06-11).
+> All gates passed; measured values in [section 9](#9-measured-baseline-ibm_fez-2026-06-11),
+> where all five oracles (including a non-gating `chi_square` measurement) have a hardware
+> data point.
 > This document remains the runbook for re-running the validation on any device.
 
 ---
@@ -190,3 +192,30 @@ the matrix. On a noisier device or a bad calibration day the Bell gate is the mo
 likely informative-fail; GHZ and Grover have comfortable headroom. No defect-class
 failures occurred: counts extraction, register selection, and all three report
 formats worked on the first hardware contact.
+
+### Oracle coverage and the chi_square measurement
+
+All five assertion oracles were exercised on `ibm_fez`. Four are in the gating
+hardware examples: `distribution_tvd` and `hellinger_fidelity` (Bell, GHZ),
+`allowed_states` (all three), `state_probability` (Grover, on `11`). The fifth,
+`chi_square`, is excluded from the gating examples and was instead measured by the
+non-gating `bell-state-hardware-oracle-coverage` diagnostic (job
+`d8l592rqv2lc738621eg`, 4096 shots, counts `00`: 1779, `11`: 1764, `10`: 304,
+`01`: 249). On that single run the four distance/structural oracles passed
+(TVD 0.1350, fidelity 0.8650, leakage 0.1350, P(`00`) 0.4343) while `chi_square`
+returned statistic 1.5e17, dof 3, p-value 0.0000.
+
+That divergence is the reason `chi_square` is simulator-only, and it is mechanical,
+not a tuning artifact. The ideal Bell expected distribution `{00: 0.5, 11: 0.5}`
+assigns probability 0 to the error states `01` and `10`. Pearson's statistic sums
+`(observed - expected)^2 / expected` per basis state; `chi_square_statistic` floors
+the expected count at `_MIN_EXPECTED = 1e-12` to stay finite, so each of the 553
+shots that leaked into `01`/`10` contributes on the order of `observed^2 / 1e-12`,
+driving the statistic to ~1.5e17 and the p-value to 0. Against an ideal expected
+distribution whose support excludes the device's error states, *any* leakage forces
+rejection. TVD, Hellinger fidelity, and support leakage degrade gracefully on the
+same counts because they measure distance or overlap, not a variance-normalised
+deviation with a near-zero denominator. The fix for a chi_square hardware gate would
+be a noise-aware expected distribution with nonzero mass on the error states (a
+device error model), which is out of scope for v0.2; the distance and structural
+oracles are the correct hardware gates.
