@@ -123,7 +123,22 @@ class IBMRuntimeBackend(Backend):
         )
 
         if self.name:
-            backend = service.backend(self.name)
+            try:
+                backend = service.backend(self.name)
+            except Exception as exc:
+                # A pinned device that is not visible to this account/instance (a
+                # different plan, region, or instance exposes a different device set)
+                # otherwise fails with an opaque lookup error. List what is reachable
+                # so the fix is obvious, and point at the least_busy default.
+                available = sorted(
+                    b.name
+                    for b in service.backends(operational=True, simulator=False)
+                )
+                raise BackendUnavailableError(
+                    f"device {self.name!r} is not available to this account; "
+                    f"reachable real devices: {available or '(none operational)'}. "
+                    "Omit backend.name to use least_busy, or pick one of the above."
+                ) from exc
         else:
             backend = service.least_busy(operational=True, simulator=False)
 

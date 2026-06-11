@@ -1,0 +1,54 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-hardware-oracle-coverage
+  description: >-
+    DIAGNOSTIC, not a gate. Exercises ALL FIVE oracles on a real QPU against one
+    Bell circuit so every assertion type has at least one hardware data point.
+    chi_square is included here ONLY to measure its behaviour on hardware: at
+    thousands of shots it over-rejects under coherent device noise, so it is
+    EXPECTED to fail and is kept out of the gating hardware examples. Run this
+    manually (it is excluded from the gating loop); read the chi_square p-value
+    from the JSON report. Requires an IBM token (SHOTGATE_IBM_TOKEN).
+  labels:
+    suite: diagnostic
+    qubits: "2"
+    target: qpu
+
+defaults:
+  backend:
+    provider: ibm
+    shots: 4096
+    # name omitted on purpose: least_busy is the portable default. Pin a device
+    # only for reproducibility, and only one your account can actually reach.
+    # options:
+    #   instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/<account>:<id>::"
+
+jobs:
+  - name: bell-pair-all-oracles
+    circuit:
+      format: qasm2
+      path: bell.qasm
+    assertions:
+      # Distance-based, noise-tolerant.
+      - type: distribution_tvd
+        expected: { "00": 0.5, "11": 0.5 }
+        max_distance: 0.15
+      - type: hellinger_fidelity
+        expected: { "00": 0.5, "11": 0.5 }
+        min_fidelity: 0.85
+      # Structural leakage budget.
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.15
+      # Marginal probability window for |00> (covered on Grover for |11>; here on
+      # the Bell circuit too, for completeness).
+      - type: state_probability
+        state: "00"
+        min: 0.35
+        max: 0.65
+      # EXPECTED TO FAIL on hardware: chi_square over-rejects at high shot counts
+      # under coherent device noise. Present here to MEASURE that, not to gate.
+      - type: chi_square
+        expected: { "00": 0.5, "11": 0.5 }
+        significance: 0.01
