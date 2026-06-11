@@ -1,0 +1,40 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: ghz-state-hardware
+  description: >-
+    3-qubit GHZ gate with NOISE-TOLERANT thresholds for execution on a real QPU.
+    Requires an IBM token (SHOTGATE_IBM_TOKEN). The thresholds follow
+    docs/hardware-validation.md section 4: chi_square is omitted on hardware
+    because it over-rejects under coherent device noise at thousands of shots.
+  labels:
+    suite: hardware
+    qubits: "3"
+    target: qpu
+
+defaults:
+  backend:
+    provider: ibm
+    shots: 4096
+    # name: ibm_fez   # pin a device, or omit to use least_busy
+    # options:
+    #   instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/<account>:<id>::"
+
+jobs:
+  - name: ghz-3q-qpu
+    circuit:
+      format: qasm2
+      path: ghz.qasm
+    assertions:
+      # A 3-qubit GHZ accumulates two CX errors plus readout on three qubits,
+      # so the distance budget is wider than the Bell gate.
+      - type: distribution_tvd
+        expected: { "000": 0.5, "111": 0.5 }
+        max_distance: 0.20
+      - type: hellinger_fidelity
+        expected: { "000": 0.5, "111": 0.5 }
+        min_fidelity: 0.80
+      # Ideal GHZ only occupies the all-0 / all-1 corners; bound the spill.
+      - type: allowed_states
+        states: ["000", "111"]
+        max_leakage: 0.20

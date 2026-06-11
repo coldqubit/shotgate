@@ -1,0 +1,36 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: grover-2q-hardware
+  description: >-
+    Algorithmic correctness gate on a real QPU with NOISE-TOLERANT thresholds:
+    one Grover iteration must still make the marked state |11> dominate, even
+    under gate and readout error. Requires an IBM token (SHOTGATE_IBM_TOKEN).
+    Thresholds follow docs/hardware-validation.md section 4.
+  labels:
+    suite: hardware
+    qubits: "2"
+    target: qpu
+
+defaults:
+  backend:
+    provider: ibm
+    shots: 4096
+    # name: ibm_fez   # pin a device, or omit to use least_busy
+    # options:
+    #   instance: "crn:v1:bluemix:public:quantum-computing:us-east:a/<account>:<id>::"
+
+jobs:
+  - name: grover-mark-11-qpu
+    circuit:
+      format: qasm2
+      path: grover.qasm
+    assertions:
+      # On an ideal simulator P(|11>) == 1; on hardware the marked state must
+      # still clearly dominate the other three outcomes combined.
+      - type: state_probability
+        state: "11"
+        min: 0.70
+      - type: allowed_states
+        states: ["11"]
+        max_leakage: 0.30

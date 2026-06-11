@@ -1,0 +1,88 @@
+name: hardware-validation
+
+# Run the hardware example gates on a REAL IBM QPU. Manual dispatch only: it
+# consumes Open Plan QPU minutes and can queue. The shotgate package under test
+# comes from PyPI; the workflows and circuits come from this checkout.
+#
+# Requires the repository secret SHOTGATE_IBM_TOKEN (an IBM Quantum Platform API
+# key). The account's single instance is auto-selected; no CRN is committed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "IBM device to pin (empty = least_busy)"
+        required: false
+        default: "ibm_fez"
+      shots:
+        description: "Shots per job"
+        required: false
+        default: "4096"
+      version:
+        description: "shotgate version from PyPI (empty = latest)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  qpu-gates:
+    name: hardware gates on ${{ inputs.device || 'least_busy' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
+      - name: Run hardware gates (bell, ghz, grover)
+        env:
+          SHOTGATE_IBM_TOKEN: ${{ secrets.SHOTGATE_IBM_TOKEN }}
+          DEVICE: ${{ inputs.device }}
+          SHOTS: ${{ inputs.shots }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p reports
+          podman run --rm \
+            -v "$PWD:/work:ro" -v "$PWD/reports:/reports" \
+            -e SHOTGATE_IBM_TOKEN -e DEVICE -e SHOTS \
+            -e REQUESTED_VERSION \
+            docker.io/library/python:3.12-slim bash -euc '
+              SPEC="shotgate[ibm]"
+              [ -n "$REQUESTED_VERSION" ] && SPEC="shotgate[ibm]==$REQUESTED_VERSION"
+              pip install -q --no-cache-dir "$SPEC"
+              pip show shotgate | sed -n "1,2p"
+
+              fail=0
+              for wf in bell-state-hardware ghz-state-hardware grover-2q-hardware; do
+                cp -r "/work/examples/${wf}" "/tmp/${wf}" && cd "/tmp/${wf}"
+                # Pin the requested device; the examples default to least_busy.
+                python /work/.github/scripts/pin-device.py workflow.yaml "$DEVICE"
+                echo "=== ${wf} ==="
+                shotgate run workflow.yaml --shots "$SHOTS" \
+                  --junit "/reports/${wf}.xml" \
+                  --json "/reports/${wf}.json" \
+                  --markdown "/reports/${wf}.md" || fail=1
+                cd /
+              done
+              exit "$fail"
+            '
+
+      - name: Publish step summary
+        if: always()
+        run: |
+          for md in reports/*.md; do
+            [ -f "$md" ] && cat "$md" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Upload QPU reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qpu-reports
+          path: reports/
