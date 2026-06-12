@@ -6,8 +6,11 @@ minutes. Section 1 uses Podman with no host Python; Section 2 uses a pip install
 
 ## Prerequisites
 
-- [Podman](https://podman.io/) 4+ (`podman --version`).
-- Optional: `qemu-system-x86_64` + `/dev/kvm` for the VM tier.
+You need only the tooling for the path you pick; Sections 1 and 2 are independent.
+
+- **Container path (Section 1):** [Podman](https://podman.io/) 4+ (`podman --version`).
+- **pip path (Section 2):** Python 3.10+ and `pip` (`python --version`).
+- Optional, for the VM tier (Section 6): `qemu-system-x86_64` + a writable `/dev/kvm`.
 - The example workflows from this repo (or your own).
 
 ## 1. Run your first gate (pull the image)
@@ -83,11 +86,20 @@ jobs:
         max: 0.55
 ```
 
-Validate then run it:
+Validate then run it. From the pip install (Section 2):
 
 ```bash
-make validate WORKFLOW=my-workflow.yaml      # schema check only
-make run      WORKFLOW=my-workflow.yaml      # execute + gate
+shotgate validate my-workflow.yaml      # schema check only
+shotgate run      my-workflow.yaml      # execute + gate
+```
+
+From the container instead, reuse the Section 1 invocation with your own file (swap
+`run` for `validate` for the schema-only check):
+
+```bash
+podman run --rm --userns=keep-id --user "$(id -u):$(id -g)" \
+  -v "$PWD:/work:Z" -w /work ghcr.io/coldqubit/shotgate:latest \
+  run my-workflow.yaml
 ```
 
 ## 5. Target real hardware (optional)

@@ -76,15 +76,15 @@ jobs: [
 $ shotgate run examples/bell-state/workflow.yaml
 ─────────────────────────── shotgate :: bell-state ───────────────────────────
  job: bell-pair · aer_simulator · 8192 shots
- ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
- ┃ Assertion                 ┃ Result ┃ Detail                                        ┃
- ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
- │ chi-square p >= 0.01      │  PASS  │ chi-square=0.410 dof=1 p-value=0.5220          │
- │ TVD <= 0.03               │  PASS  │ total variation distance 0.0043 (<= 0.03)     │
- │ fidelity >= 0.99          │  PASS  │ Hellinger fidelity 1.0000 (>= 0.99)           │
- │ leakage <= 0.0            │  PASS  │ support leakage 0.0000 (<= 0.0)               │
- │ P(00) >= 0.45 and <= 0.55 │  PASS  │ P(00) = 0.4957                                │
- └───────────────────────────┴────────┴───────────────────────────────────────────────┘
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃ Assertion                 ┃ Result ┃ Detail                                    ┃
+ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+ │ chi-square p >= 0.01      │  PASS  │ chi-square=0.410 dof=1 p-value=0.5220     │
+ │ TVD <= 0.03               │  PASS  │ total variation distance 0.0043 (<= 0.03) │
+ │ fidelity >= 0.99          │  PASS  │ Hellinger fidelity 1.0000 (>= 0.99)       │
+ │ leakage <= 0.0            │  PASS  │ support leakage 0.0000 (<= 0.0)           │
+ │ P(00) >= 0.45 and <= 0.55 │  PASS  │ P(00) = 0.4957                            │
+ └───────────────────────────┴────────┴───────────────────────────────────────────┘
  PASSED · 5/5 assertions · 0.214s
 ```
 

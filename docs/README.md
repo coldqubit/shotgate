@@ -1,5 +1,14 @@
 # shotgate documentation
 
+shotgate runs container-native CI/CD quality gates for quantum circuits: it executes a
+circuit on a simulator or a real quantum processing unit (QPU) and gates the pipeline on
+the *statistical* properties of the measured shot distribution (chi-square goodness-of-fit,
+total variation distance, Hellinger fidelity, support leakage) rather than on exact
+equality, which probabilistic output makes meaningless. New here? Read
+[Getting Started](getting-started.md) first, then the
+[Workflow Specification](workflow-spec.md) for the YAML schema and the
+[Assertion Catalog](assertions.md) for the oracles and how to set thresholds.
+
 | Document | What it covers |
 | --- | --- |
 | [Getting Started](getting-started.md) | Zero to a passing quantum gate with Podman. |
