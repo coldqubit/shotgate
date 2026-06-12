@@ -18,9 +18,11 @@ came out of those runs:
    on the same counts (TVD 0.1350, fidelity 0.8650, leakage 0.1350, P(`00`) 0.4343).
    The ideal expected distribution `{00: 0.5, 11: 0.5}` assigns probability 0 to
    the error states `01`/`10`; the implementation floors expected counts at
-   `_MIN_EXPECTED = 1e-12` to keep the statistic finite, so each of the 553 leaked
-   shots contributes on the order of `observed^2 / 1e-12`. Against an ideal support,
-   any device leakage forces rejection regardless of thresholds.
+   `_MIN_EXPECTED = 1e-12` to keep the statistic finite, so each error state
+   contributes `observed^2 / 1e-12` (the 304 and 249 counts in `10`/`01` sum to about
+   `1.5e17`, a magnitude set by the floor, not the data). Against an ideal support,
+   any device leakage forces rejection regardless of thresholds; the rejection is
+   floor-independent even though the statistic's magnitude is not.
 
 ## Decision
 

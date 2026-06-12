@@ -86,9 +86,10 @@ podman run --rm -e SHOTGATE_IBM_TOKEN -v "$PWD:/work:Z" -w /work \
 
 Per example, the simulator profile is tight; the **hardware profile** is what should pass
 on a healthy current-generation device. Treat these as starting points and tighten once a
-device baseline is measured. `chi_square` is intentionally **dropped on hardware**: with
-thousands of shots it over-rejects under coherent device error; use distance/fidelity/
-structural oracles instead.
+device baseline is measured. `chi_square` is intentionally **dropped on hardware**: the
+ideal expected distribution assigns zero probability to the device's error states, so any
+leakage forces rejection (mechanism in section 9); use distance/fidelity/structural
+oracles instead.
 
 | Example | Oracle | Simulator (tight) | Hardware (noise-aware) |
 | --- | --- | --- | --- |
@@ -212,11 +213,13 @@ That divergence is the reason `chi_square` is simulator-only, and it is mechanic
 not a tuning artifact. The ideal Bell expected distribution `{00: 0.5, 11: 0.5}`
 assigns probability 0 to the error states `01` and `10`. Pearson's statistic sums
 `(observed - expected)^2 / expected` per basis state; `chi_square_statistic` floors
-the expected count at `_MIN_EXPECTED = 1e-12` to stay finite, so each of the 553
-shots that leaked into `01`/`10` contributes on the order of `observed^2 / 1e-12`,
-driving the statistic to ~1.5e17 and the p-value to 0. Against an ideal expected
-distribution whose support excludes the device's error states, *any* leakage forces
-rejection. TVD, Hellinger fidelity, and support leakage degrade gracefully on the
+the expected count at `_MIN_EXPECTED = 1e-12` to stay finite, so each error state
+contributes `observed^2 / 1e-12`: the `10` and `01` outcomes (304 and 249 counts, 553
+of 4096 shots) contribute `(304^2 + 249^2) / 1e-12`, about 1.5e17, driving the p-value
+to 0. That magnitude is set by the `1e-12` floor, not by the data; the rejection itself
+is floor-independent, since 553 shots landing on outcomes the ideal model forbids send
+the p-value to 0 for any reasonable floor. TVD, Hellinger fidelity, and support
+leakage degrade gracefully on the
 same counts because they measure distance or overlap, not a variance-normalised
 deviation with a near-zero denominator. The fix for a chi_square hardware gate would
 be a noise-aware expected distribution with nonzero mass on the error states (a
