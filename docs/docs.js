@@ -49,8 +49,60 @@
     return n;
   }
 
+  // GitHub-compatible heading slugs: lowercase, drop markdown emphasis marks,
+  // keep word chars (underscores included, so ibm_fez stays ibm_fez), collapse
+  // every other run to a single hyphen, trim. Matches the anchors GitHub mints
+  // for the same docs/*.md headings, so deep links are portable both ways.
   function slugify(text) {
-    return text.toLowerCase().replace(/[`*_]/g, '').replace(/[^\wÀ-￿]+/g, '-').replace(/^-+|-+$/g, '');
+    return text.toLowerCase().replace(/[`*]/g, '').replace(/[^\wÀ-￿]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  var BAR_OFFSET = 72; // sticky docbar (60px) + a little breathing room
+
+  // Resolve a heading by id, tolerant of legacy/variant anchors: if the exact id
+  // is gone, match ignoring underscore/hyphen differences so older shared links
+  // still land (e.g. an old ibmfez slug now minted as ibm_fez).
+  function findAnchor(anchor) {
+    var t = document.getElementById(anchor);
+    if (t) return t;
+    var norm = anchor.replace(/[_-]+/g, '-');
+    var all = $article.querySelectorAll('[id]');
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].id.replace(/[_-]+/g, '-') === norm) return all[i];
+    }
+    return null;
+  }
+
+  // Scroll a heading to just below the sticky bar. Uses an absolute window
+  // offset rather than scrollIntoView(), which is unreliable under a sticky
+  // header. Returns true if the target was found.
+  function scrollToAnchor(anchor) {
+    if (!anchor) { window.scrollTo(0, 0); return true; }
+    var t = findAnchor(anchor);
+    if (t) {
+      var y = t.getBoundingClientRect().top + window.pageYOffset - BAR_OFFSET;
+      window.scrollTo(0, Math.max(0, y));
+    }
+    return !!t;
+  }
+
+  // Land a deep-link anchor and keep it landed through async reflow: the brand
+  // faces (IBM Plex) load after first paint and the mono is wide, so headings
+  // re-wrap and the target drifts. Re-scroll on a short settle sequence and on
+  // document.fonts.ready, each guarded against the user navigating away.
+  function landAnchor(slug) {
+    if (!pendingAnchor) { window.scrollTo(0, 0); return; }
+    scrollToAnchor(pendingAnchor);
+    [60, 180, 400].forEach(function (d) {
+      setTimeout(function () {
+        if (currentSlug === slug && pendingAnchor) scrollToAnchor(pendingAnchor);
+      }, d);
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        if (currentSlug === slug && pendingAnchor) scrollToAnchor(pendingAnchor);
+      });
+    }
   }
 
   function fetchDoc(file) {
@@ -182,7 +234,10 @@
       });
     }
     mermaidReady.then(function () {
-      window.mermaid.run({ nodes: nodes });
+      return window.mermaid.run({ nodes: nodes });
+    }).then(function () {
+      // diagrams change the page height; re-land any pending deep-link anchor
+      if (pendingAnchor) scrollToAnchor(pendingAnchor);
     }).catch(function () { /* the raw definition stays visible as text */ });
   }
 
@@ -260,17 +315,16 @@
   }
 
   var currentSlug = null;
+  var pendingAnchor = null;
 
   function route() {
     var r = parseHash();
     var doc = bySlug[r.slug] || DOCS[0];
+    pendingAnchor = r.anchor;
     document.body.classList.remove('nav-open');
     document.getElementById('nav-toggle').setAttribute('aria-expanded', 'false');
     if (doc.slug === currentSlug) {
-      if (r.anchor) {
-        var t = document.getElementById(r.anchor);
-        if (t) t.scrollIntoView();
-      }
+      scrollToAnchor(r.anchor);
       return;
     }
     currentSlug = doc.slug;
@@ -286,12 +340,7 @@
       process(doc);
       buildChrome(doc);
       buildToc();
-      if (r.anchor) {
-        var t = document.getElementById(r.anchor);
-        if (t) t.scrollIntoView();
-      } else {
-        window.scrollTo(0, 0);
-      }
+      landAnchor(doc.slug);
     }).catch(function (err) {
       if (currentSlug !== doc.slug) return;
       $article.innerHTML = '';
