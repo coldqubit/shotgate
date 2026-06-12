@@ -76,6 +76,14 @@ Notes & caveats:
   floored at a tiny epsilon to keep the statistic finite.)
 - Classical validity expects $E_x \gtrsim 5$ per category; with many categories and
   few shots, prefer `distribution_tvd`.
+- **Simulator-only as a hardware gate.** Declaring the *ideal* distribution as `expected`
+  puts zero probability on a real device's error states, so any leakage forces rejection
+  regardless of `significance`: on `ibm_fez` (Bell, 4096 shots) `chi_square` returned
+  p-value 0.0000 on counts whose TVD (0.1350) and fidelity (0.8650) passed noise-aware
+  gates. Gate hardware with the distance and structural oracles instead; mechanism and
+  measurements in the
+  [hardware baseline](hardware-validation.md#9-measured-baseline-ibm_fez-2026-06-11)
+  and [ADR-0006](adr/0006-hardware-oracle-policy.md).
 
 ---
 
@@ -123,13 +131,14 @@ and all-one corners; anything else is error/leakage.
 
 | Goal | Use |
 | --- | --- |
-| General "does the distribution match?" | `distribution_tvd` (default) + `chi_square` |
+| General "does the distribution match?" | `distribution_tvd` (default) + `chi_square` (simulator) |
 | Track closeness as one number over time | `hellinger_fidelity` |
 | Algorithm produces a specific answer | `state_probability` |
 | Forbid impossible outcomes / bound error | `allowed_states` |
 
-A robust suite combines a **distance** oracle, a **hypothesis test**, and a
-**structural** oracle, as the [Bell example](../examples/bell-state/workflow.yaml) does.
+Combine a **distance** oracle, a **hypothesis test**, and a **structural** oracle so
+that no single failure mode goes unmeasured, as the
+[Bell example](../examples/bell-state/workflow.yaml) does.
 
 ## Setting thresholds (statistical reality)
 
