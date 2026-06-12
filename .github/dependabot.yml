@@ -17,3 +17,11 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+
+  # The website's Pages deploy lives on the orphan `web` branch; keep its
+  # actions current too (main's github-actions entry only sees main).
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: web
+    schedule:
+      interval: weekly
