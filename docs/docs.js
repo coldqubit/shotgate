@@ -7,6 +7,14 @@
 (function () {
   'use strict';
 
+  // LaTeX math via KaTeX. The marked extension tokenizes $...$ / $$...$$ before
+  // the inline markdown rules, so multi-underscore formulas aren't mangled into
+  // emphasis and $ inside fenced code is left alone. Degrades to raw text if the
+  // CDN scripts fail to load (same posture as mermaid).
+  if (window.marked && typeof window.markedKatex === 'function') {
+    window.marked.use(window.markedKatex({ throwOnError: false }));
+  }
+
   var REPO = 'coldqubit/shotgate';
   var RAW = 'https://raw.githubusercontent.com/' + REPO + '/main/docs/';
   var BLOB = 'https://github.com/' + REPO + '/blob/main/docs/';
@@ -335,7 +343,14 @@
 
     fetchDoc(doc.file).then(function (md) {
       if (currentSlug !== doc.slug) return; // user navigated away mid-fetch
-      var html = window.marked.parse(md, { mangle: false, headerIds: false });
+      // Normalise single-line $$ ... $$ display math to canonical block form
+      // (delimiters on their own lines) so the KaTeX block tokenizer catches
+      // it; inline $...$ already renders. Safe here: $$ appears only in real
+      // display equations in these docs, never inside code fences.
+      var src = md.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, function (_, inner) {
+        return '\n\n$$\n' + inner + '\n$$\n\n';
+      });
+      var html = window.marked.parse(src, { mangle: false, headerIds: false });
       $article.innerHTML = window.DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
       process(doc);
       buildChrome(doc);
