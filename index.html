@@ -128,7 +128,7 @@
       <div class="sec-head">
         <span class="kicker"><span class="tick"></span>Assertion oracles</span>
         <h2>Statistics, not snapshots.</h2>
-        <p>Quantum output is probabilistic; exact-match testing is meaningless. Each oracle bounds a distribution property instead.</p>
+        <p>Quantum output is probabilistic; exact-match testing is meaningless. Each oracle bounds a distribution property, or the circuit's own structure, instead.</p>
       </div>
       <div class="oracles">
         <div class="card"><span class="sym">δ</span><h4>distribution_tvd</h4><p>Total variation distance between observed and expected counts, bounded above. Interpretable and shot-count agnostic.</p><div class="card-foot">max_distance: 0.03</div></div>
@@ -140,6 +140,8 @@
         <div class="card"><span class="sym">H</span><h4>shannon_entropy</h4><p>Shannon entropy of the measured distribution, held inside a min/max window (bits).</p><div class="card-foot">min: 0.9 · max: 1.1</div></div>
         <div class="card"><span class="sym">⟨Z⟩</span><h4>expectation_value</h4><p>Pauli-Z product expectation ⟨Z..Z⟩ in [-1, 1], via a window or a target. A Bell pair gives +1.</p><div class="card-foot">qubits: [0, 1] · min: 0.95</div></div>
         <div class="card"><span class="sym">▲</span><h4>most_frequent_outcome</h4><p>The modal measured outcome must be a given state, optionally above a probability. For single-answer algorithms.</p><div class="card-foot">state: 11 · min_probability: 0.7</div></div>
+        <div class="card"><span class="sym">≣</span><h4>circuit_depth</h4><p>Bound the authored circuit's depth in a min/max window. Static and output-independent: gated with no shots and no backend.</p><div class="card-foot">max: 50 · no execution</div></div>
+        <div class="card"><span class="sym">⊆</span><h4>gate_set</h4><p>Require the circuit to use only an allowed set of gate names (measurement and barriers are always permitted). Static, runs every commit.</p><div class="card-foot">allowed: [h, cx, rz, sx] · no execution</div></div>
       </div>
     </div>
   </section>
