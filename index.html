@@ -52,7 +52,7 @@
         <!-- values are static fallbacks; js/site.js re-syncs them from the repo -->
         <div class="hero-badges">
           <span class="badge" id="b-ci"><span class="k">CI</span><span class="v violet">podman</span></span>
-          <span class="badge" id="b-release"><span class="k">release</span><span class="v violet">v0.4.0</span></span>
+          <span class="badge" id="b-release"><span class="k">release</span><span class="v violet">v0.5.0</span></span>
           <span class="badge" id="b-license"><span class="k">license</span><span class="v blue">Apache-2.0</span></span>
           <span class="badge" id="b-python"><span class="k">python</span><span class="v blue">3.10+</span></span>
           <span class="badge" id="b-status"><span class="k">status</span><span class="v amber">alpha</span></span>
@@ -133,7 +133,7 @@
       <div class="oracles">
         <div class="card"><span class="sym">δ</span><h4>distribution_tvd</h4><p>Total variation distance between observed and expected counts, bounded above. Interpretable and shot-count agnostic.</p><div class="card-foot">max_distance: 0.03</div></div>
         <div class="card"><span class="sym">F</span><h4>hellinger_fidelity</h4><p>Classical fidelity between the observed and expected distributions, bounded below.</p><div class="card-foot">min_fidelity: 0.99</div></div>
-        <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit against the expected distribution; gate on a p-value vs. your significance level. Simulator-oriented, or hardware-capable with a readout_error model.</p><div class="card-foot">significance: 0.01 · readout-aware on hardware</div></div>
+        <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit against the expected distribution; gate on a p-value vs. your significance level. With readout_error: auto it runs plain on a simulator and auto-calibrates from the device on a QPU.</p><div class="card-foot">significance: 0.01 · readout_error: auto</div></div>
         <div class="card"><span class="sym">∉</span><h4>allowed_states</h4><p>Probability mass observed outside the allowed support set; catches states that should never appear.</p><div class="card-foot">max_leakage: 0.0</div></div>
         <div class="card"><span class="sym">P</span><h4>state_probability</h4><p>Marginal probability of one outcome, held inside a window. The simplest hardware-friendly gate.</p><div class="card-foot">min: 0.45 · max: 0.55</div></div>
         <div class="card"><span class="sym">D</span><h4>kl_divergence</h4><p>Kullback-Leibler divergence from the expected distribution, bounded above (bits). Simulator-oriented unless the expected is noise-aware.</p><div class="card-foot">max_divergence: 0.05</div></div>
