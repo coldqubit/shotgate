@@ -189,3 +189,43 @@ def test_most_frequent_outcome():
     )
     assert a.evaluate({"11": 70, "00": 30}, 100).passed is True
     assert a.evaluate({"11": 40, "00": 60}, 100).passed is False  # mode is 00
+
+
+# Real ibm_fez Bell diagnostic counts (docs/hardware-validation.md section 9).
+IBM_FEZ_BELL = {"00": 1779, "11": 1764, "10": 304, "01": 249}
+
+
+def test_chi_square_noise_aware_expected_gates_hardware_counts():
+    plain = ADAPTER.validate_python(
+        {"type": "chi_square", "expected": {"00": 0.5, "11": 0.5}, "significance": 0.01}
+    )
+    assert plain.evaluate(IBM_FEZ_BELL, 4096).passed is False  # p = 0 against ideal
+    aware = ADAPTER.validate_python(
+        {
+            "type": "chi_square",
+            "expected": {"00": 0.5, "11": 0.5},
+            "significance": 0.01,
+            "readout_error": {"p0": 0.07, "p1": 0.075},
+        }
+    )
+    res = aware.evaluate(IBM_FEZ_BELL, 4096)
+    assert res.passed is True
+    assert res.metrics["p_value"] > 0.01
+
+
+def test_kl_divergence_noise_aware_expected_is_finite_on_hardware_counts():
+    plain = ADAPTER.validate_python(
+        {"type": "kl_divergence", "expected": {"00": 0.5, "11": 0.5}, "max_divergence": 0.1}
+    )
+    assert plain.evaluate(IBM_FEZ_BELL, 4096).metrics["kl_divergence"] == math.inf
+    aware = ADAPTER.validate_python(
+        {
+            "type": "kl_divergence",
+            "expected": {"00": 0.5, "11": 0.5},
+            "max_divergence": 0.1,
+            "readout_error": {"p0": 0.07, "p1": 0.075},
+        }
+    )
+    res = aware.evaluate(IBM_FEZ_BELL, 4096)
+    assert math.isfinite(res.metrics["kl_divergence"])
+    assert res.passed is True

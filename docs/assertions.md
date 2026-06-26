@@ -84,6 +84,22 @@ Notes & caveats:
   measurements in the
   [hardware baseline](hardware-validation.md#9-measured-baseline-ibm_fez-2026-06-11)
   and [ADR-0006](adr/0006-hardware-oracle-policy.md).
+- **Making it hardware-capable with `readout_error`.** Supply a per-qubit readout
+  (assignment) error model and the oracle transforms `expected` through it before
+  comparing, giving the test nonzero mass on the device's error states. The same
+  `ibm_fez` Bell counts then pass: statistic $1.5\times10^{17}\to 5.51$, p-value
+  $0\to 0.138$ at `significance` 0.01. The parameters come from device calibration, not
+  the counts under test, so the gate stays an honest hypothesis test (see
+  [ADR-0010](adr/0010-noise-aware-expected-distribution.md)).
+
+  ```yaml
+  - type: chi_square
+    expected: { "00": 0.5, "11": 0.5 }     # the ideal, noiseless distribution
+    readout_error: { p0: 0.07, p1: 0.075 } # P(1|0), P(0|1) per qubit, from calibration
+    significance: 0.01
+  ```
+
+  The same `readout_error` block works on `kl_divergence`.
 
 ---
 

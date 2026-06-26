@@ -30,6 +30,7 @@ Distribution = Mapping[str, float]
 Counts = Mapping[str, int]
 
 __all__ = [
+    "apply_readout_error",
     "bhattacharyya_coefficient",
     "chi2_sf",
     "chi_square_statistic",
@@ -200,6 +201,40 @@ def most_frequent_outcome(counts: Counts) -> tuple[str, float]:
     probs = counts_to_probabilities(counts)
     state = min(probs, key=lambda k: (-probs[k], k))
     return state, probs[state]
+
+
+def apply_readout_error(expected: Distribution, p0: float, p1: float) -> dict[str, float]:
+    """Transform an ideal distribution through an independent per-qubit readout channel.
+
+    Given assignment errors ``P(measure 1 | prepared 0) = p0`` and
+    ``P(measure 0 | prepared 1) = p1`` on every qubit, returns the distribution actually
+    expected at the detector. Because the resulting distribution has nonzero mass on the
+    error states, it makes ``chi_square`` and ``kl_divergence`` usable as hardware gates:
+    the readout parameters come from device calibration, not from the measured counts.
+
+    All keys of ``expected`` must share one width (validated upstream); the cost is
+    ``O(|support| * 2^n)`` in the qubit count ``n``, so a guard rejects very wide states.
+    """
+    from itertools import product
+
+    expected = normalize(expected)
+    n = len(next(iter(expected)))
+    if n > 16:
+        raise ValueError(
+            f"apply_readout_error supports up to 16 qubits; got {n}-bit states"
+        )
+    measured_states = ["".join(bits) for bits in product("01", repeat=n)]
+    result: dict[str, float] = dict.fromkeys(measured_states, 0.0)
+    for true_state, p_true in expected.items():
+        for measured in measured_states:
+            prob = p_true
+            for true_bit, meas_bit in zip(true_state, measured, strict=True):
+                if true_bit == "0":
+                    prob *= (1.0 - p0) if meas_bit == "0" else p0
+                else:
+                    prob *= (1.0 - p1) if meas_bit == "1" else p1
+            result[measured] += prob
+    return result
 
 
 # --------------------------------------------------------------------------- #

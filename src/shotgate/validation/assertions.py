@@ -60,6 +60,20 @@ class AssertionResult:
     metrics: dict[str, float] = field(default_factory=dict)
 
 
+class ReadoutErrorSpec(BaseModel):
+    """A per-qubit readout (assignment) error model, declared from device calibration.
+
+    Used to make ``chi_square``/``kl_divergence`` noise-aware so they can gate on hardware:
+    the ideal ``expected`` distribution is transformed through this channel before
+    comparison, giving it nonzero mass on the device's error states. The parameters come
+    from the device's readout calibration, not from the measured counts.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    p0: float = Field(0.0, ge=0.0, le=1.0)  # P(measure 1 | prepared 0)
+    p1: float = Field(0.0, ge=0.0, le=1.0)  # P(measure 0 | prepared 1)
+
+
 class _BaseAssertion(BaseModel):
     """Common configuration shared by every assertion model."""
 
@@ -149,6 +163,7 @@ class ChiSquareAssertion(_BaseAssertion):
     type: Literal["chi_square"]
     expected: dict[str, float]
     significance: float = Field(0.05, gt=0.0, lt=1.0)
+    readout_error: ReadoutErrorSpec | None = None
 
     @field_validator("expected")
     @classmethod
@@ -159,15 +174,25 @@ class ChiSquareAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"chi-square p >= {self.significance}"
 
+    def _effective_expected(self) -> dict[str, float]:
+        if self.readout_error is None:
+            return self.expected
+        return metrics.apply_readout_error(
+            self.expected, self.readout_error.p0, self.readout_error.p1
+        )
+
     def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
-        statistic, dof, p_value = metrics.chi_square_test(counts, self.expected)
+        statistic, dof, p_value = metrics.chi_square_test(
+            counts, self._effective_expected()
+        )
         passed = p_value >= self.significance
+        suffix = " [noise-aware expected]" if self.readout_error is not None else ""
         return AssertionResult(
             type=self.type,
             label=self.display_label(),
             passed=passed,
             message=f"chi-square={statistic:.3f} dof={dof} p-value={p_value:.4f} "
-            f"({'>=' if passed else '<'} alpha={self.significance})",
+            f"({'>=' if passed else '<'} alpha={self.significance}){suffix}",
             metrics={
                 "statistic": statistic,
                 "dof": float(dof),
@@ -281,6 +306,7 @@ class KLDivergenceAssertion(_BaseAssertion):
     type: Literal["kl_divergence"]
     expected: dict[str, float]
     max_divergence: float = Field(0.05, ge=0.0)
+    readout_error: ReadoutErrorSpec | None = None
 
     @field_validator("expected")
     @classmethod
@@ -291,9 +317,16 @@ class KLDivergenceAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"KL <= {self.max_divergence}"
 
+    def _effective_expected(self) -> dict[str, float]:
+        if self.readout_error is None:
+            return self.expected
+        return metrics.apply_readout_error(
+            self.expected, self.readout_error.p0, self.readout_error.p1
+        )
+
     def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
-        divergence = metrics.kl_divergence(probs, self.expected)
+        divergence = metrics.kl_divergence(probs, self._effective_expected())
         passed = divergence <= self.max_divergence
         if math.isfinite(divergence):
             message = (
@@ -497,6 +530,7 @@ __all__ = [
     "HellingerFidelityAssertion",
     "KLDivergenceAssertion",
     "MostFrequentOutcomeAssertion",
+    "ReadoutErrorSpec",
     "ShannonEntropyAssertion",
     "StateProbabilityAssertion",
 ]

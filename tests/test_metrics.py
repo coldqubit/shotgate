@@ -137,3 +137,15 @@ def test_most_frequent_outcome_and_tie_break():
     assert prob == pytest.approx(0.7)
     # tie -> lexicographically smallest bitstring
     assert metrics.most_frequent_outcome({"11": 50, "00": 50})[0] == "00"
+
+
+def test_apply_readout_error_identity_and_mass_on_errors():
+    ideal = {"00": 0.5, "11": 0.5}
+    # No readout error -> identity (zero mass on the error states).
+    assert metrics.apply_readout_error(ideal, 0.0, 0.0) == pytest.approx(
+        {"00": 0.5, "01": 0.0, "10": 0.0, "11": 0.5}
+    )
+    # With readout error, the error states gain mass and the result stays a distribution.
+    noisy = metrics.apply_readout_error(ideal, 0.07, 0.075)
+    assert noisy["01"] > 0.0 and noisy["10"] > 0.0
+    assert sum(noisy.values()) == pytest.approx(1.0)

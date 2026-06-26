@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Noise-aware expected distributions: `chi_square` and `kl_divergence` can gate on
+  hardware (ADR-0010).** An optional `readout_error: { p0, p1 }` block transforms the ideal
+  `expected` through a calibration-derived per-qubit readout model, giving the test nonzero
+  mass on the device's error states. On the measured `ibm_fez` Bell counts this takes
+  `chi_square` from statistic 1.5e17 / p-value 0 to statistic 5.51 / p-value 0.138 (passes
+  at alpha 0.01); the readout parameters are declared from calibration, not fit to the
+  counts, so the gate stays honest. Partially lifts the ADR-0006 simulator-only policy.
 - **Declarative noise-model simulation on `local-aer` (ADR-0009).** A backend can carry a
   `noise` block (`depolarizing_1q`/`depolarizing_2q`/`readout_p0`/`readout_p1`) so the
   noise-aware `*-hardware` thresholds can be regression-tested in CI without a QPU. A
