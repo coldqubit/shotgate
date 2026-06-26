@@ -34,3 +34,8 @@ jobs:
       - type: allowed_states
         states: ["11"]
         max_leakage: 0.30
+      # The marked state must be the modal outcome (it dominates whenever the
+      # P(|11>) >= 0.70 gate above holds). Gives most_frequent_outcome a hardware
+      # data point on its natural use case (a single intended answer).
+      - type: most_frequent_outcome
+        state: "11"
