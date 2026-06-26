@@ -22,8 +22,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-and-core-tests:
-    name: lint + core tests
+  lint:
+    name: lint + types
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -34,22 +34,47 @@ jobs:
             docker.io/library/python:3.12-slim \
             public.ecr.aws/docker/library/python:3.12-slim
 
-      - name: ruff + mypy + core unit tests (containerized)
+      - name: ruff + mypy (containerized)
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
             docker.io/library/python:3.12-slim bash -euc "
               pip install -q -e '.[dev]'
               ruff check src tests
               mypy
-              pytest -q -m 'not integration' --junitxml=core-junit.xml
+            "
+
+  core-tests:
+    name: core unit tests (py ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    # The validation core is SDK-free, so the core suite runs across the declared
+    # Python support grid (requires-python >= 3.10) without a quantum SDK.
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            "docker.io/library/python:${{ matrix.python }}-slim" \
+            "public.ecr.aws/docker/library/python:${{ matrix.python }}-slim"
+
+      - name: core unit tests, SDK-free (containerized)
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            "docker.io/library/python:${{ matrix.python }}-slim" bash -euc "
+              pip install -q -e '.[dev]'
+              pytest -q -m 'not integration' --junitxml=core-junit-${{ matrix.python }}.xml
             "
 
       - name: Upload core test report
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: core-junit
-          path: core-junit.xml
+          name: core-junit-${{ matrix.python }}
+          path: core-junit-${{ matrix.python }}.xml
 
   image-and-integration:
     name: build image + integration + example gates
@@ -96,8 +121,16 @@ jobs:
             integration-junit.xml
 
   pip-consumer-path:
-    name: pip path (CLI + pytest plugin)
+    name: pip path (qiskit ${{ matrix.label }})
     runs-on: ubuntu-latest
+    # Exercise the consumer path against both ends of the declared qiskit range
+    # (qiskit>=1.2,<3): the supported floor and the latest 2.x.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { qiskit: "qiskit==1.2.*", label: "floor-1.2" }
+          - { qiskit: "qiskit<3", label: "latest-2.x" }
     steps:
       - uses: actions/checkout@v6
 
@@ -107,11 +140,12 @@ jobs:
             docker.io/library/python:3.12-slim \
             public.ecr.aws/docker/library/python:3.12-slim
 
-      - name: pip install and exercise the CLI and pytest plugin (containerized)
+      - name: pip install (pinned qiskit) and exercise the CLI and pytest plugin
         run: |
           podman run --rm -v "$PWD:/work:Z" -w /work \
             docker.io/library/python:3.12-slim bash -euc "
-              pip install -q '.[aer,dev]'
+              pip install -q '.[aer,dev]' '${{ matrix.qiskit }}'
+              python -c 'import qiskit; print(\"using qiskit\", qiskit.__version__)'
               # The pytest11 entry point must expose --shotgate after a pip install.
               pytest --help 2>/dev/null | grep -q -- '--shotgate'
               # CLI consumer path: gate a Bell workflow and emit a JUnit report.
@@ -128,7 +162,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: pip-path-junit
+          name: pip-path-junit-${{ matrix.label }}
           path: |
             cli-junit.xml
             plugin-junit.xml
