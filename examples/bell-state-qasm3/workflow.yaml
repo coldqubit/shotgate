@@ -1,0 +1,43 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-qasm3
+  description: >-
+    The Bell pair from the bell-state example, defined in OpenQASM 3 (inline)
+    instead of OpenQASM 2. Demonstrates the qasm3 circuit format; the qasm3 path
+    needs the qiskit-qasm3-import package, which the aer/ibm extras and the
+    published images include.
+  labels:
+    suite: smoke
+    format: qasm3
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 1234
+
+jobs:
+  - name: bell-pair
+    circuit:
+      format: qasm3
+      inline: |
+        OPENQASM 3.0;
+        include "stdgates.inc";
+        qubit[2] q;
+        bit[2] c;
+        h q[0];
+        cx q[0], q[1];
+        c = measure q;
+    assertions:
+      - type: distribution_tvd
+        expected: { "00": 0.5, "11": 0.5 }
+        max_distance: 0.03
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.0
+      - type: state_probability
+        state: "00"
+        min: 0.45
+        max: 0.55

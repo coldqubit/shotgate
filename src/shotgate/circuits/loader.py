@@ -49,8 +49,17 @@ def _parse_qasm(text: str, fmt: str) -> Any:
         )
     if fmt == "qasm3":
         from qiskit import qasm3
+        from qiskit.exceptions import MissingOptionalLibraryError
 
-        return qasm3.loads(text)
+        try:
+            return qasm3.loads(text)
+        except MissingOptionalLibraryError as exc:
+            raise RuntimeError(
+                "OpenQASM 3 parsing requires the 'qiskit-qasm3-import' package. "
+                "Install a backend extra that bundles it: "
+                "pip install 'shotgate[aer]' (or 'shotgate[ibm]'); the published "
+                "ghcr.io/coldqubit/shotgate images already include it."
+            ) from exc
     raise ValueError(f"unsupported circuit format: {fmt!r}")
 
 

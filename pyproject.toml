@@ -35,8 +35,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-aer = ["qiskit>=1.2,<3", "qiskit-aer>=0.15"]
-ibm = ["qiskit>=1.2,<3", "qiskit-ibm-runtime>=0.30"]
+aer = ["qiskit>=1.2,<3", "qiskit-aer>=0.15", "qiskit-qasm3-import>=0.5"]
+ibm = ["qiskit>=1.2,<3", "qiskit-ibm-runtime>=0.30", "qiskit-qasm3-import>=0.5"]
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",

@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+
+- **OpenQASM 3 circuits now load.** The `qasm3` circuit format was advertised in
+  the schema but failed at runtime: `qiskit.qasm3.loads` needs the
+  `qiskit-qasm3-import` package, which no extra declared. It is now a dependency of
+  the `aer` and `ibm` extras (and the published images), the loader raises an
+  actionable error if it is somehow absent, and a `bell-state-qasm3` example plus
+  loader tests cover the path.
+
 ## [0.2.2] - 2026-06-11
 
 ### Added
