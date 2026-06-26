@@ -262,3 +262,52 @@ def test_kl_divergence_noise_aware_expected_is_finite_on_hardware_counts():
     res = aware.evaluate(IBM_FEZ_BELL, 4096)
     assert math.isfinite(res.metrics["kl_divergence"])
     assert res.passed is True
+
+
+def test_readout_error_auto_parses_and_rejects_bad_string():
+    a = ADAPTER.validate_python(
+        {"type": "chi_square", "expected": {"00": 0.5, "11": 0.5}, "readout_error": "auto"}
+    )
+    assert a.readout_error == "auto"
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python(
+            {"type": "chi_square", "expected": {"00": 0.5}, "readout_error": "bogus"}
+        )
+
+
+def test_chi_square_auto_plain_on_sim_calibrated_on_device():
+    a = ADAPTER.validate_python(
+        {
+            "type": "chi_square",
+            "expected": {"00": 0.5, "11": 0.5},
+            "readout_error": "auto",
+            "significance": 0.01,
+        }
+    )
+    # No calibration (a noiseless simulator) -> ideal expected -> the plain test, which
+    # rejects these leaky counts. The message is NOT tagged noise-aware.
+    plain = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None)
+    assert plain.passed is False
+    assert "noise-aware" not in plain.message
+    # With the execution's readout calibration -> noise-aware expected -> passes.
+    cal = {"readout_calibration": {"p0": 0.07, "p1": 0.075, "source": "device-average"}}
+    aware = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=cal)
+    assert aware.passed is True
+    assert "device-average" in aware.message
+
+
+def test_kl_auto_falls_back_to_plain_without_calibration():
+    a = ADAPTER.validate_python(
+        {
+            "type": "kl_divergence",
+            "expected": {"00": 0.5, "11": 0.5},
+            "readout_error": "auto",
+            "max_divergence": 0.1,
+        }
+    )
+    assert a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None).metrics[
+        "kl_divergence"
+    ] == math.inf
+    cal = {"readout_calibration": {"p0": 0.07, "p1": 0.075}}
+    res = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=cal)
+    assert math.isfinite(res.metrics["kl_divergence"])

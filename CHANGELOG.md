@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **`readout_error: auto` for `chi_square` and `kl_divergence` (ADR-0013).** The oracle uses
+  the readout calibration the run actually had instead of a hand-written guess: the `ibm`
+  backend reads it from the device's published properties (averaged over the active qubits),
+  `local-aer` reports its `noise` block's readout parameters, and a noiseless simulator
+  reports none, so `auto` falls back to the plain test. One workflow then gates with the
+  plain `chi_square` on a simulator and the device-calibrated one on a QPU, with no
+  per-device editing. The `evaluate` contract gains an optional `backend_metadata` argument;
+  existing oracles ignore it.
+
 ## [0.4.0] - 2026-06-26
 
 ### Added

@@ -140,6 +140,7 @@ class Runner:
             )
             counts: dict[str, int] = {}
             run_shots = backend_spec.shots
+            bmeta: dict[str, Any] | None = None
             if requires_execution:
                 backend = get_backend(backend_spec)
                 result = backend.run(
@@ -147,6 +148,7 @@ class Runner:
                 )
                 counts = result.counts
                 run_shots = result.shots
+                bmeta = result.metadata
                 report.counts = result.counts
                 report.backend_name = result.backend_name
                 report.metrics["backend_metadata"] = result.metadata
@@ -154,7 +156,9 @@ class Runner:
                 report.metrics["executed"] = False
 
             outcomes = [
-                assertion.evaluate(counts, run_shots, circuit_metrics=cmetrics)
+                assertion.evaluate(
+                    counts, run_shots, circuit_metrics=cmetrics, backend_metadata=bmeta
+                )
                 for assertion in job.assertions
             ]
             report.assertions = outcomes

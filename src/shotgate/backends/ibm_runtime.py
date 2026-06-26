@@ -87,6 +87,42 @@ def extract_counts(pub_result: Any, register: str | None = None) -> dict[str, in
     return {str(k): int(v) for k, v in bit_array.get_counts().items()}
 
 
+def _device_readout_calibration(backend: Any, isa_circuit: Any) -> dict[str, Any] | None:
+    """Average per-qubit readout (assignment) error over the circuit's active physical
+    qubits, read from the device's published properties.
+
+    Lets a ``readout_error: auto`` oracle gate against the device's own calibration instead
+    of a guessed value. Returns ``None`` if properties are unavailable (e.g. a cloud
+    simulator). This is the device-averaged v1; a per-qubit version is future work.
+    """
+    try:
+        props = backend.properties()
+    except Exception:
+        props = None
+    if props is None:
+        return None
+    try:
+        qubits = list(isa_circuit.layout.final_index_layout(filter_ancillas=True))
+    except Exception:
+        qubits = list(range(int(getattr(isa_circuit, "num_qubits", 0))))
+    p0s: list[float] = []
+    p1s: list[float] = []
+    for q in qubits:
+        try:
+            p0s.append(float(props.qubit_property(q, "prob_meas1_prep0")[0]))  # P(1|0)
+            p1s.append(float(props.qubit_property(q, "prob_meas0_prep1")[0]))  # P(0|1)
+        except Exception:
+            continue
+    if not p0s or not p1s:
+        return None
+    return {
+        "p0": sum(p0s) / len(p0s),
+        "p1": sum(p1s) / len(p1s),
+        "qubits": qubits,
+        "source": "device-average",
+    }
+
+
 class IBMRuntimeBackend(Backend):
     provider = "ibm"
 
@@ -155,15 +191,20 @@ class IBMRuntimeBackend(Backend):
         # Robustly read counts from the named classical register(s) of the result.
         counts = extract_counts(pub_result, register=self.options.get("register"))
 
+        metadata: dict[str, Any] = {
+            "provider": self.provider,
+            "job_id": job.job_id(),
+            "channel": channel,
+            # seed is honored only on cloud simulators; ignored on real QPUs.
+            "seed_requested": seed,
+        }
+        calibration = _device_readout_calibration(backend, isa_circuit)
+        if calibration is not None:
+            metadata["readout_calibration"] = calibration
+
         return BackendResult(
             counts=counts,
             shots=shots,
             backend_name=backend.name,
-            metadata={
-                "provider": self.provider,
-                "job_id": job.job_id(),
-                "channel": channel,
-                # seed is honored only on cloud simulators; ignored on real QPUs.
-                "seed_requested": seed,
-            },
+            metadata=metadata,
         )

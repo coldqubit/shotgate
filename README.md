@@ -179,7 +179,7 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 
 | Type | Oracle | Use it for |
 | --- | --- | --- |
-| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; **simulator-only** (see catalog) |
+| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; plain on simulators, hardware-capable via `readout_error: auto` |
 | `distribution_tvd` | Total variation distance (TVD) ≤ bound | Default distribution check; interpretable, shot-count-agnostic |
 | `hellinger_fidelity` | Classical fidelity ≥ threshold | Fidelity tracking against an ideal distribution |
 | `state_probability` | Marginal P(state) in a window / ≈ target | Single-outcome amplitude checks (e.g. Grover) |

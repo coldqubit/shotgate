@@ -65,15 +65,16 @@ jobs:
       - type: shannon_entropy
         min: 0.8
         max: 1.5
-      # Noise-aware variants: a per-qubit readout model gives the ideal expected
-      # nonzero mass on the error states, so these CAN pass on hardware (contrast the
-      # plain chi_square above). The readout parameters are a device characteristic,
-      # not fit to the counts.
+      # Noise-aware variants with readout_error: auto. The oracle uses the readout
+      # calibration the run actually had (read from the device's published properties),
+      # giving the ideal expected nonzero mass on the error states, so these CAN pass on
+      # hardware (contrast the plain chi_square above). On a noiseless simulator there is
+      # no calibration, so auto falls back to the plain test.
       - type: chi_square
         expected: { "00": 0.5, "11": 0.5 }
-        readout_error: { p0: 0.07, p1: 0.07 }
+        readout_error: auto
         significance: 0.01
       - type: kl_divergence
         expected: { "00": 0.5, "11": 0.5 }
-        readout_error: { p0: 0.07, p1: 0.07 }
+        readout_error: auto
         max_divergence: 0.1

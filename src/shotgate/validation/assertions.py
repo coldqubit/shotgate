@@ -74,6 +74,39 @@ class ReadoutErrorSpec(BaseModel):
     p1: float = Field(0.0, ge=0.0, le=1.0)  # P(measure 0 | prepared 1)
 
 
+def _noise_aware_expected(
+    expected: dict[str, float],
+    readout_error: ReadoutErrorSpec | Literal["auto"] | None,
+    backend_metadata: dict[str, Any] | None,
+) -> tuple[dict[str, float], str]:
+    """Resolve the expected distribution a goodness-of-fit oracle compares against.
+
+    - ``None``: the ideal ``expected`` unchanged (the plain test).
+    - a ``ReadoutErrorSpec``: the ideal transformed through that fixed readout model.
+    - ``"auto"``: use the readout calibration the execution actually had (attached to
+      ``backend_metadata['readout_calibration']`` by the backend). A noiseless simulator
+      reports no calibration, so this falls back to the ideal distribution, i.e. the plain
+      test; a real device uses its own published readout numbers. This is what lets a single
+      workflow gate with the plain `chi_square` on a simulator and the calibrated one on a
+      QPU, with no per-device editing.
+
+    Returns ``(effective_expected, note)``; ``note`` annotates the result message.
+    """
+    if readout_error is None:
+        return expected, ""
+    if readout_error == "auto":
+        cal = (backend_metadata or {}).get("readout_calibration")
+        if not cal:
+            return expected, ""
+        eff = metrics.apply_readout_error(expected, float(cal["p0"]), float(cal["p1"]))
+        return eff, (
+            f" [noise-aware: {cal.get('source', 'device')} "
+            f"p0={float(cal['p0']):.3f} p1={float(cal['p1']):.3f}]"
+        )
+    eff = metrics.apply_readout_error(expected, readout_error.p0, readout_error.p1)
+    return eff, " [noise-aware expected]"
+
+
 class _BaseAssertion(BaseModel):
     """Common configuration shared by every assertion model."""
 
@@ -118,6 +151,7 @@ class DistributionTVDAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         distance = metrics.total_variation_distance(probs, self.expected)
@@ -153,6 +187,7 @@ class HellingerFidelityAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         fidelity = metrics.hellinger_fidelity(probs, self.expected)
@@ -178,7 +213,7 @@ class ChiSquareAssertion(_BaseAssertion):
     type: Literal["chi_square"]
     expected: dict[str, float]
     significance: float = Field(0.05, gt=0.0, lt=1.0)
-    readout_error: ReadoutErrorSpec | None = None
+    readout_error: ReadoutErrorSpec | Literal["auto"] | None = None
 
     @field_validator("expected")
     @classmethod
@@ -189,24 +224,18 @@ class ChiSquareAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"chi-square p >= {self.significance}"
 
-    def _effective_expected(self) -> dict[str, float]:
-        if self.readout_error is None:
-            return self.expected
-        return metrics.apply_readout_error(
-            self.expected, self.readout_error.p0, self.readout_error.p1
-        )
-
     def evaluate(
         self,
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
-        statistic, dof, p_value = metrics.chi_square_test(
-            counts, self._effective_expected()
+        expected, suffix = _noise_aware_expected(
+            self.expected, self.readout_error, backend_metadata
         )
+        statistic, dof, p_value = metrics.chi_square_test(counts, expected)
         passed = p_value >= self.significance
-        suffix = " [noise-aware expected]" if self.readout_error is not None else ""
         return AssertionResult(
             type=self.type,
             label=self.display_label(),
@@ -269,6 +298,7 @@ class StateProbabilityAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         prob = metrics.state_probability(counts, self.state)
         passed = True
@@ -312,6 +342,7 @@ class AllowedStatesAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         leakage = metrics.support_leakage(counts, self.states)
         passed = leakage <= self.max_leakage
@@ -336,7 +367,7 @@ class KLDivergenceAssertion(_BaseAssertion):
     type: Literal["kl_divergence"]
     expected: dict[str, float]
     max_divergence: float = Field(0.05, ge=0.0)
-    readout_error: ReadoutErrorSpec | None = None
+    readout_error: ReadoutErrorSpec | Literal["auto"] | None = None
 
     @field_validator("expected")
     @classmethod
@@ -347,26 +378,23 @@ class KLDivergenceAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"KL <= {self.max_divergence}"
 
-    def _effective_expected(self) -> dict[str, float]:
-        if self.readout_error is None:
-            return self.expected
-        return metrics.apply_readout_error(
-            self.expected, self.readout_error.p0, self.readout_error.p1
-        )
-
     def evaluate(
         self,
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
-        divergence = metrics.kl_divergence(probs, self._effective_expected())
+        expected, note = _noise_aware_expected(
+            self.expected, self.readout_error, backend_metadata
+        )
+        divergence = metrics.kl_divergence(probs, expected)
         passed = divergence <= self.max_divergence
         if math.isfinite(divergence):
             message = (
                 f"KL divergence {divergence:.4f} bits "
-                f"({'<=' if passed else '>'} {self.max_divergence})"
+                f"({'<=' if passed else '>'} {self.max_divergence}){note}"
             )
         else:
             message = (
@@ -414,6 +442,7 @@ class ShannonEntropyAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         entropy = metrics.shannon_entropy(counts)
         passed = True
@@ -483,6 +512,7 @@ class ExpectationValueAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         value = metrics.z_expectation(counts, self.qubits)
         passed = True
@@ -528,6 +558,7 @@ class MostFrequentOutcomeAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         state, prob = metrics.most_frequent_outcome(counts)
         passed = metrics.clean_key(state) == metrics.clean_key(self.state)
@@ -584,6 +615,7 @@ class CircuitDepthAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         if not circuit_metrics or "depth" not in circuit_metrics:
             return AssertionResult(
@@ -628,6 +660,7 @@ class GateSetAssertion(_BaseAssertion):
         counts: dict[str, int],
         shots: int,
         circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         if not circuit_metrics or "operations" not in circuit_metrics:
             return AssertionResult(

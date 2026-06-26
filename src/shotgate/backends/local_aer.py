@@ -78,14 +78,27 @@ class LocalAerBackend(Backend):
         result = simulator.run(compiled, shots=shots, seed_simulator=seed).result()
         counts = {str(k): int(v) for k, v in result.get_counts().items()}
 
+        metadata: dict[str, Any] = {
+            "provider": self.provider,
+            "method": simulator.options.get("method", "automatic"),
+            "seed": seed,
+            "noisy": noise_model is not None,
+        }
+        # Expose the simulated readout error so `readout_error: auto` oracles can use it
+        # (a noiseless run reports none, so `auto` falls back to the ideal expected).
+        if noise:
+            p0 = float(noise.get("readout_p0", 0.0))
+            p1 = float(noise.get("readout_p1", 0.0))
+            if p0 > 0.0 or p1 > 0.0:
+                metadata["readout_calibration"] = {
+                    "p0": p0,
+                    "p1": p1,
+                    "source": "noise-model",
+                }
+
         return BackendResult(
             counts=counts,
             shots=shots,
             backend_name=self.name or "aer_simulator",
-            metadata={
-                "provider": self.provider,
-                "method": simulator.options.get("method", "automatic"),
-                "seed": seed,
-                "noisy": noise_model is not None,
-            },
+            metadata=metadata,
         )

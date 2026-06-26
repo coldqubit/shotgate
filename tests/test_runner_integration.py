@@ -227,3 +227,38 @@ def test_structural_only_job_skips_execution():
     assert "backend_metadata" not in job.metrics
     assert job.counts == {}
     assert job.metrics["depth"] == 3  # h, cx, measure
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_chi_square_auto_uses_noise_block_calibration():
+    from shotgate.config import LoadedWorkflow, parse_workflow
+
+    doc = {
+        "apiVersion": "shotgate.dev/v1alpha1",
+        "kind": "QuantumWorkflow",
+        "metadata": {"name": "auto"},
+        "jobs": [
+            {
+                "name": "bell",
+                "circuit": {"format": "qasm2", "inline": BELL_QASM2},
+                "backend": {
+                    "provider": "local-aer",
+                    "shots": 8192,
+                    "seed": 7,
+                    "noise": {"readout_p0": 0.06, "readout_p1": 0.07},
+                },
+                "assertions": [
+                    {
+                        "type": "chi_square",
+                        "expected": {"00": 0.5, "11": 0.5},
+                        "readout_error": "auto",
+                        "significance": 0.01,
+                    }
+                ],
+            }
+        ],
+    }
+    a = Runner(LoadedWorkflow(parse_workflow(doc), EXAMPLES)).run().jobs[0].assertions[0]
+    # auto pulled the simulated readout calibration from the noise block and passed.
+    assert a.passed
+    assert "noise-model" in a.message

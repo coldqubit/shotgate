@@ -100,6 +100,21 @@ Notes & caveats:
   ```
 
   The same `readout_error` block works on `kl_divergence`.
+- **`readout_error: auto` (recommended for portable workflows).** Instead of writing the
+  readout numbers by hand, let the oracle read the calibration the run actually used. The
+  backend attaches it: the `ibm` backend reads it from the device's published properties
+  (averaged over the active qubits), and `local-aer` reports its `noise` block's readout
+  parameters. A **noiseless simulator** reports no calibration, so `auto` falls back to the
+  ideal `expected`, i.e. the **plain** test. So one workflow gates with the plain
+  `chi_square` on a simulator and the device-calibrated one on a QPU, with no per-device
+  editing (see [ADR-0013](adr/0013-auto-calibrated-readout.md)).
+
+  ```yaml
+  - type: chi_square
+    expected: { "00": 0.5, "11": 0.5 }
+    readout_error: auto      # ideal on a noiseless sim; device calibration on a QPU
+    significance: 0.01
+  ```
 
 ---
 
