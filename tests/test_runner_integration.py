@@ -22,7 +22,9 @@ EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
 
 @pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
-@pytest.mark.parametrize("example", ["bell-state", "ghz-state", "grover-2q"])
+@pytest.mark.parametrize(
+    "example", ["bell-state", "ghz-state", "grover-2q", "bell-state-observables"]
+)
 def test_example_workflows_pass(example: str):
     loaded = load_workflow(EXAMPLES / example / "workflow.yaml")
     report = Runner(loaded).run()

@@ -184,6 +184,10 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 | `hellinger_fidelity` | Classical fidelity ≥ threshold | Fidelity tracking against an ideal distribution |
 | `state_probability` | Marginal P(state) in a window / ≈ target | Single-outcome amplitude checks (e.g. Grover) |
 | `allowed_states` | Probability mass outside support ≤ budget | Structural/leakage guarantees (e.g. GHZ corners) |
+| `kl_divergence` | KL D(obs‖exp) ≤ bound (bits) | Information-theoretic distance; **simulator-only** (zero-support) |
+| `shannon_entropy` | Entropy in a min/max window (bits) | Assert the intended randomness/concentration |
+| `expectation_value` | `<Z..Z>` in [-1, 1] via window / target | Correlation/parity observable tracking |
+| `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer (e.g. Grover) |
 
 Full reference: [`docs/assertions.md`](docs/assertions.md). The statistical core is pure Python
 (no SciPy), including a from-scratch χ² survival function via the regularised incomplete gamma

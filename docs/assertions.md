@@ -127,13 +127,101 @@ and all-one corners; anything else is error/leakage.
 
 ---
 
+## `kl_divergence`: Kullback-Leibler Divergence
+
+$$ D(p \,\|\, q) = \sum_{x} p(x)\,\log_2 \frac{p(x)}{q(x)} \ \ge 0 $$
+
+Passes when $D(p \,\|\, q) \le$ `max_divergence` (in bits). $0$ when $p = q$;
+asymmetric (it weights by the **observed** distribution $p$).
+
+```yaml
+- type: kl_divergence
+  expected: { "00": 0.5, "11": 0.5 }
+  max_divergence: 0.05
+```
+
+Like `chi_square`, KL **diverges to infinity** when `expected` assigns probability 0
+to an outcome that was observed (leakage), so it is **simulator-oriented** unless
+`expected` carries nonzero mass on the device's error states. A diverged value is
+reported and serialised as JSON `null`.
+
+---
+
+## `shannon_entropy`: Distribution Entropy
+
+$$ H(p) = -\sum_{x} p(x)\,\log_2 p(x) \ \in [0, \log_2|\mathcal{D}|] $$
+
+Bounds the entropy of the measured distribution, in bits: $0$ for a deterministic
+outcome, $1.0$ for a balanced Bell pair, $2.0$ for a uniform 2-bit distribution.
+
+```yaml
+- type: shannon_entropy
+  min: 0.9
+  max: 1.1
+```
+
+Passes when the entropy lies within the provided `min`/`max` window (at least one is
+required). Useful to assert a circuit produces the intended amount of randomness or
+concentration without naming exact outcomes.
+
+---
+
+## `expectation_value`: Pauli-Z Product Expectation
+
+$$ \langle Z_{q_0} Z_{q_1} \cdots \rangle = \sum_{x} p(x)\,(-1)^{\sum_i x_{q_i}} \ \in [-1, 1] $$
+
+Reads a Pauli-Z product expectation off the computational-basis counts as a parity
+expectation. Bit order is little-endian (qubit $q$ is character $n-1-q$ of a width-$n$
+key). A perfect Bell pair gives $\langle Z_0 Z_1 \rangle = +1$; an anti-correlated
+state gives $-1$.
+
+```yaml
+# window form
+- type: expectation_value
+  qubits: [0, 1]
+  min: 0.95
+# target form
+- type: expectation_value
+  qubits: [0, 1]
+  equals: 1.0
+  tolerance: 0.05
+```
+
+Passes when all provided constraints hold (`min` $\le \langle Z\cdots\rangle \le$ `max`,
+and/or $|\langle Z\cdots\rangle - \text{equals}| \le$ `tolerance`; at least one is
+required). Z-basis only; arbitrary-Pauli and entanglement-witness observables need
+basis-change circuits and are future work (see ADR-0008).
+
+---
+
+## `most_frequent_outcome`: Modal Outcome
+
+Asserts the **modal** measured bitstring (highest count) is a given state, optionally
+above a probability.
+
+```yaml
+- type: most_frequent_outcome
+  state: "11"
+  min_probability: 0.7
+```
+
+Passes when the modal outcome equals `state` (and its probability $\ge$
+`min_probability` if given). Ties are broken by the lexicographically smallest
+bitstring for determinism. Ideal for algorithms with a single intended answer (e.g.
+Grover's marked state).
+
+---
+
 ## Choosing oracles
 
 | Goal | Use |
 | --- | --- |
 | General "does the distribution match?" | `distribution_tvd` (default) + `chi_square` (simulator) |
 | Track closeness as one number over time | `hellinger_fidelity` |
-| Algorithm produces a specific answer | `state_probability` |
+| Information-theoretic distance to expected | `kl_divergence` (simulator, like `chi_square`) |
+| Algorithm produces a specific answer | `state_probability` or `most_frequent_outcome` |
+| Track a correlation/parity observable | `expectation_value` ($\langle Z\cdots\rangle$) |
+| Assert the right amount of randomness | `shannon_entropy` |
 | Forbid impossible outcomes / bound error | `allowed_states` |
 
 Combine a **distance** oracle, a **hypothesis test**, and a **structural** oracle so

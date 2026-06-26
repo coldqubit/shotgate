@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Four new assertion oracles (5 -> 9), see ADR-0008:** `kl_divergence` (bound the
+  Kullback-Leibler divergence to an expected distribution, in bits; simulator-oriented
+  like `chi_square`), `shannon_entropy` (bound the distribution entropy in a min/max
+  window), `expectation_value` (bound the Pauli-Z product `<Z..Z>` in [-1, 1] via a
+  window or a target), and `most_frequent_outcome` (assert the modal state, optionally
+  above a probability). All are counts-based and keep the validation core SDK-free. A
+  `bell-state-observables` example exercises the new observable oracles. The JSON reporter
+  now serialises a non-finite metric (a diverged KL) as `null` so output stays valid.
+
 ### Changed
 
 - **JUnit reports carry `timestamp` and `skipped`** attributes on the root and every

@@ -1,0 +1,43 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-observables
+  description: >-
+    The Bell pair, validated with the observable and information-theoretic oracles
+    (expectation_value, shannon_entropy, kl_divergence) added in v0.4. Complements
+    the distance/structural checks in the bell-state example.
+  labels:
+    suite: smoke
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 1234
+
+jobs:
+  - name: bell-pair
+    circuit:
+      format: qasm2
+      inline: |
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+    assertions:
+      # Parity observable: a Bell pair is perfectly Z-correlated, <Z0 Z1> = +1.
+      - type: expectation_value
+        qubits: [0, 1]
+        min: 0.95
+      # The balanced |00>/|11> distribution carries exactly 1 bit of entropy.
+      - type: shannon_entropy
+        min: 0.9
+        max: 1.1
+      # Information-theoretic distance to the ideal distribution (simulator-tight).
+      - type: kl_divergence
+        expected: { "00": 0.5, "11": 0.5 }
+        max_divergence: 0.02
