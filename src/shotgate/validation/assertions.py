@@ -11,12 +11,41 @@ defining a model with a unique ``type`` literal and registering it in
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from shotgate.validation import metrics
+
+
+def _validate_bitstring_keys(keys: Iterable[str], *, field: str) -> None:
+    """Reject malformed basis-state keys at schema-parse time.
+
+    Keys must be non-empty, contain only ``0``/``1`` (whitespace from multi-register
+    formatting is stripped, matching :func:`metrics.clean_key`), and all describe the
+    same number of bits. This turns a silently mis-compared distribution (e.g. a
+    3-bit key against a 2-qubit circuit, or a typo like ``"0x"``) into a clear
+    validation error instead of a wrong-but-green result.
+    """
+    originals = list(keys)
+    cleaned = [k.replace(" ", "") for k in originals]
+    if not cleaned:
+        raise ValueError(f"{field} must not be empty")
+    widths: set[int] = set()
+    for original, c in zip(originals, cleaned, strict=True):
+        if not c or set(c) - {"0", "1"}:
+            raise ValueError(
+                f"{field} key {original!r} is not a valid bitstring "
+                "(non-empty, characters 0/1 only)"
+            )
+        widths.add(len(c))
+    if len(widths) > 1:
+        raise ValueError(
+            f"{field} mixes bitstring widths {sorted(widths)}; all keys must "
+            "describe the same number of bits"
+        )
 
 
 @dataclass
@@ -55,6 +84,12 @@ class DistributionTVDAssertion(_BaseAssertion):
     expected: dict[str, float]
     max_distance: float = Field(0.05, ge=0.0, le=1.0)
 
+    @field_validator("expected")
+    @classmethod
+    def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
+        _validate_bitstring_keys(v.keys(), field="expected")
+        return v
+
     def default_label(self) -> str:
         return f"TVD <= {self.max_distance}"
 
@@ -78,6 +113,12 @@ class HellingerFidelityAssertion(_BaseAssertion):
     type: Literal["hellinger_fidelity"]
     expected: dict[str, float]
     min_fidelity: float = Field(0.99, ge=0.0, le=1.0)
+
+    @field_validator("expected")
+    @classmethod
+    def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
+        _validate_bitstring_keys(v.keys(), field="expected")
+        return v
 
     def default_label(self) -> str:
         return f"fidelity >= {self.min_fidelity}"
@@ -107,6 +148,12 @@ class ChiSquareAssertion(_BaseAssertion):
     type: Literal["chi_square"]
     expected: dict[str, float]
     significance: float = Field(0.05, gt=0.0, lt=1.0)
+
+    @field_validator("expected")
+    @classmethod
+    def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
+        _validate_bitstring_keys(v.keys(), field="expected")
+        return v
 
     def default_label(self) -> str:
         return f"chi-square p >= {self.significance}"
@@ -139,6 +186,12 @@ class StateProbabilityAssertion(_BaseAssertion):
     type: Literal["state_probability"]
     state: str
     minimum: float | None = Field(None, alias="min", ge=0.0, le=1.0)
+
+    @field_validator("state")
+    @classmethod
+    def _check_state(cls, v: str) -> str:
+        _validate_bitstring_keys([v], field="state")
+        return v
     maximum: float | None = Field(None, alias="max", ge=0.0, le=1.0)
     equals: float | None = Field(None, ge=0.0, le=1.0)
     tolerance: float = Field(0.05, ge=0.0, le=1.0)
@@ -193,6 +246,12 @@ class AllowedStatesAssertion(_BaseAssertion):
     type: Literal["allowed_states"]
     states: list[str] = Field(min_length=1)
     max_leakage: float = Field(0.0, ge=0.0, le=1.0)
+
+    @field_validator("states")
+    @classmethod
+    def _check_states(cls, v: list[str]) -> list[str]:
+        _validate_bitstring_keys(v, field="states")
+        return v
 
     def default_label(self) -> str:
         return f"leakage <= {self.max_leakage}"

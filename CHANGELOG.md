@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **Fail-closed validation (see ADR-0007).** A job that runs but declares no
+  assertions now **fails** by default, instead of silently passing a gate that checked
+  nothing; opt out with `--allow-empty` (CLI) or `allow_empty=True` (`Runner`).
+  Basis-state keys in `expected`, `state`, and `states` are validated at schema-parse
+  time: non-empty, `0`/`1` only, and a single consistent width, so a malformed key
+  (e.g. `"0x"`, or mixed `"0"`/`"11"`) raises a clear `ValidationError` instead of being
+  silently mis-compared. Both are behaviour changes, intended at `0.x`.
+
 ### Fixed
 
 - **OpenQASM 3 circuits now load.** The `qasm3` circuit format was advertised in

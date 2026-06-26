@@ -84,10 +84,12 @@ class Runner:
         loaded: LoadedWorkflow,
         backend_override: str | None = None,
         shots_override: int | None = None,
+        allow_empty: bool = False,
     ) -> None:
         self.loaded = loaded
         self.backend_override = backend_override
         self.shots_override = shots_override
+        self.allow_empty = allow_empty
 
     def run(self) -> WorkflowReport:
         workflow = self.loaded.workflow
@@ -141,7 +143,17 @@ class Runner:
                 for assertion in job.assertions
             ]
             report.assertions = outcomes
-            report.passed = all(o.passed for o in outcomes)
+            if outcomes:
+                report.passed = all(o.passed for o in outcomes)
+            elif self.allow_empty:
+                report.passed = True
+            else:
+                report.passed = False
+                report.error = (
+                    "no assertions declared: a quality gate must check something. "
+                    "Add assertions, or allow an intentionally empty gate with "
+                    "--allow-empty (CLI) or allow_empty=True (Runner)."
+                )
         except Exception as exc:
             report.error = f"{type(exc).__name__}: {exc}"
             report.passed = False

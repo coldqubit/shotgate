@@ -70,3 +70,46 @@ def test_inline_circuit_runs():
 
     report = Runner(LoadedWorkflow(wf, EXAMPLES)).run()
     assert report.passed
+
+
+def _empty_gate_workflow():
+    from shotgate.config import parse_workflow
+
+    return parse_workflow(
+        {
+            "apiVersion": "shotgate.dev/v1alpha1",
+            "kind": "QuantumWorkflow",
+            "metadata": {"name": "empty-gate"},
+            "jobs": [
+                {
+                    "name": "no-checks",
+                    "circuit": {
+                        "format": "qasm2",
+                        "inline": 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nh q[0];\n',
+                    },
+                    "backend": {"provider": "local-aer", "shots": 1024, "seed": 1},
+                    "assertions": [],
+                }
+            ],
+        }
+    )
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_empty_gate_fails_by_default():
+    from shotgate.config import LoadedWorkflow
+
+    report = Runner(LoadedWorkflow(_empty_gate_workflow(), EXAMPLES)).run()
+    assert not report.passed
+    assert "no assertions" in (report.jobs[0].error or "").lower()
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_empty_gate_allowed_with_flag():
+    from shotgate.config import LoadedWorkflow
+
+    report = Runner(
+        LoadedWorkflow(_empty_gate_workflow(), EXAMPLES), allow_empty=True
+    ).run()
+    assert report.passed
+    assert report.jobs[0].error is None

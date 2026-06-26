@@ -106,3 +106,40 @@ def test_state_probability_equals_with_tolerance():
     )
     assert a.evaluate(BELL_COUNTS, 8192).passed is True
     assert a.evaluate({"00": 6000, "11": 2192}, 8192).passed is False
+
+
+def test_expected_rejects_non_binary_key():
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python(
+            {"type": "distribution_tvd", "expected": {"0x": 0.5, "11": 0.5}}
+        )
+
+
+def test_expected_rejects_mixed_widths():
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python(
+            {"type": "chi_square", "expected": {"0": 0.5, "11": 0.5}}
+        )
+
+
+def test_state_rejects_non_binary():
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python(
+            {"type": "state_probability", "state": "2", "min": 0.4}
+        )
+
+
+def test_allowed_states_rejects_malformed_and_mixed_width():
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "allowed_states", "states": ["00", "1z"]})
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "allowed_states", "states": ["0", "11"]})
+
+
+def test_multiregister_spaced_keys_are_accepted():
+    # Qiskit can format multi-register results with spaces; they normalise to a
+    # consistent width and must remain valid.
+    a = ADAPTER.validate_python(
+        {"type": "distribution_tvd", "expected": {"0 1": 0.5, "1 1": 0.5}}
+    )
+    assert isinstance(a, DistributionTVDAssertion)

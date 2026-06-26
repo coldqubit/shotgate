@@ -51,6 +51,11 @@ def main() -> None:
     help="Write a Markdown summary to this path (e.g. $GITHUB_STEP_SUMMARY).",
 )
 @click.option("--quiet", is_flag=True, help="Suppress the console table.")
+@click.option(
+    "--allow-empty",
+    is_flag=True,
+    help="Allow a job with no assertions to pass (default: an empty gate fails).",
+)
 def run(
     workflow: Path,
     backend: str | None,
@@ -59,6 +64,7 @@ def run(
     json_path: Path | None,
     markdown: Path | None,
     quiet: bool,
+    allow_empty: bool,
 ) -> None:
     """Execute WORKFLOW: run each job, validate output, and report."""
     import typing
@@ -78,7 +84,12 @@ def run(
     except Exception as exc:
         raise click.ClickException(f"failed to load workflow: {exc}") from exc
 
-    report = Runner(loaded, backend_override=backend, shots_override=shots).run()
+    report = Runner(
+        loaded,
+        backend_override=backend,
+        shots_override=shots,
+        allow_empty=allow_empty,
+    ).run()
 
     if not quiet:
         render_console(report)
