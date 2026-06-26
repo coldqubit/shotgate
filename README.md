@@ -259,17 +259,19 @@ shotgate/
   2026-06-11, Bell/GHZ/Grover at 4096 shots; measured baseline and runbook in
   [`docs/hardware-validation.md`](docs/hardware-validation.md)), hardware example gates for
   GHZ and Grover, and a dispatchable QPU validation workflow.
-- **v0.3.0 (latest release):** the OpenQASM 3 fix and fail-closed validation, four more
-  oracles (`kl_divergence`, `shannon_entropy`, `expectation_value`, `most_frequent_outcome`),
+- **v0.3.0:** the OpenQASM 3 fix and fail-closed validation, four more oracles
+  (`kl_divergence`, `shannon_entropy`, `expectation_value`, `most_frequent_outcome`),
   declarative noise-model simulation and noise-aware expected distributions (so
   `chi_square`/`kl_divergence` can gate on hardware), and the AWS Braket backend (local
   simulation; the cloud path awaits validation on real hardware).
 - **v0.4.0 (latest release):** structural oracles `circuit_depth` and `gate_set`, static
   circuit-property gates that run with no execution (no shots, no QPU, no backend).
-- **Planned:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend
-  differential testing, circuit fixtures and property-based generation, a Helm chart, an
-  optional OpenTelemetry exporter for the telemetry layer (kept out of the core
-  dependencies), and validation of the Braket cloud path on real hardware.
+- **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release: error
+  mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend differential testing,
+  circuit fixtures and property-based generation, a Helm chart, an optional OpenTelemetry
+  exporter (kept out of the core dependencies), and validation of the Braket cloud path on
+  real hardware. **`1.0.0`** is the API-stability milestone (the `shotgate.dev/v1` schema and
+  a frozen CLI/Python surface), not a feature count.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 
