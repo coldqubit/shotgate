@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
@@ -143,3 +145,47 @@ def test_multiregister_spaced_keys_are_accepted():
         {"type": "distribution_tvd", "expected": {"0 1": 0.5, "1 1": 0.5}}
     )
     assert isinstance(a, DistributionTVDAssertion)
+
+
+def test_kl_divergence_pass_and_diverge():
+    a = ADAPTER.validate_python(
+        {"type": "kl_divergence", "expected": {"00": 0.5, "11": 0.5}, "max_divergence": 0.05}
+    )
+    assert a.evaluate(BELL_COUNTS, 8192).passed is True
+    # Leakage into a state the expected distribution forbids -> divergence is infinite.
+    res = a.evaluate(NOISY_COUNTS, 8192)
+    assert res.passed is False
+    assert res.metrics["kl_divergence"] == math.inf
+
+
+def test_shannon_entropy_window_and_requires_bound():
+    a = ADAPTER.validate_python({"type": "shannon_entropy", "min": 0.9, "max": 1.1})
+    assert a.evaluate(BELL_COUNTS, 8192).passed is True  # H = 1.0 bit
+    assert a.evaluate({"00": 8192}, 8192).passed is False  # H = 0
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "shannon_entropy"})
+
+
+def test_expectation_value_window_equals_and_validation():
+    a = ADAPTER.validate_python(
+        {"type": "expectation_value", "qubits": [0, 1], "min": 0.95}
+    )
+    assert a.evaluate(BELL_COUNTS, 8192).passed is True  # <Z0Z1> = +1
+    anti = ADAPTER.validate_python(
+        {"type": "expectation_value", "qubits": [0, 1], "equals": -1.0, "tolerance": 0.05}
+    )
+    assert anti.evaluate({"01": 50, "10": 50}, 100).passed is True  # <Z0Z1> = -1
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "expectation_value", "qubits": [0]})
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python(
+            {"type": "expectation_value", "qubits": [0, 0], "min": 0.0}
+        )
+
+
+def test_most_frequent_outcome():
+    a = ADAPTER.validate_python(
+        {"type": "most_frequent_outcome", "state": "11", "min_probability": 0.6}
+    )
+    assert a.evaluate({"11": 70, "00": 30}, 100).passed is True
+    assert a.evaluate({"11": 40, "00": 60}, 100).passed is False  # mode is 00

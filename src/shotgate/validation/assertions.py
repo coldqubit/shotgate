@@ -11,6 +11,7 @@ defining a model with a unique ``type`` literal and registering it in
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Annotated, Literal
@@ -269,13 +270,207 @@ class AllowedStatesAssertion(_BaseAssertion):
         )
 
 
+class KLDivergenceAssertion(_BaseAssertion):
+    """Bound the Kullback-Leibler divergence ``D(observed || expected)`` in bits.
+
+    Like ``chi_square``, this diverges (fails) when ``expected`` assigns zero
+    probability to an observed outcome, so it is simulator-oriented unless ``expected``
+    is noise-aware.
+    """
+
+    type: Literal["kl_divergence"]
+    expected: dict[str, float]
+    max_divergence: float = Field(0.05, ge=0.0)
+
+    @field_validator("expected")
+    @classmethod
+    def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
+        _validate_bitstring_keys(v.keys(), field="expected")
+        return v
+
+    def default_label(self) -> str:
+        return f"KL <= {self.max_divergence}"
+
+    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+        probs = metrics.counts_to_probabilities(counts)
+        divergence = metrics.kl_divergence(probs, self.expected)
+        passed = divergence <= self.max_divergence
+        if math.isfinite(divergence):
+            message = (
+                f"KL divergence {divergence:.4f} bits "
+                f"({'<=' if passed else '>'} {self.max_divergence})"
+            )
+        else:
+            message = (
+                "KL divergence diverged: expected assigns probability 0 to an observed "
+                "outcome (use a noise-aware expected distribution on hardware)"
+            )
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=message,
+            metrics={"kl_divergence": divergence, "max_divergence": self.max_divergence},
+        )
+
+
+class ShannonEntropyAssertion(_BaseAssertion):
+    """Bound the Shannon entropy (in bits) of the measured distribution."""
+
+    type: Literal["shannon_entropy"]
+    minimum: float | None = Field(None, alias="min", ge=0.0)
+    maximum: float | None = Field(None, alias="max", ge=0.0)
+
+    @model_validator(mode="after")
+    def _check_bounds(self) -> ShannonEntropyAssertion:
+        if self.minimum is None and self.maximum is None:
+            raise ValueError("shannon_entropy requires one of: min, max")
+        if (
+            self.minimum is not None
+            and self.maximum is not None
+            and self.minimum > self.maximum
+        ):
+            raise ValueError("min must not exceed max")
+        return self
+
+    def default_label(self) -> str:
+        bounds = []
+        if self.minimum is not None:
+            bounds.append(f">= {self.minimum}")
+        if self.maximum is not None:
+            bounds.append(f"<= {self.maximum}")
+        return f"entropy {' and '.join(bounds)} bits"
+
+    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+        entropy = metrics.shannon_entropy(counts)
+        passed = True
+        if self.minimum is not None:
+            passed = passed and entropy >= self.minimum
+        if self.maximum is not None:
+            passed = passed and entropy <= self.maximum
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=f"Shannon entropy {entropy:.4f} bits",
+            metrics={"entropy": entropy},
+        )
+
+
+class ExpectationValueAssertion(_BaseAssertion):
+    """Bound the Pauli-Z product expectation ``<Z_{q0} Z_{q1} ...>`` in ``[-1, 1]``.
+
+    Use ``min``/``max`` for a window, or ``equals`` with ``tolerance`` for a target.
+    A perfect Bell pair has ``<Z0 Z1> = +1``.
+    """
+
+    type: Literal["expectation_value"]
+    qubits: list[int] = Field(min_length=1)
+    minimum: float | None = Field(None, alias="min", ge=-1.0, le=1.0)
+    maximum: float | None = Field(None, alias="max", ge=-1.0, le=1.0)
+    equals: float | None = Field(None, ge=-1.0, le=1.0)
+    tolerance: float = Field(0.05, ge=0.0, le=2.0)
+
+    @field_validator("qubits")
+    @classmethod
+    def _check_qubits(cls, v: list[int]) -> list[int]:
+        if any(q < 0 for q in v):
+            raise ValueError("qubit indices must be non-negative")
+        if len(set(v)) != len(v):
+            raise ValueError("qubit indices must be unique")
+        return v
+
+    @model_validator(mode="after")
+    def _check_bounds(self) -> ExpectationValueAssertion:
+        if self.equals is None and self.minimum is None and self.maximum is None:
+            raise ValueError("expectation_value requires one of: min, max, equals")
+        if (
+            self.minimum is not None
+            and self.maximum is not None
+            and self.minimum > self.maximum
+        ):
+            raise ValueError("min must not exceed max")
+        return self
+
+    def _operator(self) -> str:
+        return "<" + "".join(f"Z{q}" for q in self.qubits) + ">"
+
+    def default_label(self) -> str:
+        if self.equals is not None:
+            return f"{self._operator()} ~= {self.equals}"
+        bounds = []
+        if self.minimum is not None:
+            bounds.append(f">= {self.minimum}")
+        if self.maximum is not None:
+            bounds.append(f"<= {self.maximum}")
+        return f"{self._operator()} {' and '.join(bounds)}"
+
+    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+        value = metrics.z_expectation(counts, self.qubits)
+        passed = True
+        if self.equals is not None:
+            passed = abs(value - self.equals) <= self.tolerance
+        if self.minimum is not None:
+            passed = passed and value >= self.minimum
+        if self.maximum is not None:
+            passed = passed and value <= self.maximum
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=f"{self._operator()} = {value:.4f}",
+            metrics={"expectation": value},
+        )
+
+
+class MostFrequentOutcomeAssertion(_BaseAssertion):
+    """Assert the modal measured outcome is a given state, optionally above a probability.
+
+    Useful for algorithms with a single intended answer (e.g. Grover's marked state).
+    """
+
+    type: Literal["most_frequent_outcome"]
+    state: str
+    min_probability: float | None = Field(None, ge=0.0, le=1.0)
+
+    @field_validator("state")
+    @classmethod
+    def _check_state(cls, v: str) -> str:
+        _validate_bitstring_keys([v], field="state")
+        return v
+
+    def default_label(self) -> str:
+        base = f"mode == {self.state}"
+        if self.min_probability is not None:
+            return f"{base} (P >= {self.min_probability})"
+        return base
+
+    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+        state, prob = metrics.most_frequent_outcome(counts)
+        passed = metrics.clean_key(state) == metrics.clean_key(self.state)
+        if self.min_probability is not None:
+            passed = passed and prob >= self.min_probability
+        detail = "" if passed else f" (wanted {self.state})"
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=f"modal outcome {state} at P={prob:.4f}{detail}",
+            metrics={"probability": prob},
+        )
+
+
 # Discriminated union: Pydantic dispatches on the ``type`` field when parsing.
 Assertion = Annotated[
     DistributionTVDAssertion
     | HellingerFidelityAssertion
     | ChiSquareAssertion
     | StateProbabilityAssertion
-    | AllowedStatesAssertion,
+    | AllowedStatesAssertion
+    | KLDivergenceAssertion
+    | ShannonEntropyAssertion
+    | ExpectationValueAssertion
+    | MostFrequentOutcomeAssertion,
     Field(discriminator="type"),
 ]
 
@@ -285,6 +480,10 @@ ASSERTION_TYPES = (
     "chi_square",
     "state_probability",
     "allowed_states",
+    "kl_divergence",
+    "shannon_entropy",
+    "expectation_value",
+    "most_frequent_outcome",
 )
 
 __all__ = [
@@ -294,6 +493,10 @@ __all__ = [
     "AssertionResult",
     "ChiSquareAssertion",
     "DistributionTVDAssertion",
+    "ExpectationValueAssertion",
     "HellingerFidelityAssertion",
+    "KLDivergenceAssertion",
+    "MostFrequentOutcomeAssertion",
+    "ShannonEntropyAssertion",
     "StateProbabilityAssertion",
 ]

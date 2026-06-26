@@ -11,14 +11,31 @@
 from __future__ import annotations
 
 import json
+import math
+from typing import Any
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
 from shotgate.runner import WorkflowReport
 
 
+def _finite(obj: Any) -> Any:
+    """Replace non-finite floats (inf/nan, e.g. a diverged KL-divergence metric) with
+    ``None`` so the emitted JSON is valid for strict parsers (JS ``JSON.parse`` rejects
+    ``Infinity``)."""
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _finite(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_finite(v) for v in obj]
+    return obj
+
+
 def to_json(report: WorkflowReport, *, indent: int = 2) -> str:
-    return json.dumps(report.as_dict(), indent=indent, sort_keys=False)
+    return json.dumps(
+        _finite(report.as_dict()), indent=indent, sort_keys=False, allow_nan=False
+    )
 
 
 def to_junit_xml(report: WorkflowReport) -> str:
