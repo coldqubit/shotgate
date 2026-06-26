@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-26
+
+> Bundles the work the roadmap sketched across several minor milestones (oracle breadth,
+> noise-aware validation, the AWS Braket backend) into one release after `0.2.2`.
+
 ### Added
 
 - **AWS Braket backend (ADR-0011).** `provider: braket` runs the same workflows on Braket.
@@ -245,7 +250,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/coldqubit/shotgate/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/coldqubit/shotgate/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/coldqubit/shotgate/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/coldqubit/shotgate/compare/v0.1.1...v0.2.0
