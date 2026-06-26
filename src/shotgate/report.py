@@ -30,6 +30,7 @@ def to_junit_xml(report: WorkflowReport) -> str:
     total_tests = 0
     total_failures = 0
     total_errors = 0
+    total_skipped = 0
     suites: list[ET.Element] = []
 
     for job in report.jobs:
@@ -38,10 +39,11 @@ def to_junit_xml(report: WorkflowReport) -> str:
             {
                 "name": job.name,
                 "time": f"{job.duration_s:.6f}",
+                "timestamp": report.started_at,
                 "hostname": job.backend_name,
             },
         )
-        tests = failures = errors = 0
+        tests = failures = errors = skipped = 0
 
         if job.error is not None:
             tests += 1
@@ -72,10 +74,12 @@ def to_junit_xml(report: WorkflowReport) -> str:
         suite.set("tests", str(tests))
         suite.set("failures", str(failures))
         suite.set("errors", str(errors))
+        suite.set("skipped", str(skipped))
         suites.append(suite)
         total_tests += tests
         total_failures += failures
         total_errors += errors
+        total_skipped += skipped
 
     root = ET.Element(
         "testsuites",
@@ -84,7 +88,9 @@ def to_junit_xml(report: WorkflowReport) -> str:
             "tests": str(total_tests),
             "failures": str(total_failures),
             "errors": str(total_errors),
+            "skipped": str(total_skipped),
             "time": f"{report.duration_s:.6f}",
+            "timestamp": report.started_at,
         },
     )
     root.extend(suites)

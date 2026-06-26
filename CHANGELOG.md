@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **JUnit reports carry `timestamp` and `skipped`** attributes on the root and every
+  testsuite, for fuller xUnit-schema compliance in CI dashboards. Declared the supported
+  Python grid (3.10-3.13) as trove classifiers.
 - **Fail-closed validation (see ADR-0007).** A job that runs but declares no
   assertions now **fails** by default, instead of silently passing a gate that checked
   nothing; opt out with `--allow-empty` (CLI) or `allow_empty=True` (`Runner`).

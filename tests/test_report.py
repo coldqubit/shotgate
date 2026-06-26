@@ -50,8 +50,12 @@ def test_junit_xml_is_wellformed_and_counts_failures():
     assert root.tag == "testsuites"
     assert root.attrib["tests"] == "2"
     assert root.attrib["failures"] == "1"
+    # JUnit completeness: timestamp + skipped on the root and every suite.
+    assert root.attrib["timestamp"] == "2026-06-01T00:00:00+00:00"
+    assert root.attrib["skipped"] == "0"
     suites = root.findall("testsuite")
     assert {s.attrib["name"] for s in suites} == {"bell", "ghz"}
+    assert all("timestamp" in s.attrib and "skipped" in s.attrib for s in suites)
     # The failing assertion is recorded as a <failure>.
     failures = root.findall(".//failure")
     assert len(failures) == 1
