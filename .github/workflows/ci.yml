@@ -167,6 +167,35 @@ jobs:
             cli-junit.xml
             plugin-junit.xml
 
+  braket-local:
+    name: braket local simulation
+    runs-on: ubuntu-latest
+    # The Braket backend's local-simulation path runs with no AWS account; the cloud
+    # path (named devices) needs AWS credentials and is not exercised in CI.
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pull base image (retry + mirror fallback)
+        run: |
+          .github/scripts/pull-base-image.sh \
+            docker.io/library/python:3.12-slim \
+            public.ecr.aws/docker/library/python:3.12-slim
+
+      - name: braket local-simulation backend test (containerized)
+        run: |
+          podman run --rm -v "$PWD:/work:Z" -w /work \
+            docker.io/library/python:3.12-slim bash -euc "
+              pip install -q '.[braket,dev]'
+              pytest -q tests/test_braket_backend.py --junitxml=/work/braket-junit.xml
+            "
+
+      - name: Upload braket report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: braket-junit
+          path: braket-junit.xml
+
   terraform:
     name: terraform fmt + validate
     runs-on: ubuntu-latest

@@ -1,0 +1,40 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-braket
+  description: >-
+    The Bell pair on the AWS Braket LOCAL simulator, which needs no AWS account. Set
+    backend.name to a Braket device (e.g. SV1, or a device ARN) to target the cloud
+    instead, which requires configured AWS credentials and is billed by AWS.
+  labels:
+    suite: smoke
+    backend: braket
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: braket
+    shots: 4096
+    # name: SV1   # uncomment to run on an AWS Braket cloud device (needs AWS credentials)
+
+jobs:
+  - name: bell-pair
+    circuit:
+      format: qasm2
+      inline: |
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+    assertions:
+      # The local simulator is noiseless, so |01>/|10> never appear and P(00) ~ 0.5.
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.0
+      - type: state_probability
+        state: "00"
+        min: 0.4
+        max: 0.6

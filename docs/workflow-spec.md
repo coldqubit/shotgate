@@ -65,7 +65,7 @@ If the loaded circuit has no classical bits, shotgate appends `measure_all()`.
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `provider` | `local-aer` \| `ibm` | `local-aer` | Execution target. Braket is planned (roadmap); selecting an unimplemented provider fails schema validation. |
+| `provider` | `local-aer` \| `ibm` \| `braket` | `local-aer` | Execution target. `braket` runs locally with no AWS account; cloud Braket devices need AWS credentials. Selecting an unimplemented provider fails schema validation. |
 | `shots` | int | `4096` | 1–1,000,000. |
 | `seed` | int | none | Determinism for simulators. |
 | `name` | string | none | Device/backend name (cloud providers). |

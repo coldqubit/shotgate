@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **AWS Braket backend (ADR-0011).** `provider: braket` runs the same workflows on Braket.
+  Local simulation needs **no AWS account** (omit `backend.name`); cloud devices are reached
+  by setting `backend.name` (e.g. `SV1`) and need configured AWS credentials. Dependencies
+  live in the `braket` extra (`pip install shotgate[braket]`); a dedicated CI job validates
+  the local path. Promotes `braket` from a planned to a working backend. The cloud path is
+  implemented but not yet validated on real Braket hardware.
 - **Noise-aware expected distributions: `chi_square` and `kl_divergence` can gate on
   hardware (ADR-0010).** An optional `readout_error: { p0, p1 }` block transforms the ideal
   `expected` through a calibration-derived per-qubit readout model, giving the test nonzero

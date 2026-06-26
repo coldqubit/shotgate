@@ -245,7 +245,7 @@ shotgate/
 | --- | --- |
 | `local-aer` (Qiskit Aer simulator) | **Working**, default, baked into the image |
 | `ibm` (IBM Quantum via Qiskit Runtime) | **Validated on real hardware** (`ibm_fez`, 2026-06-11: Bell/GHZ/Grover gates passed at 4096 shots; [measured baseline](docs/hardware-validation.md)) |
-| `braket` (AWS Braket) | **Planned** (not selectable yet) |
+| `braket` (AWS Braket via qiskit-braket-provider) | **Working: local simulation** (no AWS account). Cloud devices need AWS credentials; not yet validated on real Braket hardware. |
 | Error mitigation ([Mitiq](https://mitiq.readthedocs.io/)) | **Planned** |
 
 ## Roadmap

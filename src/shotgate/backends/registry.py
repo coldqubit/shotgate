@@ -18,12 +18,14 @@ from shotgate.config import BackendSpec
 _REGISTRY: dict[str, str] = {
     "local-aer": "shotgate.backends.local_aer:LocalAerBackend",
     "ibm": "shotgate.backends.ibm_runtime:IBMRuntimeBackend",
+    "braket": "shotgate.backends.braket:BraketBackend",
 }
 
 # provider name -> pip extra that supplies its dependencies
 _PROVIDER_EXTRA: dict[str, str] = {
     "local-aer": "aer",
     "ibm": "ibm",
+    "braket": "braket",
 }
 
 

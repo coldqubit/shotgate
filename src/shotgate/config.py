@@ -43,10 +43,10 @@ from shotgate.validation.assertions import Assertion
 API_VERSION = "shotgate.dev/v1alpha1"
 KIND = "QuantumWorkflow"
 
-# Only providers with an implemented backend are selectable. Braket is planned
-# (roadmap) and intentionally excluded so a workflow can't request a backend that
-# does not exist; selecting it fails fast at schema validation.
-ProviderName = Literal["local-aer", "ibm"]
+# Providers with an implemented backend. `braket` runs locally with no AWS account;
+# cloud Braket devices need configured AWS credentials. An unimplemented provider is
+# intentionally absent so selecting it fails fast at schema validation.
+ProviderName = Literal["local-aer", "ibm", "braket"]
 
 
 class _Strict(BaseModel):
