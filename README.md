@@ -228,7 +228,7 @@ The same artifact therefore runs in a small CI container and against a real QPU.
 ```text
 shotgate/
 ├── src/shotgate/          # the package (validation core, backends, runner, CLI, pytest plugin)
-├── examples/              # runnable workflows: bell, ghz, grover
+├── examples/              # runnable workflows: bell/ghz/grover + backend & oracle variants
 ├── tests/                 # unit tests (core) + integration tests (gated on aer)
 ├── infra/
 │   ├── terraform/         # IaC module: "quantum workflow as code"
@@ -253,14 +253,20 @@ shotgate/
 - **v0.1:** YAML workflows, local Aer backend, χ²/TVD/fidelity/structural oracles,
   JUnit/JSON/MD reporters, Podman and KVM/QEMU isolation, Terraform module, pytest plugin,
   PyPI package, published GHCR image with an IBM-enabled variant.
-- **v0.2 (now):** statistical gates **validated against real quantum hardware** (`ibm_fez`,
-  2026-06-11, Bell/GHZ/Grover at 4096 shots; measured baseline and runbook in
+- **v0.2 (latest release):** statistical gates **validated against real quantum hardware**
+  (`ibm_fez`, 2026-06-11, Bell/GHZ/Grover at 4096 shots; measured baseline and runbook in
   [`docs/hardware-validation.md`](docs/hardware-validation.md)), hardware example gates for
   GHZ and Grover, and a dispatchable QPU validation workflow.
-- **v0.3:** noise-model simulation, a minimal AWS Braket backend, error mitigation via
-  [Mitiq](https://mitiq.readthedocs.io/), circuit fixtures and property-based generation,
-  multi-backend differential testing, a Helm chart, and an optional OpenTelemetry exporter
-  for the telemetry layer (kept out of the core dependencies).
+- **On `main`, pending the next release:** the OpenQASM 3 fix and fail-closed validation,
+  four more oracles (`kl_divergence`, `shannon_entropy`, `expectation_value`,
+  `most_frequent_outcome`), declarative noise-model simulation and noise-aware expected
+  distributions (so `chi_square`/`kl_divergence` can gate on hardware), and the AWS Braket
+  backend (local simulation; the cloud path awaits validation on real hardware). See the
+  `[Unreleased]` section of [`CHANGELOG.md`](CHANGELOG.md).
+- **Planned:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend
+  differential testing, circuit fixtures and property-based generation, a Helm chart, an
+  optional OpenTelemetry exporter for the telemetry layer (kept out of the core
+  dependencies), and validation of the Braket cloud path on real hardware.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 

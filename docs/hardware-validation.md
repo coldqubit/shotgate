@@ -9,8 +9,10 @@
 > on `ibm_fez` (156-qubit Heron r2, Open Plan instance) at 4096 shots each, via the
 > `hardware-validation` GitHub workflow installing `shotgate[ibm]==0.1.1` from PyPI.
 > All gates passed; measured values in [section 9](#9-measured-baseline-ibm_fez-2026-06-11),
-> where all five oracles (including a non-gating `chi_square` measurement) have a hardware
-> data point.
+> where all five oracles available at the v0.2 milestone (including a non-gating `chi_square`
+> measurement) have a hardware data point. The oracles added since (`kl_divergence`,
+> `shannon_entropy`, `expectation_value`, `most_frequent_outcome`) are simulator-tested and
+> have not yet been run on hardware.
 > This document remains the runbook for re-running the validation on any device.
 
 ---
@@ -199,8 +201,9 @@ formats worked on the first hardware contact.
 
 ### Oracle coverage and the chi_square measurement
 
-All five assertion oracles were exercised on `ibm_fez`. Four are in the gating
-hardware examples: `distribution_tvd` and `hellinger_fidelity` (Bell, GHZ),
+All five assertion oracles available at the v0.2 milestone were exercised on `ibm_fez`
+(the four oracles added in later versions are simulator-tested only so far). Four are in
+the gating hardware examples: `distribution_tvd` and `hellinger_fidelity` (Bell, GHZ),
 `allowed_states` (all three), `state_probability` (Grover, on `11`). The fifth,
 `chi_square`, is excluded from the gating examples and was instead measured by the
 non-gating `bell-state-hardware-oracle-coverage` diagnostic (job
