@@ -188,6 +188,8 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 | `shannon_entropy` | Entropy in a min/max window (bits) | Assert the intended randomness/concentration |
 | `expectation_value` | `<Z..Z>` in [-1, 1] via window / target | Correlation/parity observable tracking |
 | `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer (e.g. Grover) |
+| `circuit_depth` | Authored-circuit depth in a window | Static complexity budget (no execution) |
+| `gate_set` | Circuit uses only allowed gate names | Enforce a basis / catch unexpected gates (no execution) |
 
 Full reference: [`docs/assertions.md`](docs/assertions.md). The statistical core is pure Python
 (no SciPy), including a from-scratch χ² survival function via the regularised incomplete gamma
@@ -262,6 +264,8 @@ shotgate/
   declarative noise-model simulation and noise-aware expected distributions (so
   `chi_square`/`kl_divergence` can gate on hardware), and the AWS Braket backend (local
   simulation; the cloud path awaits validation on real hardware).
+- **On `main`, pending the next release:** structural oracles `circuit_depth` and `gate_set`,
+  static circuit-property gates that run with no execution (no shots, no QPU, no backend).
 - **Planned:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend
   differential testing, circuit fixtures and property-based generation, a Helm chart, an
   optional OpenTelemetry exporter for the telemetry layer (kept out of the core

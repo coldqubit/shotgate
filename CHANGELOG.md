@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Two structural oracles (9 -> 11), see ADR-0012:** `circuit_depth` and `gate_set` gate on
+  the authored circuit's structure (its depth and its gate set) rather than its output. They
+  are static: a job whose assertions are all structural runs with no shots, no QPU time, and
+  no backend execution. The assertion contract gains an optional `circuit_metrics` argument
+  (the runner passes the telemetry it already computes); existing oracles are unaffected. A
+  `bell-state-structural` example demonstrates the no-execution path.
+
 ## [0.3.0] - 2026-06-26
 
 > Bundles the work the roadmap sketched across several minor milestones (oracle breadth,

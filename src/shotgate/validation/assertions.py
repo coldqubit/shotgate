@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Annotated, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -80,6 +80,11 @@ class _BaseAssertion(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     label: str | None = None
 
+    #: Whether this oracle needs measured counts (so the circuit must be executed).
+    #: Structural oracles set this False, letting the runner skip execution for a job
+    #: whose assertions are all static circuit-property checks.
+    needs_counts: ClassVar[bool] = True
+
     def display_label(self) -> str:
         return self.label or self.default_label()
 
@@ -108,7 +113,12 @@ class DistributionTVDAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"TVD <= {self.max_distance}"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         distance = metrics.total_variation_distance(probs, self.expected)
         passed = distance <= self.max_distance
@@ -138,7 +148,12 @@ class HellingerFidelityAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"fidelity >= {self.min_fidelity}"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         fidelity = metrics.hellinger_fidelity(probs, self.expected)
         passed = fidelity >= self.min_fidelity
@@ -181,7 +196,12 @@ class ChiSquareAssertion(_BaseAssertion):
             self.expected, self.readout_error.p0, self.readout_error.p1
         )
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         statistic, dof, p_value = metrics.chi_square_test(
             counts, self._effective_expected()
         )
@@ -244,7 +264,12 @@ class StateProbabilityAssertion(_BaseAssertion):
             bounds.append(f"<= {self.maximum}")
         return f"P({self.state}) {' and '.join(bounds)}"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         prob = metrics.state_probability(counts, self.state)
         passed = True
         if self.equals is not None:
@@ -282,7 +307,12 @@ class AllowedStatesAssertion(_BaseAssertion):
     def default_label(self) -> str:
         return f"leakage <= {self.max_leakage}"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         leakage = metrics.support_leakage(counts, self.states)
         passed = leakage <= self.max_leakage
         return AssertionResult(
@@ -324,7 +354,12 @@ class KLDivergenceAssertion(_BaseAssertion):
             self.expected, self.readout_error.p0, self.readout_error.p1
         )
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         divergence = metrics.kl_divergence(probs, self._effective_expected())
         passed = divergence <= self.max_divergence
@@ -374,7 +409,12 @@ class ShannonEntropyAssertion(_BaseAssertion):
             bounds.append(f"<= {self.maximum}")
         return f"entropy {' and '.join(bounds)} bits"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         entropy = metrics.shannon_entropy(counts)
         passed = True
         if self.minimum is not None:
@@ -438,7 +478,12 @@ class ExpectationValueAssertion(_BaseAssertion):
             bounds.append(f"<= {self.maximum}")
         return f"{self._operator()} {' and '.join(bounds)}"
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         value = metrics.z_expectation(counts, self.qubits)
         passed = True
         if self.equals is not None:
@@ -478,7 +523,12 @@ class MostFrequentOutcomeAssertion(_BaseAssertion):
             return f"{base} (P >= {self.min_probability})"
         return base
 
-    def evaluate(self, counts: dict[str, int], shots: int) -> AssertionResult:
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
         state, prob = metrics.most_frequent_outcome(counts)
         passed = metrics.clean_key(state) == metrics.clean_key(self.state)
         if self.min_probability is not None:
@@ -493,6 +543,117 @@ class MostFrequentOutcomeAssertion(_BaseAssertion):
         )
 
 
+# Operations that are not logical gates; always permitted by gate_set.
+_STRUCTURAL_OPS = frozenset({"measure", "barrier", "snapshot", "delay"})
+
+
+class CircuitDepthAssertion(_BaseAssertion):
+    """Bound the depth of the authored circuit.
+
+    A static, output-independent check (it reads circuit telemetry, not measured
+    counts), useful to catch a circuit that grew past a complexity budget.
+    """
+
+    type: Literal["circuit_depth"]
+    needs_counts: ClassVar[bool] = False
+    minimum: int | None = Field(None, alias="min", ge=0)
+    maximum: int | None = Field(None, alias="max", ge=0)
+
+    @model_validator(mode="after")
+    def _check_bounds(self) -> CircuitDepthAssertion:
+        if self.minimum is None and self.maximum is None:
+            raise ValueError("circuit_depth requires one of: min, max")
+        if (
+            self.minimum is not None
+            and self.maximum is not None
+            and self.minimum > self.maximum
+        ):
+            raise ValueError("min must not exceed max")
+        return self
+
+    def default_label(self) -> str:
+        bounds = []
+        if self.minimum is not None:
+            bounds.append(f">= {self.minimum}")
+        if self.maximum is not None:
+            bounds.append(f"<= {self.maximum}")
+        return f"depth {' and '.join(bounds)}"
+
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
+        if not circuit_metrics or "depth" not in circuit_metrics:
+            return AssertionResult(
+                type=self.type,
+                label=self.display_label(),
+                passed=False,
+                message="circuit metrics unavailable (depth could not be measured)",
+                metrics={},
+            )
+        depth = int(circuit_metrics["depth"])
+        passed = True
+        if self.minimum is not None:
+            passed = passed and depth >= self.minimum
+        if self.maximum is not None:
+            passed = passed and depth <= self.maximum
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=f"circuit depth {depth}",
+            metrics={"depth": float(depth)},
+        )
+
+
+class GateSetAssertion(_BaseAssertion):
+    """Require the authored circuit to use only an allowed set of gate names.
+
+    Measurement, barrier, and similar structural operations are always permitted;
+    list only the logical gates. A static, output-independent check, useful to catch
+    an unexpected gate or to enforce a target device's basis before execution.
+    """
+
+    type: Literal["gate_set"]
+    needs_counts: ClassVar[bool] = False
+    allowed: list[str] = Field(min_length=1)
+
+    def default_label(self) -> str:
+        return f"gates in {self.allowed}"
+
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+    ) -> AssertionResult:
+        if not circuit_metrics or "operations" not in circuit_metrics:
+            return AssertionResult(
+                type=self.type,
+                label=self.display_label(),
+                passed=False,
+                message="circuit metrics unavailable (gate set could not be read)",
+                metrics={},
+            )
+        used = set(circuit_metrics["operations"]) - _STRUCTURAL_OPS
+        disallowed = sorted(used - set(self.allowed))
+        passed = not disallowed
+        message = (
+            f"gates {sorted(used)} within the allowed set"
+            if passed
+            else f"disallowed gate(s): {disallowed} (allowed: {self.allowed})"
+        )
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=message,
+            metrics={"gate_count": float(len(used))},
+        )
+
+
 # Discriminated union: Pydantic dispatches on the ``type`` field when parsing.
 Assertion = Annotated[
     DistributionTVDAssertion
@@ -503,7 +664,9 @@ Assertion = Annotated[
     | KLDivergenceAssertion
     | ShannonEntropyAssertion
     | ExpectationValueAssertion
-    | MostFrequentOutcomeAssertion,
+    | MostFrequentOutcomeAssertion
+    | CircuitDepthAssertion
+    | GateSetAssertion,
     Field(discriminator="type"),
 ]
 
@@ -517,6 +680,8 @@ ASSERTION_TYPES = (
     "shannon_entropy",
     "expectation_value",
     "most_frequent_outcome",
+    "circuit_depth",
+    "gate_set",
 )
 
 __all__ = [
@@ -525,8 +690,10 @@ __all__ = [
     "Assertion",
     "AssertionResult",
     "ChiSquareAssertion",
+    "CircuitDepthAssertion",
     "DistributionTVDAssertion",
     "ExpectationValueAssertion",
+    "GateSetAssertion",
     "HellingerFidelityAssertion",
     "KLDivergenceAssertion",
     "MostFrequentOutcomeAssertion",

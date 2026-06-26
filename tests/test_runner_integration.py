@@ -35,6 +35,7 @@ BELL_QASM2 = (
         "grover-2q",
         "bell-state-observables",
         "bell-state-noisy-sim",
+        "bell-state-structural",
     ],
 )
 def test_example_workflows_pass(example: str):
@@ -194,3 +195,35 @@ def test_noise_model_degrades_distribution_into_device_regime():
     assert noisy.metrics["backend_metadata"]["noisy"] is True
     # The noisy run leaks into the forbidden |01>/|10> states; the clean one does not.
     assert metrics.support_leakage(noisy.counts, ["00", "11"]) > 0.05
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit not installed")
+def test_structural_only_job_skips_execution():
+    from shotgate.config import LoadedWorkflow, parse_workflow
+
+    wf = parse_workflow(
+        {
+            "apiVersion": "shotgate.dev/v1alpha1",
+            "kind": "QuantumWorkflow",
+            "metadata": {"name": "structural"},
+            "jobs": [
+                {
+                    "name": "shape",
+                    "circuit": {"format": "qasm2", "inline": BELL_QASM2},
+                    "backend": {"provider": "local-aer"},
+                    "assertions": [
+                        {"type": "circuit_depth", "max": 6},
+                        {"type": "gate_set", "allowed": ["h", "cx"]},
+                    ],
+                }
+            ],
+        }
+    )
+    report = Runner(LoadedWorkflow(wf, EXAMPLES)).run()
+    job = report.jobs[0]
+    assert report.passed
+    # The backend was never run: no counts, no backend metadata, executed=False.
+    assert job.metrics.get("executed") is False
+    assert "backend_metadata" not in job.metrics
+    assert job.counts == {}
+    assert job.metrics["depth"] == 3  # h, cx, measure

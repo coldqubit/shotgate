@@ -213,6 +213,39 @@ def test_chi_square_noise_aware_expected_gates_hardware_counts():
     assert res.metrics["p_value"] > 0.01
 
 
+def test_circuit_depth_window_and_validation():
+    cm = {"depth": 5, "operations": {"h": 1, "cx": 2, "measure": 3}}
+    a = ADAPTER.validate_python({"type": "circuit_depth", "max": 10})
+    assert a.evaluate({}, 0, circuit_metrics=cm).passed is True
+    tight = ADAPTER.validate_python({"type": "circuit_depth", "max": 3})
+    assert tight.evaluate({}, 0, circuit_metrics=cm).passed is False
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "circuit_depth"})  # needs a bound
+    # No circuit metrics -> fails closed.
+    assert a.evaluate({}, 0, circuit_metrics=None).passed is False
+
+
+def test_gate_set_membership_auto_allows_measure():
+    cm = {"depth": 3, "operations": {"h": 1, "cx": 1, "measure": 2}}
+    ok = ADAPTER.validate_python({"type": "gate_set", "allowed": ["h", "cx"]})
+    assert ok.evaluate({}, 0, circuit_metrics=cm).passed is True  # measure auto-allowed
+    bad = ADAPTER.validate_python({"type": "gate_set", "allowed": ["h"]})
+    res = bad.evaluate({}, 0, circuit_metrics=cm)
+    assert res.passed is False
+    assert "cx" in res.message
+
+
+def test_structural_oracles_do_not_need_counts():
+    from shotgate.validation.assertions import (
+        CircuitDepthAssertion,
+        GateSetAssertion,
+    )
+
+    assert CircuitDepthAssertion.needs_counts is False
+    assert GateSetAssertion.needs_counts is False
+    assert DistributionTVDAssertion.needs_counts is True
+
+
 def test_kl_divergence_noise_aware_expected_is_finite_on_hardware_counts():
     plain = ADAPTER.validate_python(
         {"type": "kl_divergence", "expected": {"00": 0.5, "11": 0.5}, "max_divergence": 0.1}

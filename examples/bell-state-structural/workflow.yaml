@@ -1,0 +1,35 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-structural
+  description: >-
+    Static circuit-property gates (depth, gate set) on the Bell circuit. These are
+    output-independent: the job is gated on the authored circuit's structure with no
+    shots, no QPU time, and no backend execution at all. Useful to catch a circuit that
+    grew past a complexity budget or picked up an unexpected gate, on every commit.
+  labels:
+    suite: smoke
+    static: "true"
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+
+jobs:
+  - name: bell-shape
+    circuit:
+      format: qasm2
+      inline: |
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+    assertions:
+      - type: circuit_depth
+        max: 6
+      - type: gate_set
+        allowed: ["h", "cx"]

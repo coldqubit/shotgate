@@ -128,18 +128,33 @@ class Runner:
         )
         try:
             circuit = load_circuit(job.circuit, self.loaded.base_dir)
-            report.metrics.update(circuit_metrics(circuit).as_dict())
+            cmetrics = circuit_metrics(circuit).as_dict()
+            report.metrics.update(cmetrics)
 
-            backend = get_backend(backend_spec)
-            result = backend.run(
-                circuit, shots=backend_spec.shots, seed=backend_spec.seed
+            # A job whose assertions are all static (structural) needs no execution:
+            # skip the backend entirely, so circuit-property gates run with no shots,
+            # no QPU time, and no backend dependency. An empty gate still executes (it
+            # may exist only to capture counts/telemetry under --allow-empty).
+            requires_execution = not job.assertions or any(
+                a.needs_counts for a in job.assertions
             )
-            report.counts = result.counts
-            report.backend_name = result.backend_name
-            report.metrics["backend_metadata"] = result.metadata
+            counts: dict[str, int] = {}
+            run_shots = backend_spec.shots
+            if requires_execution:
+                backend = get_backend(backend_spec)
+                result = backend.run(
+                    circuit, shots=backend_spec.shots, seed=backend_spec.seed
+                )
+                counts = result.counts
+                run_shots = result.shots
+                report.counts = result.counts
+                report.backend_name = result.backend_name
+                report.metrics["backend_metadata"] = result.metadata
+            else:
+                report.metrics["executed"] = False
 
             outcomes = [
-                assertion.evaluate(result.counts, result.shots)
+                assertion.evaluate(counts, run_shots, circuit_metrics=cmetrics)
                 for assertion in job.assertions
             ]
             report.assertions = outcomes

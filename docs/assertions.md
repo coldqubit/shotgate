@@ -228,6 +228,38 @@ Grover's marked state).
 
 ---
 
+## `circuit_depth`: Circuit Depth (structural)
+
+A static, output-independent check on the **authored** circuit's depth.
+
+```yaml
+- type: circuit_depth
+  max: 50
+```
+
+Passes when the depth is within the provided `min`/`max` window (at least one is
+required). This needs **no execution**: a job whose assertions are all structural runs
+with no shots, no QPU time, and no backend. It bounds the circuit as written, not the
+device-transpiled circuit.
+
+---
+
+## `gate_set`: Allowed Gate Set (structural)
+
+Require the authored circuit to use only an allowed set of gate names. Measurement,
+barrier, and similar structural operations are always permitted, so list only the
+logical gates.
+
+```yaml
+- type: gate_set
+  allowed: ["h", "cx", "rz", "sx"]
+```
+
+Passes when every logical gate used is in `allowed`. Useful to catch an unexpected gate
+or to enforce a target device's basis before execution. Also static (no execution).
+
+---
+
 ## Choosing oracles
 
 | Goal | Use |
@@ -239,6 +271,8 @@ Grover's marked state).
 | Track a correlation/parity observable | `expectation_value` ($\langle Z\cdots\rangle$) |
 | Assert the right amount of randomness | `shannon_entropy` |
 | Forbid impossible outcomes / bound error | `allowed_states` |
+| Bound circuit complexity, no execution | `circuit_depth` (structural) |
+| Enforce a gate set / device basis, no execution | `gate_set` (structural) |
 
 Combine a **distance** oracle, a **hypothesis test**, and a **structural** oracle so
 that no single failure mode goes unmeasured, as the
