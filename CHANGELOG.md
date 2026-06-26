@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-26
+
 ### Added
 
 - **Two structural oracles (9 -> 11), see ADR-0012:** `circuit_depth` and `gate_set` gate on
@@ -14,6 +16,14 @@ All notable changes to this project are documented here. The format is based on
   no backend execution. The assertion contract gains an optional `circuit_metrics` argument
   (the runner passes the telemetry it already computes); existing oracles are unaffected. A
   `bell-state-structural` example demonstrates the no-execution path.
+- **`most_frequent_outcome` on the Grover hardware example,** giving that oracle a gating
+  hardware data point on its natural use case (a single intended answer).
+
+### Changed
+
+- Documented a 2026-06-26 real-QPU re-run exercising the post-v0.2 oracles on hardware
+  (`expectation_value`, noise-aware `chi_square`/`kl_divergence`, `most_frequent_outcome`):
+  see `docs/hardware-validation.md` section 10.
 
 ## [0.3.0] - 2026-06-26
 
@@ -259,7 +269,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/coldqubit/shotgate/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/coldqubit/shotgate/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/coldqubit/shotgate/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/coldqubit/shotgate/compare/v0.2.0...v0.2.1

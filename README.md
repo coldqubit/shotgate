@@ -264,8 +264,8 @@ shotgate/
   declarative noise-model simulation and noise-aware expected distributions (so
   `chi_square`/`kl_divergence` can gate on hardware), and the AWS Braket backend (local
   simulation; the cloud path awaits validation on real hardware).
-- **On `main`, pending the next release:** structural oracles `circuit_depth` and `gate_set`,
-  static circuit-property gates that run with no execution (no shots, no QPU, no backend).
+- **v0.4.0 (latest release):** structural oracles `circuit_depth` and `gate_set`, static
+  circuit-property gates that run with no execution (no shots, no QPU, no backend).
 - **Planned:** error mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend
   differential testing, circuit fixtures and property-based generation, a Helm chart, an
   optional OpenTelemetry exporter for the telemetry layer (kept out of the core
