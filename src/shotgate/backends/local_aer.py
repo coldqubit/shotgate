@@ -14,6 +14,42 @@ from typing import Any
 
 from shotgate.backends.base import Backend, BackendResult
 
+# Gate names that carry the declarative depolarizing error. Gates outside these sets
+# stay noiseless; the model is an approximate, uniform device proxy, not a calibration.
+_ONE_QUBIT_GATES = ("h", "x", "y", "z", "sx", "rx", "ry", "rz", "s", "sdg", "t", "tdg", "u", "p")
+_TWO_QUBIT_GATES = ("cx", "cz", "cy", "ecr", "cp", "swap", "rzz", "rxx", "ryy")
+
+
+def _build_noise_model(noise: dict[str, Any]) -> Any | None:
+    """Build a Qiskit Aer ``NoiseModel`` from a declarative :class:`NoiseSpec` mapping.
+
+    Returns ``None`` when every parameter is zero, so a noise spec of all-zeros behaves
+    exactly like the noiseless simulator.
+    """
+    from qiskit_aer.noise import NoiseModel, ReadoutError, depolarizing_error
+
+    d1 = float(noise.get("depolarizing_1q", 0.0))
+    d2 = float(noise.get("depolarizing_2q", 0.0))
+    p0 = float(noise.get("readout_p0", 0.0))
+    p1 = float(noise.get("readout_p1", 0.0))
+    if not (d1 > 0.0 or d2 > 0.0 or p0 > 0.0 or p1 > 0.0):
+        return None
+
+    model = NoiseModel()
+    if d1 > 0.0:
+        model.add_all_qubit_quantum_error(
+            depolarizing_error(d1, 1), list(_ONE_QUBIT_GATES)
+        )
+    if d2 > 0.0:
+        model.add_all_qubit_quantum_error(
+            depolarizing_error(d2, 2), list(_TWO_QUBIT_GATES)
+        )
+    if p0 > 0.0 or p1 > 0.0:
+        model.add_all_qubit_readout_error(
+            ReadoutError([[1.0 - p0, p0], [p1, 1.0 - p1]])
+        )
+    return model
+
 
 class LocalAerBackend(Backend):
     provider = "local-aer"
@@ -29,7 +65,15 @@ class LocalAerBackend(Backend):
         from qiskit import transpile
         from qiskit_aer import AerSimulator
 
-        simulator = AerSimulator(**self.options)
+        # The noise spec (if any) was injected into options by the registry; it is not
+        # an AerSimulator kwarg, so separate it before constructing the simulator.
+        sim_kwargs = dict(self.options)
+        noise = sim_kwargs.pop("noise", None)
+        noise_model = _build_noise_model(noise) if noise else None
+        if noise_model is not None:
+            sim_kwargs["noise_model"] = noise_model
+
+        simulator = AerSimulator(**sim_kwargs)
         compiled = transpile(circuit, simulator)
         result = simulator.run(compiled, shots=shots, seed_simulator=seed).result()
         counts = {str(k): int(v) for k, v in result.get_counts().items()}
@@ -42,5 +86,6 @@ class LocalAerBackend(Backend):
                 "provider": self.provider,
                 "method": simulator.options.get("method", "automatic"),
                 "seed": seed,
+                "noisy": noise_model is not None,
             },
         )

@@ -77,6 +77,20 @@ class CircuitSpec(_Strict):
         return self
 
 
+class NoiseSpec(_Strict):
+    """A simple, declarative noise model for the local Aer simulator.
+
+    Lets a workflow exercise the noise-aware (``*-hardware``) thresholds in CI without a
+    QPU: it applies a uniform depolarizing error per 1- and 2-qubit gate and a (possibly
+    asymmetric) readout error. Non-simulator backends ignore it (real devices are noisy).
+    """
+
+    depolarizing_1q: float = Field(0.0, ge=0.0, le=1.0)  # per single-qubit gate
+    depolarizing_2q: float = Field(0.0, ge=0.0, le=1.0)  # per two-qubit gate
+    readout_p0: float = Field(0.0, ge=0.0, le=1.0)  # P(measure 1 | prepared 0)
+    readout_p1: float = Field(0.0, ge=0.0, le=1.0)  # P(measure 0 | prepared 1)
+
+
 class BackendSpec(_Strict):
     """Where and how to execute a circuit."""
 
@@ -85,6 +99,7 @@ class BackendSpec(_Strict):
     seed: int | None = None
     name: str | None = None  # device/backend name for cloud providers
     options: dict[str, Any] = Field(default_factory=dict)
+    noise: NoiseSpec | None = None  # local-aer only: simulate device noise
 
     def merged_with_defaults(self, defaults: BackendSpec | None) -> BackendSpec:
         """Return a backend spec where unset fields fall back to ``defaults``."""
@@ -172,6 +187,7 @@ __all__ = [
     "JobSpec",
     "LoadedWorkflow",
     "Metadata",
+    "NoiseSpec",
     "Workflow",
     "load_workflow",
     "parse_workflow",

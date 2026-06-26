@@ -61,7 +61,12 @@ def get_backend(spec: BackendSpec) -> Backend:
             f"The published image ghcr.io/coldqubit/shotgate bakes the aer backend "
             f"in (use the :latest-ibm tag for ibm)."
         )
-    return backend_cls(name=spec.name, options=spec.options)
+    # A declarative noise model rides through the options dict so the Backend ABC
+    # stays minimal; simulator backends consume it, real-hardware backends ignore it.
+    options = spec.options
+    if spec.noise is not None:
+        options = {**spec.options, "noise": spec.noise.model_dump()}
+    return backend_cls(name=spec.name, options=options)
 
 
 def available_backends() -> dict[str, bool]:

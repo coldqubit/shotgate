@@ -93,6 +93,53 @@ def test_backend_merge_helper():
     assert merged.seed == 99
 
 
+def test_noise_spec_parses_and_is_strict():
+    doc = {
+        **VALID,
+        "defaults": {
+            "backend": {
+                "provider": "local-aer",
+                "noise": {"depolarizing_1q": 0.01, "readout_p0": 0.05},
+            }
+        },
+    }
+    wf = parse_workflow(doc)
+    assert wf.defaults is not None
+    assert wf.defaults.backend is not None
+    assert wf.defaults.backend.noise is not None
+    assert wf.defaults.backend.noise.depolarizing_1q == 0.01
+
+
+def test_noise_spec_rejects_unknown_field_and_out_of_range():
+    bad = {
+        **VALID,
+        "defaults": {"backend": {"provider": "local-aer", "noise": {"bogus": 0.1}}},
+    }
+    with pytest.raises(ValidationError):
+        parse_workflow(bad)
+    oob = {
+        **VALID,
+        "defaults": {
+            "backend": {"provider": "local-aer", "noise": {"readout_p0": 1.5}}
+        },
+    }
+    with pytest.raises(ValidationError):
+        parse_workflow(oob)
+
+
+def test_noise_merges_from_defaults_into_job_backend():
+    doc = {
+        **VALID,
+        "defaults": {
+            "backend": {"provider": "local-aer", "noise": {"depolarizing_2q": 0.02}}
+        },
+    }
+    wf = parse_workflow(doc)
+    effective = wf.effective_backend(wf.jobs[0])
+    assert effective.noise is not None
+    assert effective.noise.depolarizing_2q == 0.02
+
+
 def test_load_workflow_from_disk(tmp_path: Path):
     wf_file = tmp_path / "wf.yaml"
     wf_file.write_text(

@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Declarative noise-model simulation on `local-aer` (ADR-0009).** A backend can carry a
+  `noise` block (`depolarizing_1q`/`depolarizing_2q`/`readout_p0`/`readout_p1`) so the
+  noise-aware `*-hardware` thresholds can be regression-tested in CI without a QPU. A
+  simulated-noisy Bell pair lands in the measured device regime (TVD ~0.12 vs the measured
+  `ibm_fez` 0.1284); a `bell-state-noisy-sim` example gates it against hardware-profile
+  bounds. Non-simulator backends ignore `noise`.
 - **Four new assertion oracles (5 -> 9), see ADR-0008:** `kl_divergence` (bound the
   Kullback-Leibler divergence to an expected distribution, in bits; simulator-oriented
   like `chi_square`), `shannon_entropy` (bound the distribution entropy in a min/max

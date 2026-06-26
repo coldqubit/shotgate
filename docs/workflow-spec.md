@@ -70,6 +70,7 @@ If the loaded circuit has no classical bits, shotgate appends `measure_all()`.
 | `seed` | int | none | Determinism for simulators. |
 | `name` | string | none | Device/backend name (cloud providers). |
 | `options` | map | `{}` | Provider-specific (e.g. `{ channel, instance, token }`). |
+| `noise` | object | none | `local-aer` only: simulate device noise to exercise the noise-aware thresholds offline. Fields: `depolarizing_1q`, `depolarizing_2q`, `readout_p0`, `readout_p1` (each in `[0, 1]`). See [ADR-0009](adr/0009-noise-model-simulation.md). |
 
 **Defaults merge semantics:** a job inherits every `defaults.backend` field it does
 *not* explicitly set. Example: with `defaults.backend.shots: 8192`, a job that sets

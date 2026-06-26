@@ -1,0 +1,50 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-noisy-sim
+  description: >-
+    A Bell pair on the local Aer simulator WITH a declarative noise model, gated by the
+    noise-aware (hardware-profile) thresholds. This regression-tests the *-hardware
+    thresholds in CI with zero QPU time: the simulated depolarizing + readout noise lands
+    the distribution in the real-device regime (measured ibm_fez Bell TVD was 0.1284).
+  labels:
+    suite: smoke
+    noisy: "true"
+    qubits: "2"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 1234
+    # Approximate, uniform device noise (not a calibration): depolarizing per gate
+    # plus a slightly asymmetric readout error, tuned to the ibm_fez Bell regime.
+    noise:
+      depolarizing_1q: 0.004
+      depolarizing_2q: 0.012
+      readout_p0: 0.06
+      readout_p1: 0.07
+
+jobs:
+  - name: bell-pair
+    circuit:
+      format: qasm2
+      inline: |
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+    assertions:
+      # Noise-aware thresholds, comfortably looser than the simulator-tight ones.
+      - type: distribution_tvd
+        expected: { "00": 0.5, "11": 0.5 }
+        max_distance: 0.20
+      - type: hellinger_fidelity
+        expected: { "00": 0.5, "11": 0.5 }
+        min_fidelity: 0.80
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.20
