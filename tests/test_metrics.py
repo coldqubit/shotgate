@@ -99,3 +99,41 @@ def test_chi_square_penalises_leakage():
     counts = {"00": 480, "11": 480, "01": 40}
     _, _, p = metrics.chi_square_test(counts, {"00": 0.5, "11": 0.5})
     assert p < 0.001
+
+
+def test_shannon_entropy_uniform_and_deterministic():
+    assert metrics.shannon_entropy({"00": 50, "11": 50}) == pytest.approx(1.0)
+    assert metrics.shannon_entropy({"00": 100}) == pytest.approx(0.0)
+    assert metrics.shannon_entropy(
+        {"00": 25, "01": 25, "10": 25, "11": 25}
+    ) == pytest.approx(2.0)
+
+
+def test_kl_divergence_zero_value_and_infinite():
+    p = {"00": 0.5, "11": 0.5}
+    assert metrics.kl_divergence(p, p) == pytest.approx(0.0)
+    # D({1:1} || {0:0.5, 1:0.5}) = 1 bit
+    assert metrics.kl_divergence({"1": 1.0}, {"0": 0.5, "1": 0.5}) == pytest.approx(1.0)
+    # q assigns zero to an outcome p observes -> infinite (zero-support pathology)
+    assert metrics.kl_divergence({"00": 0.5, "01": 0.5}, {"00": 1.0}) == math.inf
+
+
+def test_z_expectation_values():
+    assert metrics.z_expectation({"00": 50, "11": 50}, [0, 1]) == pytest.approx(1.0)
+    assert metrics.z_expectation({"01": 50, "10": 50}, [0, 1]) == pytest.approx(-1.0)
+    assert metrics.z_expectation({"0": 100}, [0]) == pytest.approx(1.0)
+    assert metrics.z_expectation({"1": 100}, [0]) == pytest.approx(-1.0)
+    assert metrics.z_expectation({"0": 50, "1": 50}, [0]) == pytest.approx(0.0)
+
+
+def test_z_expectation_rejects_out_of_range_qubit():
+    with pytest.raises(ValueError):
+        metrics.z_expectation({"00": 100}, [2])
+
+
+def test_most_frequent_outcome_and_tie_break():
+    state, prob = metrics.most_frequent_outcome({"11": 70, "00": 30})
+    assert state == "11"
+    assert prob == pytest.approx(0.7)
+    # tie -> lexicographically smallest bitstring
+    assert metrics.most_frequent_outcome({"11": 50, "00": 50})[0] == "00"

@@ -38,10 +38,14 @@ __all__ = [
     "counts_to_probabilities",
     "hellinger_distance",
     "hellinger_fidelity",
+    "kl_divergence",
+    "most_frequent_outcome",
     "normalize",
+    "shannon_entropy",
     "state_probability",
     "support_leakage",
     "total_variation_distance",
+    "z_expectation",
 ]
 
 
@@ -133,6 +137,69 @@ def support_leakage(counts: Counts, allowed_states: list[str]) -> float:
     allowed = {clean_key(s) for s in allowed_states}
     probs = counts_to_probabilities(counts)
     return sum(prob for key, prob in probs.items() if key not in allowed)
+
+
+def shannon_entropy(counts: Counts) -> float:
+    """Shannon entropy of the measured distribution, in bits.
+
+    ``0`` for a deterministic outcome, ``log2(k)`` for a uniform distribution over
+    ``k`` equally-likely outcomes (e.g. 1.0 for a balanced Bell pair, 2.0 for a
+    uniform 2-bit distribution).
+    """
+    probs = counts_to_probabilities(counts)
+    return -sum(p * math.log2(p) for p in probs.values() if p > 0.0)
+
+
+def kl_divergence(p: Distribution, q: Distribution) -> float:
+    """Kullback-Leibler divergence ``D(p || q)`` in bits.
+
+    ``0`` when ``p == q``; asymmetric. Returns ``math.inf`` when ``q`` assigns zero
+    probability to an outcome ``p`` gives positive mass, the same zero-support
+    behaviour as ``chi_square``: an ideal ``q`` that forbids a device's error states
+    diverges, so KL is a simulator-oriented oracle unless ``q`` is noise-aware.
+    """
+    p = normalize(p)
+    q = normalize(q)
+    total = 0.0
+    for key, pk in p.items():
+        if pk <= 0.0:
+            continue
+        qk = q.get(key, 0.0)
+        if qk <= 0.0:
+            return math.inf
+        total += pk * math.log2(pk / qk)
+    return total
+
+
+def z_expectation(counts: Counts, qubits: list[int]) -> float:
+    """Expectation value of the Pauli-Z product ``<Z_{q0} Z_{q1} ...>`` in ``[-1, 1]``.
+
+    Each measured bitstring contributes ``(-1)^(sum of the selected bits)``. Bit order
+    follows Qiskit's little-endian convention: in a width-``n`` key, qubit ``q`` is the
+    character at index ``n - 1 - q``. A perfect Bell pair has ``<Z0 Z1> = +1``.
+    """
+    probs = counts_to_probabilities(counts)
+    expectation = 0.0
+    for bitstring, prob in probs.items():
+        n = len(bitstring)
+        parity = 1
+        for q in qubits:
+            if not 0 <= q < n:
+                raise ValueError(f"qubit index {q} out of range for {n}-bit outcomes")
+            parity *= -1 if bitstring[n - 1 - q] == "1" else 1
+        expectation += prob * parity
+    return expectation
+
+
+def most_frequent_outcome(counts: Counts) -> tuple[str, float]:
+    """Return the modal basis state and its probability.
+
+    Ties are broken by the lexicographically smallest bitstring, so the result is
+    deterministic regardless of dict ordering.
+    """
+    probs = counts_to_probabilities(counts)
+    state = min(probs, key=lambda k: (-probs[k], k))
+    return state, probs[state]
 
 
 # --------------------------------------------------------------------------- #
