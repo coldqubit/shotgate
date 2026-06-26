@@ -11,8 +11,9 @@
 > All gates passed; measured values in [section 9](#9-measured-baseline-ibm_fez-2026-06-11),
 > where all five oracles available at the v0.2 milestone (including a non-gating `chi_square`
 > measurement) have a hardware data point. The oracles added since (`kl_divergence`,
-> `shannon_entropy`, `expectation_value`, `most_frequent_outcome`) are simulator-tested and
-> have not yet been run on hardware.
+> `shannon_entropy`, `expectation_value`, `most_frequent_outcome`, and the noise-aware
+> `readout_error` variants) were exercised on hardware in the 2026-06-26 re-run,
+> [section 10](#10-second-hardware-run-2026-06-26-the-v03-oracles-on-a-qpu).
 > This document remains the runbook for re-running the validation on any device.
 
 ---
@@ -228,3 +229,50 @@ deviation with a near-zero denominator. The fix for a chi_square hardware gate w
 be a noise-aware expected distribution with nonzero mass on the error states (a
 device error model), which is out of scope for v0.2; the distance and structural
 oracles are the correct hardware gates.
+
+## 10. Second hardware run (2026-06-26): the v0.3 oracles on a QPU
+
+A re-run on 2026-06-26 with `shotgate[ibm]==0.3.0` from PyPI, `least_busy` selection,
+4096 shots per job, channel `ibm_quantum_platform`. `least_busy` placed the Bell gate
+on `ibm_kingston` (job `d8v7lp0pknjs73a0eomg`) and the GHZ, Grover, and oracle-coverage
+jobs on `ibm_fez` (jobs `d8v7lsmmvj5c73eh963g`, `d8v7m31ropqc738bqisg`,
+`d8v7mapropqc738bqjf0`). The three gating examples passed with more margin than the
+2026-06-11 run, the devices being cleaner that day:
+
+| Gate | Oracle | Measured | Threshold |
+| --- | --- | --- | --- |
+| Bell (`ibm_kingston`) | TVD | **0.0547** | <= 0.15 |
+| | Hellinger fidelity | **0.9453** | >= 0.85 |
+| | support leakage | **0.0547** | <= 0.15 |
+| GHZ-3 (`ibm_fez`) | TVD | **0.0737** | <= 0.20 |
+| | Hellinger fidelity | **0.9261** | >= 0.80 |
+| | support leakage | **0.0737** | <= 0.20 |
+| Grover-2 (`ibm_fez`) | P(`11`) | **0.9097** | >= 0.70 |
+| | support leakage | **0.0903** | <= 0.30 |
+| | most-frequent outcome | **`11`** (P 0.9097) | == `11` |
+
+The `most_frequent_outcome` oracle (added after v0.2) is validated on hardware here:
+the marked state is the modal outcome, as it must be whenever the P(`11`) gate holds.
+
+### The oracles added after v0.2, measured on `ibm_fez`
+
+The oracle-coverage diagnostic (Bell, counts `00`: 1897, `11`: 1948, `10`: 165, `01`: 86;
+valid-state mass 0.9387) exercised the newer oracles:
+
+| Oracle | Measured | Reading |
+| --- | --- | --- |
+| `expectation_value` `<Z0 Z1>` | **0.8774** | Z-correlation, degraded from the ideal 1 by leakage. Passed `>= 0.5`. |
+| `shannon_entropy` | **1.328 bits** | Above the ideal 1 bit: leakage into `01`/`10` spreads the distribution. |
+| `kl_divergence` (noise-aware) | **0.0412 bits** | With a `readout_error` model, passed `<= 0.1`. |
+| `chi_square` (plain) | statistic **3.46e16**, p 0 | Rejects, as in section 9: the ideal expected forbids `01`/`10`. |
+| `chi_square` (noise-aware) | statistic **184.2**, p 0 | See below. |
+
+The noise-aware `chi_square` is the informative case. A fixed `readout_error` of
+`p0 = p1 = 0.07` (representative, from the 2026-06-11 run) cut the statistic from
+`3.46e16` to `184.2`, five orders of magnitude, but it still rejected: `ibm_fez` that day
+was cleaner than 0.07 implies (valid-state mass 0.9387, so roughly 0.03 leakage per
+qubit), so the 0.07 model over-predicted the error and, at 4096 shots, the mismatch is
+still rejected. This confirms ADR-0010's condition that the readout parameters must come
+from the device's own calibration, not a fixed guess. `kl_divergence` passed on the same
+counts with the same model because it measures overlap, not a variance-normalised
+deviation, so it tolerates an approximate error model where `chi_square` does not.

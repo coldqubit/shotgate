@@ -12,7 +12,7 @@ infrastructure-as-code). The "write a circuit" problem is solved by mature SDKs
 and Azure Quantum. What's missing is everything a software-delivery org expects
 *around* that core.
 
-| Layer | State of the art |
+| Layer | Maturity |
 | --- | --- |
 | Circuit authoring / simulation | **Mature** (Qiskit, Cirq, Aer, ...) |
 | Cloud execution | **Mature** (IBM, Braket, Azure) |
