@@ -264,8 +264,12 @@ shotgate/
   declarative noise-model simulation and noise-aware expected distributions (so
   `chi_square`/`kl_divergence` can gate on hardware), and the AWS Braket backend (local
   simulation; the cloud path awaits validation on real hardware).
-- **v0.4.0 (latest release):** structural oracles `circuit_depth` and `gate_set`, static
-  circuit-property gates that run with no execution (no shots, no QPU, no backend).
+- **v0.4.0:** structural oracles `circuit_depth` and `gate_set`, static circuit-property
+  gates that run with no execution (no shots, no QPU, no backend).
+- **v0.5.0 (latest release):** `readout_error: auto` for `chi_square`/`kl_divergence`, which
+  uses the run's actual readout calibration (the device's published numbers on a QPU, none on
+  a noiseless simulator), so one workflow gates plain on a simulator and calibrated on
+  hardware.
 - **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release: error
   mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend differential testing,
   circuit fixtures and property-based generation, a Helm chart, an optional OpenTelemetry

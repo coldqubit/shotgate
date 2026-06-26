@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-27
+
 ### Added
 
 - **`readout_error: auto` for `chi_square` and `kl_divergence` (ADR-0013).** The oracle uses
@@ -280,7 +282,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/coldqubit/shotgate/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/coldqubit/shotgate/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/coldqubit/shotgate/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/coldqubit/shotgate/compare/v0.2.1...v0.2.2
