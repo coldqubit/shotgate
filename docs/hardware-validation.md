@@ -269,7 +269,8 @@ valid-state mass 0.9387) exercised the newer oracles:
 
 The noise-aware `chi_square` is the informative case. A fixed `readout_error` of
 `p0 = p1 = 0.07` (representative, from the 2026-06-11 run) cut the statistic from
-`3.46e16` to `184.2`, five orders of magnitude, but it still rejected: `ibm_fez` that day
+`3.46e16` to `184.2`, about 14 orders of magnitude (a factor of ~2e14), but it still
+rejected: `ibm_fez` that day
 was cleaner than 0.07 implies (valid-state mass 0.9387, so roughly 0.03 leakage per
 qubit), so the 0.07 model over-predicted the error and, at 4096 shots, the mismatch is
 still rejected. This confirms ADR-0010's condition that the readout parameters must come
