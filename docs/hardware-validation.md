@@ -277,3 +277,32 @@ still rejected. This confirms ADR-0010's condition that the readout parameters m
 from the device's own calibration, not a fixed guess. `kl_divergence` passed on the same
 counts with the same model because it measures overlap, not a variance-normalised
 deviation, so it tolerates an approximate error model where `chi_square` does not.
+
+## 11. Auto-calibrated chi_square on a QPU (2026-06-27)
+
+A re-run on 2026-06-27 with `shotgate[ibm]==0.5.0` validated `readout_error: auto` end to end
+on `ibm_fez` (`least_busy`). The `ibm` backend read the device's published readout calibration
+and averaged it over the two active qubits: `p0 = 0.0066` (P(read 1 | prep 0)), `p1 = 0.0214`
+(P(read 0 | prep 1)). The oracle used those numbers rather than a guess (the message is tagged
+`[noise-aware: device-average p0=0.007 p1=0.021]`), confirming the calibration plumbing works
+on real hardware.
+
+Diagnostic counts `00`: 1968, `11`: 1911, `10`: 129, `01`: 88 (valid-state mass 0.9470):
+
+| Oracle | Measured | Reading |
+| --- | --- | --- |
+| `expectation_value` `<Z0 Z1>` | 0.8940 | Passed `>= 0.5`. |
+| `shannon_entropy` | 1.2974 bits | Passed the 0.8-1.5 window. |
+| `kl_divergence` (auto) | 0.0153 bits | Passed `<= 0.1` with the device calibration. |
+| `chi_square` (plain) | statistic 2.44e16, p 0 | Rejects (zero-support). |
+| `chi_square` (auto) | statistic 114.9, p 0 | Used the real calibration but still rejected. |
+
+The auto `chi_square` is again the honest case, and now the cause is unambiguous: the device's
+measured leakage is ~5.3% (TVD 0.053), but its readout error is only ~0.7% + 2.1% = ~2.8%. The
+extra leakage is gate and decoherence error, which the readout-only model does not capture, so
+the noise-aware expected still under-predicts the error states and `chi_square`, at 4096 shots,
+rejects. This is exactly the limitation ADR-0013 states: a calibrated `chi_square` is usable
+only when the device error is readout-dominated. `kl_divergence` passed on the same counts and
+calibration because it measures overlap, not a variance-normalised deviation. The guidance
+holds: gate hardware with the distance and divergence oracles; auto `chi_square` is a correct,
+automatic refinement, not a universal hardware gate.
