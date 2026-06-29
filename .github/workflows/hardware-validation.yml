@@ -80,15 +80,18 @@ jobs:
           SHOTS: ${{ inputs.shots }}
           REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          # Runs all five oracles on one Bell circuit so chi_square has a hardware
-          # data point. chi_square is EXPECTED to fail under device noise, so this
-          # step never fails the job (|| true); the JSON report carries the number.
+          # Runs the counts-based oracles on one Bell circuit so chi_square has a
+          # hardware data point: the plain chi_square (EXPECTED to fail under device
+          # noise), the readout-only auto variant, and the noise_model: auto digital
+          # twin. The twin needs Aer on the ibm backend (NoiseModel.from_backend +
+          # simulation), so this step installs shotgate[ibm,aer], not [ibm]. The step
+          # never fails the job (|| true); the JSON report carries the numbers.
           podman run --rm \
             -v "$PWD:/work:ro" -v "$PWD/reports:/reports" \
             -e SHOTGATE_IBM_TOKEN -e DEVICE -e SHOTS -e REQUESTED_VERSION \
             docker.io/library/python:3.12-slim bash -euc '
-              SPEC="shotgate[ibm]"
-              [ -n "$REQUESTED_VERSION" ] && SPEC="shotgate[ibm]==$REQUESTED_VERSION"
+              SPEC="shotgate[ibm,aer]"
+              [ -n "$REQUESTED_VERSION" ] && SPEC="shotgate[ibm,aer]==$REQUESTED_VERSION"
               pip install -q --no-cache-dir "$SPEC"
               wf=bell-state-hardware-oracle-coverage
               cp -r "/work/examples/${wf}" "/tmp/${wf}" && cd "/tmp/${wf}"
