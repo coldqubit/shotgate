@@ -77,21 +77,40 @@ class ReadoutErrorSpec(BaseModel):
 def _noise_aware_expected(
     expected: dict[str, float],
     readout_error: ReadoutErrorSpec | Literal["auto"] | None,
+    noise_model: Literal["auto"] | None,
     backend_metadata: dict[str, Any] | None,
 ) -> tuple[dict[str, float], str]:
     """Resolve the expected distribution a goodness-of-fit oracle compares against.
 
-    - ``None``: the ideal ``expected`` unchanged (the plain test).
-    - a ``ReadoutErrorSpec``: the ideal transformed through that fixed readout model.
-    - ``"auto"``: use the readout calibration the execution actually had (attached to
-      ``backend_metadata['readout_calibration']`` by the backend). A noiseless simulator
-      reports no calibration, so this falls back to the ideal distribution, i.e. the plain
-      test; a real device uses its own published readout numbers. This is what lets a single
-      workflow gate with the plain `chi_square` on a simulator and the calibrated one on a
-      QPU, with no per-device editing.
+    Three escalating sources of a noise-aware expected, with ``noise_model`` taking
+    precedence (the schema forbids setting both ``noise_model`` and ``readout_error``):
+
+    - ``noise_model: "auto"`` (digital twin): use the device's *full* calibrated noise
+      model simulated on the circuit (gate + readout + thermal relaxation), attached to
+      ``backend_metadata['noise_model_expected']`` by the backend. This compares the device
+      against its own calibrated model, which captures the gate and decoherence leakage a
+      readout transform cannot (ADR-0014). A noiseless run carries no twin, so this falls
+      back to the ideal ``expected`` (the plain test).
+    - ``readout_error`` as a ``ReadoutErrorSpec``: the ideal transformed through that fixed
+      per-qubit readout (assignment) model.
+    - ``readout_error: "auto"``: the ideal transformed through the device's published
+      readout calibration (``backend_metadata['readout_calibration']``), falling back to the
+      ideal when none is reported (a noiseless simulator).
+
+    With every option ``None`` the ideal ``expected`` is returned unchanged (the plain test).
+    The ``"auto"`` modes are what let one workflow gate with the plain test on a simulator
+    and the calibrated/twin one on a QPU, with no per-device editing.
 
     Returns ``(effective_expected, note)``; ``note`` annotates the result message.
     """
+    if noise_model == "auto":
+        twin = (backend_metadata or {}).get("noise_model_expected")
+        if isinstance(twin, dict) and twin.get("distribution"):
+            return (
+                dict(twin["distribution"]),
+                f" [noise-aware: twin {twin.get('source', 'device')}]",
+            )
+        return expected, ""
     if readout_error is None:
         return expected, ""
     if readout_error == "auto":
@@ -214,12 +233,23 @@ class ChiSquareAssertion(_BaseAssertion):
     expected: dict[str, float]
     significance: float = Field(0.05, gt=0.0, lt=1.0)
     readout_error: ReadoutErrorSpec | Literal["auto"] | None = None
+    noise_model: Literal["auto"] | None = None
 
     @field_validator("expected")
     @classmethod
     def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
         _validate_bitstring_keys(v.keys(), field="expected")
         return v
+
+    @model_validator(mode="after")
+    def _check_noise_aware(self) -> ChiSquareAssertion:
+        if self.noise_model is not None and self.readout_error is not None:
+            raise ValueError(
+                "set only one of noise_model or readout_error: noise_model: auto is the "
+                "full device twin (gate + readout + decoherence); readout_error covers "
+                "readout only"
+            )
+        return self
 
     def default_label(self) -> str:
         return f"chi-square p >= {self.significance}"
@@ -232,7 +262,7 @@ class ChiSquareAssertion(_BaseAssertion):
         backend_metadata: dict[str, Any] | None = None,
     ) -> AssertionResult:
         expected, suffix = _noise_aware_expected(
-            self.expected, self.readout_error, backend_metadata
+            self.expected, self.readout_error, self.noise_model, backend_metadata
         )
         statistic, dof, p_value = metrics.chi_square_test(counts, expected)
         passed = p_value >= self.significance
@@ -368,12 +398,23 @@ class KLDivergenceAssertion(_BaseAssertion):
     expected: dict[str, float]
     max_divergence: float = Field(0.05, ge=0.0)
     readout_error: ReadoutErrorSpec | Literal["auto"] | None = None
+    noise_model: Literal["auto"] | None = None
 
     @field_validator("expected")
     @classmethod
     def _check_expected(cls, v: dict[str, float]) -> dict[str, float]:
         _validate_bitstring_keys(v.keys(), field="expected")
         return v
+
+    @model_validator(mode="after")
+    def _check_noise_aware(self) -> KLDivergenceAssertion:
+        if self.noise_model is not None and self.readout_error is not None:
+            raise ValueError(
+                "set only one of noise_model or readout_error: noise_model: auto is the "
+                "full device twin (gate + readout + decoherence); readout_error covers "
+                "readout only"
+            )
+        return self
 
     def default_label(self) -> str:
         return f"KL <= {self.max_divergence}"
@@ -387,7 +428,7 @@ class KLDivergenceAssertion(_BaseAssertion):
     ) -> AssertionResult:
         probs = metrics.counts_to_probabilities(counts)
         expected, note = _noise_aware_expected(
-            self.expected, self.readout_error, backend_metadata
+            self.expected, self.readout_error, self.noise_model, backend_metadata
         )
         divergence = metrics.kl_divergence(probs, expected)
         passed = divergence <= self.max_divergence

@@ -116,6 +116,32 @@ Notes & caveats:
     significance: 0.01
   ```
 
+- **`noise_model: auto` (the digital twin, for gate-dominated hardware).** A readout transform
+  only models measurement error; on today's devices the dominant leakage is gate and
+  decoherence error. `noise_model: auto` compares the counts against a **digital twin**: the
+  same circuit simulated through the device's *full* calibrated noise model (gate + readout +
+  thermal relaxation), built by the backend. The `ibm` backend builds it from the device's
+  published properties (`NoiseModel.from_backend`); `local-aer` reuses its `noise` block; a
+  noiseless run carries no twin, so `auto` falls back to the ideal `expected` (the plain test).
+  This makes `chi_square` gate where `readout_error: auto` still rejects: on the 2026-06-27
+  `ibm_fez` Bell run, the readout-only expected predicted leakage 0.0275 against an observed
+  0.0530 and rejected (statistic 114.4), while the full noise model captures the gate leakage.
+  The verdict's meaning shifts accordingly: it asks "does the device match its **own calibrated
+  model**?", a calibration-drift / device-health check, not "does it match the ideal?". It is
+  mutually exclusive with `readout_error` (the twin is the richer model) and needs Qiskit Aer
+  on the `ibm` backend (`shotgate[ibm,aer]` or the `:latest-ibm` image). See
+  [ADR-0014](adr/0014-digital-twin-expected-distribution.md) and the
+  [hardware twin validation](hardware-validation.md#12-digital-twin-chi_square-validation-2026-06-30).
+
+  ```yaml
+  - type: chi_square
+    expected: { "00": 0.5, "11": 0.5 }   # the ideal; used only as the noiseless-sim fallback
+    noise_model: auto                    # plain on a sim; device twin on a QPU
+    significance: 0.01
+  ```
+
+  `noise_model: auto` works on `kl_divergence` too, with the same fallback and exclusivity.
+
 ---
 
 ## `state_probability`: Marginal Outcome Probability

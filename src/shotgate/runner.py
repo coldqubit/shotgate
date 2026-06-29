@@ -142,6 +142,17 @@ class Runner:
             run_shots = backend_spec.shots
             bmeta: dict[str, Any] | None = None
             if requires_execution:
+                # Building the digital twin (a high-shot noise-model simulation) is only
+                # worth its cost when an assertion actually compares against it, so request
+                # it from the backend only when some oracle sets `noise_model: auto`.
+                if any(
+                    getattr(a, "noise_model", None) == "auto" for a in job.assertions
+                ):
+                    backend_spec = backend_spec.model_copy(
+                        update={
+                            "options": {**backend_spec.options, "compute_twin": True}
+                        }
+                    )
                 backend = get_backend(backend_spec)
                 result = backend.run(
                     circuit, shots=backend_spec.shots, seed=backend_spec.seed

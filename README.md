@@ -179,7 +179,7 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 
 | Type | Oracle | Use it for |
 | --- | --- | --- |
-| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; plain on simulators, hardware-capable via `readout_error: auto` |
+| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; plain on simulators, hardware-capable via `readout_error: auto` (readout) or `noise_model: auto` (full device twin) |
 | `distribution_tvd` | Total variation distance (TVD) ≤ bound | Default distribution check; interpretable, shot-count-agnostic |
 | `hellinger_fidelity` | Classical fidelity ≥ threshold | Fidelity tracking against an ideal distribution |
 | `state_probability` | Marginal P(state) in a window / ≈ target | Single-outcome amplitude checks (e.g. Grover) |
@@ -266,10 +266,14 @@ shotgate/
   simulation; the cloud path awaits validation on real hardware).
 - **v0.4.0:** structural oracles `circuit_depth` and `gate_set`, static circuit-property
   gates that run with no execution (no shots, no QPU, no backend).
-- **v0.5.0 (latest release):** `readout_error: auto` for `chi_square`/`kl_divergence`, which
-  uses the run's actual readout calibration (the device's published numbers on a QPU, none on
-  a noiseless simulator), so one workflow gates plain on a simulator and calibrated on
-  hardware.
+- **v0.5.0:** `readout_error: auto` for `chi_square`/`kl_divergence`, which uses the run's
+  actual readout calibration (the device's published numbers on a QPU, none on a noiseless
+  simulator), so one workflow gates plain on a simulator and calibrated on hardware.
+- **v0.6.0 (latest release):** `noise_model: auto`, the digital twin: `chi_square`/
+  `kl_divergence` gate against the device's *full* calibrated noise model (gate, readout, and
+  thermal relaxation) simulated on the circuit, capturing the gate and decoherence leakage a
+  readout transform cannot. The verdict becomes a calibration-drift / device-health check. See
+  [`docs/hardware-validation.md`](docs/hardware-validation.md) section 12.
 - **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release: error
   mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend differential testing,
   circuit fixtures and property-based generation, a Helm chart, an optional OpenTelemetry

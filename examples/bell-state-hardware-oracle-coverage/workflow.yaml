@@ -78,3 +78,12 @@ jobs:
         expected: { "00": 0.5, "11": 0.5 }
         readout_error: auto
         max_divergence: 0.1
+      # Digital twin (noise_model: auto). The ibm backend simulates this circuit through
+      # the device's FULL calibrated noise model (NoiseModel.from_backend: gate + readout +
+      # decoherence) and compares against that, capturing the gate leakage the readout-only
+      # transform above misses. Asks "does the device match its own calibrated model?", a
+      # calibration-drift check. Needs Aer alongside the ibm extra (shotgate[ibm,aer]).
+      - type: chi_square
+        expected: { "00": 0.5, "11": 0.5 }
+        noise_model: auto
+        significance: 0.01

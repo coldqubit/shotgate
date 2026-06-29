@@ -311,3 +311,70 @@ def test_kl_auto_falls_back_to_plain_without_calibration():
     cal = {"readout_calibration": {"p0": 0.07, "p1": 0.075}}
     res = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=cal)
     assert math.isfinite(res.metrics["kl_divergence"])
+
+
+# A digital twin matching the device's observed proportions: the backend would attach this
+# after simulating the circuit through the device's full noise model (gate + readout +
+# decoherence). Keyed identically to the observed counts (ADR-0014).
+IBM_FEZ_TWIN = {
+    "noise_model_expected": {
+        "distribution": {"00": 0.4343, "11": 0.4307, "10": 0.0742, "01": 0.0608},
+        "shots": 200_000,
+        "source": "device-noise-model:ibm_fez",
+    }
+}
+
+
+def test_chi_square_noise_model_twin_gates_hardware_counts():
+    a = ADAPTER.validate_python(
+        {
+            "type": "chi_square",
+            "expected": {"00": 0.5, "11": 0.5},
+            "noise_model": "auto",
+            "significance": 0.01,
+        }
+    )
+    # No twin (a noiseless simulator) -> ideal expected -> the plain test rejects leakage.
+    plain = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None)
+    assert plain.passed is False
+    assert "noise-aware" not in plain.message
+    # With the device twin -> compares against the calibrated model -> passes, tagged twin.
+    aware = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=IBM_FEZ_TWIN)
+    assert aware.passed is True
+    assert aware.metrics["p_value"] > 0.01
+    assert "twin" in aware.message and "ibm_fez" in aware.message
+
+
+def test_kl_noise_model_twin_is_finite_and_passes():
+    a = ADAPTER.validate_python(
+        {
+            "type": "kl_divergence",
+            "expected": {"00": 0.5, "11": 0.5},
+            "noise_model": "auto",
+            "max_divergence": 0.1,
+        }
+    )
+    # Without a twin the ideal diverges on leaky counts; with the twin it is finite.
+    assert a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None).metrics[
+        "kl_divergence"
+    ] == math.inf
+    res = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=IBM_FEZ_TWIN)
+    assert math.isfinite(res.metrics["kl_divergence"])
+    assert res.passed is True
+
+
+def test_noise_model_and_readout_error_are_mutually_exclusive():
+    for oracle, extra in (
+        ("chi_square", {"significance": 0.01}),
+        ("kl_divergence", {"max_divergence": 0.1}),
+    ):
+        with pytest.raises(ValidationError):
+            ADAPTER.validate_python(
+                {
+                    "type": oracle,
+                    "expected": {"00": 0.5, "11": 0.5},
+                    "noise_model": "auto",
+                    "readout_error": "auto",
+                    **extra,
+                }
+            )

@@ -306,3 +306,44 @@ only when the device error is readout-dominated. `kl_divergence` passed on the s
 calibration because it measures overlap, not a variance-normalised deviation. The guidance
 holds: gate hardware with the distance and divergence oracles; auto `chi_square` is a correct,
 automatic refinement, not a universal hardware gate.
+
+## 12. Digital-twin chi_square validation (2026-06-30)
+
+Section 11 isolated the cause of the auto `chi_square` rejection: the readout-only expected
+under-predicts the device's leakage because gate and decoherence error are unmodelled. ADR-0014
+closes that gap with `noise_model: auto`, which compares the counts against a digital twin: the
+same circuit simulated through the device's *full* calibrated noise model (gate + readout +
+thermal relaxation). The mechanism is validated below; the numbers are reproducible.
+
+On the section-11 `ibm_fez` counts (`00`: 1968, `11`: 1911, `10`: 129, `01`: 88; observed
+leakage 0.0530), holding the expected against three error models:
+
+| Expected model | Predicted leakage | chi-square | p-value | Verdict (alpha = 0.01) |
+| --- | --- | --- | --- | --- |
+| ideal (zero-support) | 0 | 2.44e16 | 0 | reject |
+| readout-only auto (p0 0.0066, p1 0.0214) | 0.0275 | 114.4 | 1.35e-24 | reject |
+| full noise model (2-qubit depolarizing 0.05) | 0.0511 | 8.32 | 0.040 | pass |
+
+The test passes only when the model's predicted leakage matches the device's actual leakage
+(0.0511 vs 0.0530); a readout-only model under-predicts and an over-noised model (2-qubit
+depolarizing 0.10, predicted leakage 0.0747) rejects in the other direction (statistic 33.5).
+So the twin has to carry the device's true error profile, which `NoiseModel.from_backend`
+supplies from the device's published per-gate and readout properties.
+
+End-to-end on a fake IBM device (`FakeManilaV2`, Bell, 4096 shots, twin sampled at 200000
+shots, `NoiseModel.from_backend`), which exercises the full backend path the `ibm` backend
+takes on real hardware:
+
+- The twin distribution is `00`: 0.4842, `01`: 0.0170, `10`: 0.0169, `11`: 0.4819: it
+  reproduces the device's ~3.4% leakage that the ideal assigns zero.
+- A healthy run (the device behaving as its model) passes against the twin (statistic 1.41,
+  p-value 0.70) while rejecting the ideal (statistic 1.13e16, p-value 0).
+- A drifted device (2-qubit depolarizing inflated to 0.10) is rejected against the twin
+  (statistic 57.2, p-value 0). The gate detects the drift, which is its purpose: `noise_model:
+  auto` is a calibration-drift / device-health check, passing a device that matches its
+  calibration and failing one that has degraded past it.
+
+This confirms `noise_model: auto` is usable where `readout_error: auto` rejects, at the cost of
+changing the question from "matches the ideal?" to "matches its own calibrated model?". The
+distance and fidelity oracles remain the gates for "close to ideal". A re-run pinning the model
+to a live `ibm_fez` calibration is the next hardware step.

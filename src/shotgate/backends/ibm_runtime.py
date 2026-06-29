@@ -123,6 +123,41 @@ def _device_readout_calibration(backend: Any, isa_circuit: Any) -> dict[str, Any
     }
 
 
+def _device_twin(
+    backend: Any, isa_circuit: Any, *, twin_shots: int | None, seed: int | None
+) -> dict[str, Any] | None:
+    """Build a digital twin: the device's full calibrated noise model simulated on the
+    ISA circuit, returned as an expected distribution for a ``noise_model: auto`` oracle.
+
+    Uses ``NoiseModel.from_backend`` (gate + readout + thermal relaxation from the device's
+    published properties). Needs Qiskit Aer, which the ``ibm`` extra does not pull in, so
+    the import is guarded: without Aer (or if the device exposes no usable model) the twin
+    is simply absent and ``auto`` oracles fall back to the readout-only or ideal expected.
+    """
+    try:
+        from qiskit_aer.noise import NoiseModel
+
+        from shotgate.backends.digital_twin import DEFAULT_TWIN_SHOTS, twin_distribution
+    except Exception:
+        return None
+    try:
+        noise_model = NoiseModel.from_backend(backend)
+    except Exception:
+        return None
+    tshots = int(twin_shots) if twin_shots else DEFAULT_TWIN_SHOTS
+    try:
+        distribution = twin_distribution(isa_circuit, noise_model, shots=tshots, seed=seed)
+    except Exception:
+        return None
+    if not distribution:
+        return None
+    return {
+        "distribution": distribution,
+        "shots": tshots,
+        "source": f"device-noise-model:{getattr(backend, 'name', 'unknown')}",
+    }
+
+
 class IBMRuntimeBackend(Backend):
     provider = "ibm"
 
@@ -201,6 +236,15 @@ class IBMRuntimeBackend(Backend):
         calibration = _device_readout_calibration(backend, isa_circuit)
         if calibration is not None:
             metadata["readout_calibration"] = calibration
+        if self.options.get("compute_twin"):
+            twin = _device_twin(
+                backend,
+                isa_circuit,
+                twin_shots=self.options.get("twin_shots"),
+                seed=seed,
+            )
+            if twin is not None:
+                metadata["noise_model_expected"] = twin
 
         return BackendResult(
             counts=counts,

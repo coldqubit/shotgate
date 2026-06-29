@@ -262,3 +262,54 @@ def test_chi_square_auto_uses_noise_block_calibration():
     # auto pulled the simulated readout calibration from the noise block and passed.
     assert a.passed
     assert "noise-model" in a.message
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_chi_square_noise_model_twin_gates_a_noisy_run():
+    from shotgate.config import LoadedWorkflow, parse_workflow
+    from shotgate.validation import metrics
+
+    # A noisy run whose leakage comes from BOTH gate and readout error: the readout-only
+    # transform under-predicts it, but the full noise-model twin captures it (ADR-0014).
+    noise = {
+        "depolarizing_1q": 0.005,
+        "depolarizing_2q": 0.03,
+        "readout_p0": 0.02,
+        "readout_p1": 0.02,
+    }
+    doc = {
+        "apiVersion": "shotgate.dev/v1alpha1",
+        "kind": "QuantumWorkflow",
+        "metadata": {"name": "twin"},
+        "jobs": [
+            {
+                "name": "bell",
+                "circuit": {"format": "qasm2", "inline": BELL_QASM2},
+                "backend": {
+                    "provider": "local-aer",
+                    "shots": 8192,
+                    "seed": 7,
+                    "noise": noise,
+                    "options": {"twin_shots": 200_000},
+                },
+                "assertions": [
+                    {
+                        "type": "chi_square",
+                        "expected": {"00": 0.5, "11": 0.5},
+                        "noise_model": "auto",
+                        "significance": 0.01,
+                    }
+                ],
+            }
+        ],
+    }
+    job = Runner(LoadedWorkflow(parse_workflow(doc), EXAMPLES)).run().jobs[0]
+    a = job.assertions[0]
+    # The twin was attached by the backend and the oracle gated against it.
+    twin = job.metrics["backend_metadata"]["noise_model_expected"]
+    assert twin["source"] == "noise-model" and twin["shots"] == 200_000
+    assert a.passed
+    assert "twin" in a.message
+    # The same counts reject against the ideal: the twin is doing the work, not luck.
+    _stat, _dof, p_ideal = metrics.chi_square_test(job.counts, {"00": 0.5, "11": 0.5})
+    assert p_ideal < 0.01
