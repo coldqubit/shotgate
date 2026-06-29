@@ -51,11 +51,20 @@ validation core consumes the twin as plain probabilities and stays SDK-free.
 
 ## Consequences
 
-- **+** Captures gate and decoherence leakage that `readout_error: auto` cannot, so
-  `chi_square`/`kl_divergence` become usable hardware gates where readout-only still rejects.
-  Verified end to end on a fake IBM device: a healthy run passes against its twin
-  (p-value 0.70) while rejecting the ideal (p-value 0), and a drifted device (2-qubit
-  depolarizing inflated to 0.10) is rejected against the twin (statistic 57.2, p-value 0).
+- **+** Captures the gate and decoherence leakage `readout_error: auto` cannot, lowering the
+  goodness-of-fit statistic toward the gateable range. On a real `ibm_marrakesh` run
+  (2026-06-30) the statistic fell monotonically with model richness: ideal 4.54e15 ->
+  readout-only 47.56 -> twin 32.40. In simulation, where the device *is* its model, the twin
+  passes: on a fake IBM device a healthy run passes against its twin (p-value 0.70) while
+  rejecting the ideal (p-value 0), and a drifted device (2-qubit depolarizing inflated to 0.10)
+  is rejected against the twin (statistic 57.2, p-value 0).
+- **-** On a real QPU `NoiseModel.from_backend` is an approximation of the device, not the
+  device, so `chi_square` against the twin is not guaranteed to pass. On the `ibm_marrakesh`
+  run the model under-predicted the leakage (0.0183 modelled vs 0.0208 observed) and modelled
+  it as near-symmetric where the device was asymmetric, so the test still rejected at 4096
+  shots even at statistic 32.40. That is the device-health reading working (the device deviates
+  from its published calibration); the distance and divergence oracles (TVD 0.0254, fidelity
+  0.9790, KL 0.0064 on the same run) remain the robust "close to ideal" hardware gates.
 - **+** Backward compatible and opt-in: `readout_error` (fixed or `auto`) is unchanged, the
   other oracles ignore `noise_model`, and the schema field is additive (no `v1alpha1` bump).
 - **-** It changes what the test *means*. `noise_model: auto` asks "does the device match its

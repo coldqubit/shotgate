@@ -15,12 +15,15 @@ All notable changes to this project are documented here. The format is based on
   and thermal relaxation) simulated on the same circuit, not just a readout transform. The `ibm`
   backend builds the twin with `NoiseModel.from_backend` and simulates the ISA circuit on Aer;
   `local-aer` reuses its `noise` block; a noiseless run carries no twin, so `auto` falls back
-  to the ideal expected (the plain test). This makes `chi_square` gate where `readout_error:
-  auto` still rejects because gate and decoherence error dominate the leakage (the 2026-06-27
-  `ibm_fez` run: readout-only predicted leakage 0.0275 vs observed 0.0530). The verdict's
-  meaning shifts to a calibration-drift / device-health check ("does the device match its own
-  calibrated model?"); validated end to end on a fake IBM device (healthy run passes the twin
-  at p-value 0.70, a drifted device is rejected at p-value 0). `noise_model` and
+  to the ideal expected (the plain test). It captures the gate and decoherence leakage a
+  readout transform misses, lowering the goodness-of-fit statistic (on a real `ibm_marrakesh`
+  run: ideal 4.54e15 -> readout-only auto 47.56 -> twin 32.40); whether it then passes depends
+  on how closely the device matches its published model. The verdict's meaning shifts to a
+  calibration-drift / device-health check ("does the device match its own calibrated model?"):
+  in simulation, where the device is its model, the twin passes (healthy run p-value 0.70, a
+  drifted device rejected at p-value 0); on a real QPU `NoiseModel.from_backend` is an
+  approximation, so `chi_square` can still reject (see `docs/hardware-validation.md` section
+  12). `noise_model` and
   `readout_error` are mutually exclusive on one assertion; the twin needs Aer on the `ibm`
   backend (`shotgate[ibm,aer]` or the `:latest-ibm` image). Twin shot budget is
   `backend.options.twin_shots` (default 200000). The schema addition is backward-compatible

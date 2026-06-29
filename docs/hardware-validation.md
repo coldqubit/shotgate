@@ -343,7 +343,38 @@ takes on real hardware:
   auto` is a calibration-drift / device-health check, passing a device that matches its
   calibration and failing one that has degraded past it.
 
-This confirms `noise_model: auto` is usable where `readout_error: auto` rejects, at the cost of
-changing the question from "matches the ideal?" to "matches its own calibrated model?". The
-distance and fidelity oracles remain the gates for "close to ideal". A re-run pinning the model
-to a live `ibm_fez` calibration is the next hardware step.
+In simulation, where the device *is* its model, this confirms `noise_model: auto` passes where
+`readout_error: auto` rejects, at the cost of changing the question from "matches the ideal?"
+to "matches its own calibrated model?".
+
+### On a real QPU (`ibm_marrakesh`, 2026-06-30)
+
+The same diagnostic ran on `ibm_marrakesh` (`least_busy`) with `shotgate[ibm,aer]==0.6.0`, which
+built the twin from the live device via `NoiseModel.from_backend` and simulated it at 200000
+shots. The plumbing works end to end on real hardware: the twin was attached and the oracle used
+it (the message is tagged `[noise-aware: twin device-noise-model:ibm_marrakesh]`). Diagnostic
+counts `00`: 2067, `11`: 1944, `10`: 64, `01`: 21 (observed leakage 0.0208), twin distribution
+`00`: 0.4911, `01`: 0.0094, `10`: 0.0089, `11`: 0.4906 (modelled leakage 0.0183):
+
+| chi_square expected | statistic | p-value | Verdict (alpha = 0.01) |
+| --- | --- | --- | --- |
+| ideal (zero-support) | 4.54e15 | 0 | reject |
+| readout-only auto (p0 0.0029, p1 0.0112) | 47.56 | 0 | reject |
+| digital twin (`NoiseModel.from_backend`) | 32.40 | 0 | reject |
+
+The statistic falls monotonically as the expected model gets richer (4.54e15 -> 47.56 -> 32.40):
+the twin does capture gate leakage the readout transform misses, dropping the statistic ~14
+orders below the plain test and a further third below the readout-only model. But it did not
+cross the threshold, for two compounding reasons. The `from_backend` model under-predicts the
+device's leakage (0.0183 modelled vs 0.0208 observed), and it predicts a near-symmetric error
+(twin `01` 0.0094 ~ `10` 0.0089) where the device is markedly asymmetric (observed `10` 64 vs
+`01` 21). The residual mismatch concentrates in the small-expected-count error bins, which a
+goodness-of-fit test at 4096 shots punishes. This is the device-health reading working as
+intended: the device deviates from its own published calibration, and a strict test flags it.
+
+So on a clean device the twin is the correct direction and a strict calibration-drift gate, but
+`from_backend` is an approximation of the hardware, not the hardware itself, so `noise_model:
+auto` `chi_square` is not guaranteed to pass on a real QPU. The distance and divergence oracles
+remain the robust hardware gates: on this run TVD was 0.0254, Hellinger fidelity 0.9790, and the
+readout-aware `kl_divergence` 0.0064 bits, all passing. The Bell, GHZ, and Grover hardware gates
+in the same dispatch passed on `ibm_fez`.
