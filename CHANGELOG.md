@@ -6,6 +6,29 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-30
+
+### Changed
+
+- **BREAKING: `chi_square` is now simulator-only and `kl_divergence` is automatically
+  readout-aware (ADR-0015).** The three attempts to make `chi_square` gate against the ideal
+  on real hardware (a readout transform, auto-calibrated readout, and the `NoiseModel.from_backend`
+  digital twin) are retired: a goodness-of-fit test against an exact expected only holds on a
+  simulator, and the twin, though it lowered the statistic, did not gate reliably because a
+  published noise model only approximates the device (`docs/hardware-validation.md` sections
+  9-12). `chi_square` now **fails closed on real hardware** with guidance toward the
+  noise-tolerant oracles; `kl_divergence` keeps the readout transform but applies it
+  **automatically** (the device's calibration on a QPU, the plain ideal on a simulator) with no
+  configuration. Each backend reports `metadata['simulator']`. Gate hardware with
+  `distribution_tvd`, `hellinger_fidelity`, and `allowed_states`.
+
+### Removed
+
+- **BREAKING: the `readout_error` and `noise_model` assertion fields and the digital-twin
+  machinery** (`backends/digital_twin.py`, `NoiseModel.from_backend`, twin-shot options).
+  Setting either field now raises a migration error. The `shotgate.dev/v1alpha1` schema version
+  is unchanged (a removal within an alpha API). To keep the removed modes, pin `shotgate==0.6.x`.
+
 ## [0.6.0] - 2026-06-30
 
 ### Added
@@ -305,7 +328,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/coldqubit/shotgate/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/coldqubit/shotgate/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/coldqubit/shotgate/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/coldqubit/shotgate/compare/v0.3.0...v0.4.0

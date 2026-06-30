@@ -1,6 +1,6 @@
 # ADR-0010: Noise-aware expected distributions for chi_square / kl_divergence on hardware
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0015](0015-chi-square-simulator-only.md)
 - **Date:** 2026-06-26
 
 ## Context

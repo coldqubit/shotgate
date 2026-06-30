@@ -179,12 +179,12 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 
 | Type | Oracle | Use it for |
 | --- | --- | --- |
-| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; plain on simulators, hardware-capable via `readout_error: auto` (readout) or `noise_model: auto` (full device twin) |
+| `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; **simulator-only** (fails closed on hardware, ADR-0015) |
 | `distribution_tvd` | Total variation distance (TVD) ≤ bound | Default distribution check; interpretable, shot-count-agnostic |
 | `hellinger_fidelity` | Classical fidelity ≥ threshold | Fidelity tracking against an ideal distribution |
 | `state_probability` | Marginal P(state) in a window / ≈ target | Single-outcome amplitude checks (e.g. Grover) |
 | `allowed_states` | Probability mass outside support ≤ budget | Structural/leakage guarantees (e.g. GHZ corners) |
-| `kl_divergence` | KL D(obs‖exp) ≤ bound (bits) | Information-theoretic distance; **simulator-only** (zero-support) |
+| `kl_divergence` | KL D(obs‖exp) ≤ bound (bits) | Information-theoretic distance; automatically readout-aware on a QPU (ADR-0015) |
 | `shannon_entropy` | Entropy in a min/max window (bits) | Assert the intended randomness/concentration |
 | `expectation_value` | `<Z..Z>` in [-1, 1] via window / target | Correlation/parity observable tracking |
 | `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer (e.g. Grover) |
@@ -269,11 +269,16 @@ shotgate/
 - **v0.5.0:** `readout_error: auto` for `chi_square`/`kl_divergence`, which uses the run's
   actual readout calibration (the device's published numbers on a QPU, none on a noiseless
   simulator), so one workflow gates plain on a simulator and calibrated on hardware.
-- **v0.6.0 (latest release):** `noise_model: auto`, the digital twin: `chi_square`/
-  `kl_divergence` gate against the device's *full* calibrated noise model (gate, readout, and
-  thermal relaxation) simulated on the circuit, capturing the gate and decoherence leakage a
-  readout transform cannot. The verdict becomes a calibration-drift / device-health check. See
-  [`docs/hardware-validation.md`](docs/hardware-validation.md) section 12.
+- **v0.6.0:** `noise_model: auto`, the digital twin: `chi_square`/`kl_divergence` gated against
+  the device's *full* calibrated noise model simulated on the circuit. Real-QPU validation
+  (`docs/hardware-validation.md` section 12) showed it lowered but did not reliably cross the
+  threshold, since a published noise model only approximates the device.
+- **v0.7.0 (latest release):** **[BREAKING]** retired the noise-aware/twin `chi_square`
+  experiment (ADR-0015). `chi_square` is now simulator-only and fails closed on hardware;
+  `kl_divergence` keeps the readout transform but applies it automatically (no knob); the
+  `readout_error`/`noise_model` options and the digital-twin code were removed. Gate hardware
+  with `distribution_tvd`, `hellinger_fidelity`, and `allowed_states`. To keep the removed
+  modes, pin `shotgate==0.6.x`.
 - **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release: error
   mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend differential testing,
   circuit fixtures and property-based generation, a Helm chart, an optional OpenTelemetry

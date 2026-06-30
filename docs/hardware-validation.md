@@ -378,3 +378,15 @@ auto` `chi_square` is not guaranteed to pass on a real QPU. The distance and div
 remain the robust hardware gates: on this run TVD was 0.0254, Hellinger fidelity 0.9790, and the
 readout-aware `kl_divergence` 0.0064 bits, all passing. The Bell, GHZ, and Grover hardware gates
 in the same dispatch passed on `ibm_fez`.
+
+### Outcome: the noise-aware modes were retired in 0.7.0
+
+Sections 9-12 are the record of three attempts to make `chi_square` gate against the *ideal*
+expected on real hardware: a readout transform (ADR-0010), auto-calibrated readout (ADR-0013),
+and the full `NoiseModel.from_backend` digital twin (ADR-0014). The twin captured the gate
+leakage the readout transform missed but still did not gate reliably, because a published noise
+model is only an approximation of the device. The conclusion (ADR-0015): `chi_square` is a
+simulator instrument and now fails closed on hardware; `kl_divergence` keeps the readout
+transform but applies it automatically (no knob); the `readout_error`/`noise_model` options and
+the twin code were removed. These sections stay as the evidence behind that decision. To run the
+removed modes, pin `shotgate==0.6.x`.

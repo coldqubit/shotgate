@@ -195,22 +195,20 @@ def test_most_frequent_outcome():
 IBM_FEZ_BELL = {"00": 1779, "11": 1764, "10": 304, "01": 249}
 
 
-def test_chi_square_noise_aware_expected_gates_hardware_counts():
-    plain = ADAPTER.validate_python(
+def test_chi_square_is_simulator_only_and_fails_closed_on_hardware():
+    a = ADAPTER.validate_python(
         {"type": "chi_square", "expected": {"00": 0.5, "11": 0.5}, "significance": 0.01}
     )
-    assert plain.evaluate(IBM_FEZ_BELL, 4096).passed is False  # p = 0 against ideal
-    aware = ADAPTER.validate_python(
-        {
-            "type": "chi_square",
-            "expected": {"00": 0.5, "11": 0.5},
-            "significance": 0.01,
-            "readout_error": {"p0": 0.07, "p1": 0.075},
-        }
-    )
-    res = aware.evaluate(IBM_FEZ_BELL, 4096)
-    assert res.passed is True
-    assert res.metrics["p_value"] > 0.01
+    # On a simulator (metadata says so) a clean fit passes normally.
+    sim = {"simulator": True}
+    assert a.evaluate({"00": 4096, "11": 4096}, 8192, backend_metadata=sim).passed is True
+    # On real hardware it fails closed with guidance, regardless of the counts (ADR-0015).
+    hw = {"simulator": False}
+    res = a.evaluate({"00": 4096, "11": 4096}, 8192, backend_metadata=hw)
+    assert res.passed is False
+    assert "simulators only" in res.message
+    # No metadata (a direct call) is not treated as hardware: it evaluates normally.
+    assert a.evaluate(IBM_FEZ_BELL, 4096).passed is False  # p = 0 against the ideal
 
 
 def test_circuit_depth_window_and_validation():
@@ -246,135 +244,45 @@ def test_structural_oracles_do_not_need_counts():
     assert DistributionTVDAssertion.needs_counts is True
 
 
-def test_kl_divergence_noise_aware_expected_is_finite_on_hardware_counts():
-    plain = ADAPTER.validate_python(
-        {"type": "kl_divergence", "expected": {"00": 0.5, "11": 0.5}, "max_divergence": 0.1}
-    )
-    assert plain.evaluate(IBM_FEZ_BELL, 4096).metrics["kl_divergence"] == math.inf
-    aware = ADAPTER.validate_python(
-        {
-            "type": "kl_divergence",
-            "expected": {"00": 0.5, "11": 0.5},
-            "max_divergence": 0.1,
-            "readout_error": {"p0": 0.07, "p1": 0.075},
-        }
-    )
-    res = aware.evaluate(IBM_FEZ_BELL, 4096)
-    assert math.isfinite(res.metrics["kl_divergence"])
-    assert res.passed is True
-
-
-def test_readout_error_auto_parses_and_rejects_bad_string():
+def test_kl_divergence_is_automatically_readout_aware_on_hardware():
     a = ADAPTER.validate_python(
-        {"type": "chi_square", "expected": {"00": 0.5, "11": 0.5}, "readout_error": "auto"}
+        {"type": "kl_divergence", "expected": {"00": 0.5, "11": 0.5}, "max_divergence": 0.5}
     )
-    assert a.readout_error == "auto"
-    with pytest.raises(ValidationError):
-        ADAPTER.validate_python(
-            {"type": "chi_square", "expected": {"00": 0.5}, "readout_error": "bogus"}
-        )
-
-
-def test_chi_square_auto_plain_on_sim_calibrated_on_device():
-    a = ADAPTER.validate_python(
-        {
-            "type": "chi_square",
-            "expected": {"00": 0.5, "11": 0.5},
-            "readout_error": "auto",
-            "significance": 0.01,
-        }
-    )
-    # No calibration (a noiseless simulator) -> ideal expected -> the plain test, which
-    # rejects these leaky counts. The message is NOT tagged noise-aware.
-    plain = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None)
-    assert plain.passed is False
-    assert "noise-aware" not in plain.message
-    # With the execution's readout calibration -> noise-aware expected -> passes.
+    # No calibration (a simulator) -> ideal expected -> diverges on leaky counts.
+    assert a.evaluate(IBM_FEZ_BELL, 4096).metrics["kl_divergence"] == math.inf
+    # With the run's device readout calibration (attached by the backend) -> finite and
+    # tagged readout-aware, with no per-device configuration (ADR-0015).
     cal = {"readout_calibration": {"p0": 0.07, "p1": 0.075, "source": "device-average"}}
-    aware = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=cal)
-    assert aware.passed is True
-    assert "device-average" in aware.message
-
-
-def test_kl_auto_falls_back_to_plain_without_calibration():
-    a = ADAPTER.validate_python(
-        {
-            "type": "kl_divergence",
-            "expected": {"00": 0.5, "11": 0.5},
-            "readout_error": "auto",
-            "max_divergence": 0.1,
-        }
-    )
-    assert a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None).metrics[
-        "kl_divergence"
-    ] == math.inf
-    cal = {"readout_calibration": {"p0": 0.07, "p1": 0.075}}
     res = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=cal)
     assert math.isfinite(res.metrics["kl_divergence"])
+    assert "readout-aware" in res.message and "device-average" in res.message
 
 
-# A digital twin matching the device's observed proportions: the backend would attach this
-# after simulating the circuit through the device's full noise model (gate + readout +
-# decoherence). Keyed identically to the observed counts (ADR-0014).
-IBM_FEZ_TWIN = {
-    "noise_model_expected": {
-        "distribution": {"00": 0.4343, "11": 0.4307, "10": 0.0742, "01": 0.0608},
-        "shots": 200_000,
-        "source": "device-noise-model:ibm_fez",
-    }
-}
-
-
-def test_chi_square_noise_model_twin_gates_hardware_counts():
-    a = ADAPTER.validate_python(
-        {
-            "type": "chi_square",
-            "expected": {"00": 0.5, "11": 0.5},
-            "noise_model": "auto",
-            "significance": 0.01,
-        }
-    )
-    # No twin (a noiseless simulator) -> ideal expected -> the plain test rejects leakage.
-    plain = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None)
-    assert plain.passed is False
-    assert "noise-aware" not in plain.message
-    # With the device twin -> compares against the calibrated model -> passes, tagged twin.
-    aware = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=IBM_FEZ_TWIN)
-    assert aware.passed is True
-    assert aware.metrics["p_value"] > 0.01
-    assert "twin" in aware.message and "ibm_fez" in aware.message
-
-
-def test_kl_noise_model_twin_is_finite_and_passes():
-    a = ADAPTER.validate_python(
-        {
-            "type": "kl_divergence",
-            "expected": {"00": 0.5, "11": 0.5},
-            "noise_model": "auto",
-            "max_divergence": 0.1,
-        }
-    )
-    # Without a twin the ideal diverges on leaky counts; with the twin it is finite.
-    assert a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=None).metrics[
-        "kl_divergence"
-    ] == math.inf
-    res = a.evaluate(IBM_FEZ_BELL, 4096, backend_metadata=IBM_FEZ_TWIN)
-    assert math.isfinite(res.metrics["kl_divergence"])
-    assert res.passed is True
-
-
-def test_noise_model_and_readout_error_are_mutually_exclusive():
+def test_removed_noise_options_raise_migration_error():
+    # readout_error and noise_model were removed in 0.7.0 (ADR-0015). Both oracles reject
+    # them with actionable guidance (pin 0.6.x) rather than a generic "extra field" error.
     for oracle, extra in (
         ("chi_square", {"significance": 0.01}),
         ("kl_divergence", {"max_divergence": 0.1}),
     ):
-        with pytest.raises(ValidationError):
-            ADAPTER.validate_python(
-                {
-                    "type": oracle,
-                    "expected": {"00": 0.5, "11": 0.5},
-                    "noise_model": "auto",
-                    "readout_error": "auto",
-                    **extra,
-                }
-            )
+        for removed in ("readout_error", "noise_model"):
+            with pytest.raises(ValidationError) as exc:
+                ADAPTER.validate_python(
+                    {
+                        "type": oracle,
+                        "expected": {"00": 0.5, "11": 0.5},
+                        removed: "auto",
+                        **extra,
+                    }
+                )
+            assert "0.6.x" in str(exc.value)
+
+
+def test_hellinger_fidelity_fail():
+    a = HellingerFidelityAssertion(
+        type="hellinger_fidelity", expected={"00": 0.5, "11": 0.5}, min_fidelity=0.99
+    )
+    # All mass on a single state: classical fidelity to the balanced Bell pair is 0.5.
+    res = a.evaluate({"00": 8192}, 8192)
+    assert res.passed is False
+    assert res.metrics["fidelity"] == pytest.approx(0.5, abs=1e-6)

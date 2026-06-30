@@ -70,8 +70,6 @@ class LocalAerBackend(Backend):
         # the simulator.
         sim_kwargs = dict(self.options)
         noise = sim_kwargs.pop("noise", None)
-        twin_shots = sim_kwargs.pop("twin_shots", None)
-        compute_twin = sim_kwargs.pop("compute_twin", False)
         noise_model = _build_noise_model(noise) if noise else None
         if noise_model is not None:
             sim_kwargs["noise_model"] = noise_model
@@ -86,9 +84,12 @@ class LocalAerBackend(Backend):
             "method": simulator.options.get("method", "automatic"),
             "seed": seed,
             "noisy": noise_model is not None,
+            # A simulator: chi_square (simulator-only) runs here; kl_divergence stays plain
+            # unless a noise block supplies a readout calibration below.
+            "simulator": True,
         }
-        # Expose the simulated readout error so `readout_error: auto` oracles can use it
-        # (a noiseless run reports none, so `auto` falls back to the ideal expected).
+        # Expose the simulated readout error so kl_divergence picks it up automatically (a
+        # noiseless run reports none, so KL uses the plain ideal).
         if noise:
             p0 = float(noise.get("readout_p0", 0.0))
             p1 = float(noise.get("readout_p1", 0.0))
@@ -98,24 +99,6 @@ class LocalAerBackend(Backend):
                     "p1": p1,
                     "source": "noise-model",
                 }
-        # Digital twin: when this run is noisy AND an oracle asked for it, expose the full
-        # noise model's expected distribution so a `noise_model: auto` oracle can gate
-        # against it. A noiseless run carries no twin, so `auto` falls back to the ideal
-        # expected (the plain test).
-        if noise_model is not None and compute_twin:
-            from shotgate.backends.digital_twin import (
-                DEFAULT_TWIN_SHOTS,
-                twin_distribution,
-            )
-
-            tshots = int(twin_shots) if twin_shots else DEFAULT_TWIN_SHOTS
-            metadata["noise_model_expected"] = {
-                "distribution": twin_distribution(
-                    compiled, noise_model, shots=tshots, seed=seed
-                ),
-                "shots": tshots,
-                "source": "noise-model",
-            }
 
         return BackendResult(
             counts=counts,

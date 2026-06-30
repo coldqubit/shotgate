@@ -25,6 +25,23 @@ from typing import Any
 from shotgate.backends.base import Backend, BackendResult, BackendUnavailableError
 
 _LOCAL_ALIASES = {"local", "default", "braket_sv", "local_simulator"}
+# AWS on-demand simulators (no QPU): treated as simulators for chi_square's sim-only gate.
+_CLOUD_SIMULATOR_NAMES = {"sv1", "dm1", "tn1"}
+
+
+def _is_simulator(name: str | None, backend: Any) -> bool:
+    """Whether the resolved Braket device is a simulator (vs a real QPU).
+
+    Local and AWS on-demand simulators count as simulators; an unrecognised cloud device is
+    treated as hardware (the conservative default for chi_square's simulator-only gate). A
+    device ARN containing ``quantum-simulator`` is honoured when reachable.
+    """
+    if name is None or name.lower() in _LOCAL_ALIASES:
+        return True
+    if name.lower() in _CLOUD_SIMULATOR_NAMES:
+        return True
+    arn = getattr(getattr(backend, "_device", None), "arn", "") or ""
+    return "quantum-simulator" in str(arn)
 
 
 class BraketBackend(Backend):
@@ -66,6 +83,7 @@ class BraketBackend(Backend):
             metadata={
                 "provider": self.provider,
                 "device": self.name or "local",
+                "simulator": _is_simulator(self.name, backend),
                 # Braket does not honor a simulator seed through this path; runs are
                 # not deterministic. Recorded for traceability only.
                 "seed_requested": seed,

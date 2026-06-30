@@ -1,6 +1,6 @@
 # ADR-0013: Auto-calibrated readout error for chi_square / kl_divergence
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0015](0015-chi-square-simulator-only.md)
 - **Date:** 2026-06-27
 
 ## Context

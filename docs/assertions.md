@@ -76,73 +76,18 @@ Notes & caveats:
   floored at a tiny epsilon to keep the statistic finite.)
 - Classical validity expects $E_x \gtrsim 5$ per category; with many categories and
   few shots, prefer `distribution_tvd`.
-- **Simulator-only as a hardware gate.** Declaring the *ideal* distribution as `expected`
-  puts zero probability on a real device's error states, so any leakage forces rejection
-  regardless of `significance`: on `ibm_fez` (Bell, 4096 shots) `chi_square` returned
-  p-value 0.0000 on counts whose TVD (0.1350) and fidelity (0.8650) passed noise-aware
-  gates. Gate hardware with the distance and structural oracles instead; mechanism and
-  measurements in the
-  [hardware baseline](hardware-validation.md#9-measured-baseline-ibm_fez-2026-06-11)
-  and [ADR-0006](adr/0006-hardware-oracle-policy.md).
-- **Making it hardware-capable with `readout_error`.** Supply a per-qubit readout
-  (assignment) error model and the oracle transforms `expected` through it before
-  comparing, giving the test nonzero mass on the device's error states. The same
-  `ibm_fez` Bell counts then pass: statistic $1.5\times10^{17}\to 5.51$, p-value
-  $0\to 0.138$ at `significance` 0.01. The parameters come from device calibration, not
-  the counts under test, so the gate stays an honest hypothesis test (see
-  [ADR-0010](adr/0010-noise-aware-expected-distribution.md)).
-
-  ```yaml
-  - type: chi_square
-    expected: { "00": 0.5, "11": 0.5 }     # the ideal, noiseless distribution
-    readout_error: { p0: 0.07, p1: 0.075 } # P(1|0), P(0|1) per qubit, from calibration
-    significance: 0.01
-  ```
-
-  The same `readout_error` block works on `kl_divergence`.
-- **`readout_error: auto` (recommended for portable workflows).** Instead of writing the
-  readout numbers by hand, let the oracle read the calibration the run actually used. The
-  backend attaches it: the `ibm` backend reads it from the device's published properties
-  (averaged over the active qubits), and `local-aer` reports its `noise` block's readout
-  parameters. A **noiseless simulator** reports no calibration, so `auto` falls back to the
-  ideal `expected`, i.e. the **plain** test. So one workflow gates with the plain
-  `chi_square` on a simulator and the device-calibrated one on a QPU, with no per-device
-  editing (see [ADR-0013](adr/0013-auto-calibrated-readout.md)).
-
-  ```yaml
-  - type: chi_square
-    expected: { "00": 0.5, "11": 0.5 }
-    readout_error: auto      # ideal on a noiseless sim; device calibration on a QPU
-    significance: 0.01
-  ```
-
-- **`noise_model: auto` (the digital twin, for gate-dominated hardware).** A readout transform
-  only models measurement error; on today's devices the dominant leakage is gate and
-  decoherence error. `noise_model: auto` compares the counts against a **digital twin**: the
-  same circuit simulated through the device's *full* calibrated noise model (gate + readout +
-  thermal relaxation), built by the backend. The `ibm` backend builds it from the device's
-  published properties (`NoiseModel.from_backend`); `local-aer` reuses its `noise` block; a
-  noiseless run carries no twin, so `auto` falls back to the ideal `expected` (the plain test).
-  This captures the gate leakage a readout transform misses, lowering the goodness-of-fit
-  statistic (on `ibm_marrakesh`, 2026-06-30: ideal 4.54e15 -> readout-only 47.56 -> twin 32.40).
-  Whether it then *passes* depends on how well the device matches its published model: in
-  simulation, where the device is its model, the twin passes; on a real QPU `NoiseModel.from_backend`
-  is an approximation, so `chi_square` can still reject (section 12). The verdict's meaning
-  shifts accordingly: it asks "does the device match its **own calibrated model**?", a
-  calibration-drift / device-health check, not "does it match the ideal?". It is
-  mutually exclusive with `readout_error` (the twin is the richer model) and needs Qiskit Aer
-  on the `ibm` backend (`shotgate[ibm,aer]` or the `:latest-ibm` image). See
-  [ADR-0014](adr/0014-digital-twin-expected-distribution.md) and the
-  [hardware twin validation](hardware-validation.md#12-digital-twin-chi_square-validation-2026-06-30).
-
-  ```yaml
-  - type: chi_square
-    expected: { "00": 0.5, "11": 0.5 }   # the ideal; used only as the noiseless-sim fallback
-    noise_model: auto                    # plain on a sim; device twin on a QPU
-    significance: 0.01
-  ```
-
-  `noise_model: auto` works on `kl_divergence` too, with the same fallback and exclusivity.
+- **Simulator-only (enforced).** `chi_square` compares against the *exact* `expected`, so on
+  a real device the leakage onto error states the ideal assigns zero probability forces
+  rejection regardless of `significance` (on `ibm_fez`, Bell, 4096 shots, it returned p-value
+  0.0000 on counts whose TVD 0.1350 and fidelity 0.8650 passed). The oracle therefore **fails
+  closed on real hardware** with a message pointing at the noise-tolerant oracles, rather than
+  reporting a guaranteed, uninformative failure. Gate hardware with `distribution_tvd`,
+  `hellinger_fidelity`, or `allowed_states`. The mechanism and the record of three attempts to
+  make it hardware-capable (a readout transform, auto-calibrated readout, and a full
+  `NoiseModel.from_backend` digital twin, all retired in 0.7.0) are in
+  [ADR-0015](adr/0015-chi-square-simulator-only.md) and
+  [hardware-validation.md](hardware-validation.md#9-measured-baseline-ibm_fez-2026-06-11)
+  sections 9-12. To experiment with those modes, pin `shotgate==0.6.x`.
 
 ---
 
@@ -199,10 +144,15 @@ asymmetric (it weights by the **observed** distribution $p$).
   max_divergence: 0.05
 ```
 
-Like `chi_square`, KL **diverges to infinity** when `expected` assigns probability 0
-to an outcome that was observed (leakage), so it is **simulator-oriented** unless
-`expected` carries nonzero mass on the device's error states. A diverged value is
-reported and serialised as JSON `null`.
+Against the *ideal* `expected`, KL **diverges to infinity** when an observed outcome has zero
+expected probability (leakage). It is therefore **automatically readout-aware**: on a real QPU
+the backend attaches the device's published readout (assignment) calibration and KL transforms
+`expected` through it so the divergence stays finite (it passed at 0.0064 bits on
+`ibm_marrakesh`); on a simulator no calibration is attached, so the plain ideal is used. No
+per-assertion configuration: the message is tagged `[readout-aware: ...]` when the transform
+applied. The transform models measurement error only, so a large KL on hardware still signals
+real distance, and the distance oracles remain the simplest gates. A diverged value is reported
+and serialised as JSON `null`. See [ADR-0015](adr/0015-chi-square-simulator-only.md).
 
 ---
 
@@ -309,7 +259,7 @@ or to enforce a target device's basis before execution. Also static (no executio
 | --- | --- |
 | General "does the distribution match?" | `distribution_tvd` (default) + `chi_square` (simulator) |
 | Track closeness as one number over time | `hellinger_fidelity` |
-| Information-theoretic distance to expected | `kl_divergence` (simulator, like `chi_square`) |
+| Information-theoretic distance to expected | `kl_divergence` (simulator; auto readout-aware on a QPU) |
 | Algorithm produces a specific answer | `state_probability` or `most_frequent_outcome` |
 | Track a correlation/parity observable | `expectation_value` ($\langle Z\cdots\rangle$) |
 | Assert the right amount of randomness | `shannon_entropy` |

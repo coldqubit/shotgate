@@ -3,14 +3,12 @@ kind: QuantumWorkflow
 metadata:
   name: bell-state-hardware-oracle-coverage
   description: >-
-    DIAGNOSTIC, not a gate. Exercises the counts-based oracles on a real QPU against
-    one Bell circuit so each has at least one hardware data point. The plain
-    chi_square is included ONLY to measure its behaviour: against the ideal expected
-    distribution (zero probability on the error states 01/10) any device leakage
-    forces rejection, so it is EXPECTED to fail and is kept out of the gating hardware
-    examples. The noise-aware chi_square and kl_divergence (with a readout_error
-    model) and the observable/entropy oracles are also measured here. Run manually
-    (excluded from the gating loop); read the numbers from the JSON report. Requires
+    DIAGNOSTIC, not a gate. Exercises the hardware-capable counts-based oracles on a real
+    QPU against one Bell circuit so each has at least one hardware data point: the distance
+    and structural oracles, the observable and entropy oracles, and the automatically
+    readout-aware kl_divergence. chi_square is intentionally absent: it is simulator-only and
+    fails closed on hardware (ADR-0015), so gate hardware with TVD / fidelity / leakage. Run
+    manually (excluded from the gating loop); read the numbers from the JSON report. Requires
     an IBM token (SHOTGATE_IBM_TOKEN).
   labels:
     suite: diagnostic
@@ -49,13 +47,8 @@ jobs:
         state: "00"
         min: 0.35
         max: 0.65
-      # EXPECTED TO FAIL on hardware: against the ideal expected distribution the
-      # error states 01/10 have probability 0, so any leakage drives the statistic
-      # up and the p-value to 0. Present to MEASURE that, not to gate.
-      - type: chi_square
-        expected: { "00": 0.5, "11": 0.5 }
-        significance: 0.01
-      # --- oracles added since v0.2, measured on hardware (still non-gating) ---
+      # chi_square is omitted on purpose: it is simulator-only and fails closed on a real
+      # QPU (ADR-0015). On hardware the distance and structural oracles above do the gating.
       # Parity observable: a Bell pair is Z-correlated; noise lands it below 1.
       - type: expectation_value
         qubits: [0, 1]
@@ -65,25 +58,10 @@ jobs:
       - type: shannon_entropy
         min: 0.8
         max: 1.5
-      # Noise-aware variants with readout_error: auto. The oracle uses the readout
-      # calibration the run actually had (read from the device's published properties),
-      # giving the ideal expected nonzero mass on the error states, so these CAN pass on
-      # hardware (contrast the plain chi_square above). On a noiseless simulator there is
-      # no calibration, so auto falls back to the plain test.
-      - type: chi_square
-        expected: { "00": 0.5, "11": 0.5 }
-        readout_error: auto
-        significance: 0.01
+      # kl_divergence is automatically readout-aware on a QPU: the backend attaches the
+      # device's readout calibration and KL transforms the ideal expected through it, so it
+      # stays finite despite leakage (0.0064 bits on ibm_marrakesh). On a simulator no
+      # calibration is attached, so it falls back to the plain divergence. No config needed.
       - type: kl_divergence
         expected: { "00": 0.5, "11": 0.5 }
-        readout_error: auto
         max_divergence: 0.1
-      # Digital twin (noise_model: auto). The ibm backend simulates this circuit through
-      # the device's FULL calibrated noise model (NoiseModel.from_backend: gate + readout +
-      # decoherence) and compares against that, capturing the gate leakage the readout-only
-      # transform above misses. Asks "does the device match its own calibrated model?", a
-      # calibration-drift check. Needs Aer alongside the ibm extra (shotgate[ibm,aer]).
-      - type: chi_square
-        expected: { "00": 0.5, "11": 0.5 }
-        noise_model: auto
-        significance: 0.01

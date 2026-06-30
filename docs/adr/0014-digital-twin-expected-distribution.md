@@ -1,6 +1,6 @@
 # ADR-0014: Digital-twin (full noise-model) expected distribution for chi_square / kl_divergence
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0015](0015-chi-square-simulator-only.md)
 - **Date:** 2026-06-30
 
 ## Context

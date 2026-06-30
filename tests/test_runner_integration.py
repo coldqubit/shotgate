@@ -7,6 +7,7 @@ the ``aer`` extra. Run locally with ``pip install -e .[aer,dev]``.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pytest
@@ -230,9 +231,11 @@ def test_structural_only_job_skips_execution():
 
 
 @pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
-def test_chi_square_auto_uses_noise_block_calibration():
+def test_kl_auto_readout_uses_noise_block_calibration():
     from shotgate.config import LoadedWorkflow, parse_workflow
 
+    # A noisy local-aer run attaches its readout calibration; kl_divergence picks it up
+    # automatically (no config) so the divergence stays finite despite the leakage (ADR-0015).
     doc = {
         "apiVersion": "shotgate.dev/v1alpha1",
         "kind": "QuantumWorkflow",
@@ -249,54 +252,38 @@ def test_chi_square_auto_uses_noise_block_calibration():
                 },
                 "assertions": [
                     {
-                        "type": "chi_square",
+                        "type": "kl_divergence",
                         "expected": {"00": 0.5, "11": 0.5},
-                        "readout_error": "auto",
-                        "significance": 0.01,
+                        "max_divergence": 0.5,
                     }
                 ],
             }
         ],
     }
     a = Runner(LoadedWorkflow(parse_workflow(doc), EXAMPLES)).run().jobs[0].assertions[0]
-    # auto pulled the simulated readout calibration from the noise block and passed.
-    assert a.passed
-    assert "noise-model" in a.message
+    # auto pulled the simulated readout calibration from the noise block; KL is finite.
+    assert math.isfinite(a.metrics["kl_divergence"])
+    assert "readout-aware" in a.message and "noise-model" in a.message
 
 
 @pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
-def test_chi_square_noise_model_twin_gates_a_noisy_run():
+def test_chi_square_runs_on_local_aer_simulator():
     from shotgate.config import LoadedWorkflow, parse_workflow
-    from shotgate.validation import metrics
 
-    # A noisy run whose leakage comes from BOTH gate and readout error: the readout-only
-    # transform under-predicts it, but the full noise-model twin captures it (ADR-0014).
-    noise = {
-        "depolarizing_1q": 0.005,
-        "depolarizing_2q": 0.03,
-        "readout_p0": 0.02,
-        "readout_p1": 0.02,
-    }
+    # local-aer reports simulator=True, so chi_square evaluates normally (it is not blocked).
     doc = {
         "apiVersion": "shotgate.dev/v1alpha1",
         "kind": "QuantumWorkflow",
-        "metadata": {"name": "twin"},
+        "metadata": {"name": "sim-chi"},
         "jobs": [
             {
                 "name": "bell",
                 "circuit": {"format": "qasm2", "inline": BELL_QASM2},
-                "backend": {
-                    "provider": "local-aer",
-                    "shots": 8192,
-                    "seed": 7,
-                    "noise": noise,
-                    "options": {"twin_shots": 200_000},
-                },
+                "backend": {"provider": "local-aer", "shots": 8192, "seed": 7},
                 "assertions": [
                     {
                         "type": "chi_square",
                         "expected": {"00": 0.5, "11": 0.5},
-                        "noise_model": "auto",
                         "significance": 0.01,
                     }
                 ],
@@ -304,12 +291,6 @@ def test_chi_square_noise_model_twin_gates_a_noisy_run():
         ],
     }
     job = Runner(LoadedWorkflow(parse_workflow(doc), EXAMPLES)).run().jobs[0]
-    a = job.assertions[0]
-    # The twin was attached by the backend and the oracle gated against it.
-    twin = job.metrics["backend_metadata"]["noise_model_expected"]
-    assert twin["source"] == "noise-model" and twin["shots"] == 200_000
-    assert a.passed
-    assert "twin" in a.message
-    # The same counts reject against the ideal: the twin is doing the work, not luck.
-    _stat, _dof, p_ideal = metrics.chi_square_test(job.counts, {"00": 0.5, "11": 0.5})
-    assert p_ideal < 0.01
+    assert job.metrics["backend_metadata"]["simulator"] is True
+    assert job.assertions[0].passed
+    assert "simulators only" not in job.assertions[0].message
