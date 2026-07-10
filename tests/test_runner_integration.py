@@ -37,6 +37,7 @@ BELL_QASM2 = (
         "bell-state-observables",
         "bell-state-noisy-sim",
         "bell-state-structural",
+        "bell-state-differential",
     ],
 )
 def test_example_workflows_pass(example: str):
@@ -294,3 +295,84 @@ def test_chi_square_runs_on_local_aer_simulator():
     assert job.metrics["backend_metadata"]["simulator"] is True
     assert job.assertions[0].passed
     assert "simulators only" not in job.assertions[0].message
+
+
+# A circuit whose output distribution is far from a Bell pair's, for the differential
+# fail case: all-zero rather than a 50/50 superposition over |00>/|11>.
+ALL_ZERO_QASM2 = (
+    'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
+    "qreg q[2];\ncreg c[2];\nmeasure q -> c;\n"
+)
+
+
+def _differential_workflow(
+    second_circuit: str, max_distance: float = 0.05, against: str = "baseline"
+):
+    from shotgate.config import parse_workflow
+
+    return parse_workflow(
+        {
+            "apiVersion": "shotgate.dev/v1alpha1",
+            "kind": "QuantumWorkflow",
+            "metadata": {"name": "differential"},
+            "jobs": [
+                {
+                    "name": "baseline",
+                    "circuit": {"format": "qasm2", "inline": BELL_QASM2},
+                    "backend": {"provider": "local-aer", "shots": 8192, "seed": 1},
+                    "assertions": [],
+                },
+                {
+                    "name": "shadow",
+                    "circuit": {"format": "qasm2", "inline": second_circuit},
+                    "backend": {"provider": "local-aer", "shots": 8192, "seed": 2},
+                    "assertions": [
+                        {
+                            "type": "differential",
+                            "against_job": against,
+                            "max_distance": max_distance,
+                        }
+                    ],
+                },
+            ],
+        }
+    )
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_differential_passes_when_the_second_run_agrees():
+    from shotgate.config import LoadedWorkflow
+
+    wf = _differential_workflow(BELL_QASM2)  # same circuit, a different seed
+    report = Runner(LoadedWorkflow(wf, EXAMPLES), allow_empty=True).run()
+    assert report.passed
+    shadow = report.jobs[1].assertions[0]
+    assert shadow.passed
+    assert "baseline" in shadow.message
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_differential_fails_when_the_second_run_diverges():
+    from shotgate.config import LoadedWorkflow
+
+    wf = _differential_workflow(ALL_ZERO_QASM2)  # a genuinely different circuit
+    report = Runner(LoadedWorkflow(wf, EXAMPLES), allow_empty=True).run()
+    assert not report.passed
+    shadow = report.jobs[1].assertions[0]
+    assert not shadow.passed
+    assert shadow.metrics["tvd"] > 0.4
+
+
+@pytest.mark.skipif(not AER_AVAILABLE, reason="qiskit-aer not installed")
+def test_differential_fails_closed_on_a_forward_or_missing_reference():
+    from shotgate.config import LoadedWorkflow
+
+    # "shadow" itself has not finished executing when its own assertion evaluates, and
+    # "nonexistent" was never declared: both must fail closed, not raise.
+    for target in ("shadow", "nonexistent"):
+        wf = _differential_workflow(BELL_QASM2, against=target)
+        report = Runner(LoadedWorkflow(wf, EXAMPLES), allow_empty=True).run()
+        assert not report.passed
+        shadow = report.jobs[1].assertions[0]
+        assert not shadow.passed
+        assert "no counts" in shadow.message

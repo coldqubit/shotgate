@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-11
+
+### Added
+
+- **`differential` assertion (ADR-0016): the first oracle needing no declared `expected`.**
+  Bounds the total variation distance between one job's measured counts and another job's
+  (`against_job`, naming a job declared earlier in the same workflow), instead of a static
+  distribution. Lets a workflow gate a circuit whose correct output is not known in closed
+  form, or catch a backend/optimization-level/transpiler regression that a fixed-expected
+  oracle would not, since both sides of the comparison come from actually running the circuit.
+  `Runner` now tracks already-executed jobs by name and threads the referenced job's counts
+  into `evaluate()` via two new, generically-named optional keyword arguments
+  (`reference_counts`, `reference_shots`) that only this oracle consumes; every other oracle's
+  call site is unaffected. A forward reference, self-reference, or missing job name fails
+  closed with a message naming the problem, rather than a schema error. New example:
+  `examples/bell-state-differential` (one Bell circuit through Aer's `statevector` and
+  `matrix_product_state` methods, no `expected` anywhere; measured TVD 0.0006).
+
 ## [0.7.0] - 2026-06-30
 
 ### Changed
@@ -328,7 +346,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/coldqubit/shotgate/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/coldqubit/shotgate/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/coldqubit/shotgate/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/coldqubit/shotgate/compare/v0.4.0...v0.5.0

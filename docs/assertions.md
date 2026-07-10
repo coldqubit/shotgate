@@ -221,6 +221,50 @@ Grover's marked state).
 
 ---
 
+## `differential`: Cross-Run Agreement (no `expected` needed)
+
+Every oracle above compares against a declared, static `expected` distribution. `differential`
+does not: it bounds the total variation distance between **this job's** measured counts $p$ and
+**another job's** already-measured counts $r$ (named by `against_job`), so it needs no closed-form
+answer at all:
+
+$$ \mathrm{TVD}(p, r) = \tfrac{1}{2} \sum_{x} |p(x) - r(x)| \le \texttt{max\_distance} $$
+
+```yaml
+jobs:
+  - name: baseline
+    circuit: { format: qasm2, path: circuit.qasm }
+    backend: { provider: local-aer, options: { method: statevector } }
+    assertions:
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.0
+
+  - name: cross-check
+    circuit: { format: qasm2, path: circuit.qasm }
+    backend: { provider: local-aer, options: { method: matrix_product_state } }
+    assertions:
+      - type: differential
+        against_job: baseline    # must be declared EARLIER in this jobs: list
+        max_distance: 0.03
+```
+
+Use it for a circuit whose correct output is not known in closed form (the point of running it
+*is* computing that answer), or to gate that two backends, two optimization levels, or two
+simulation methods agree, catching an implementation regression that a fixed-expected oracle
+would not (both sides move together against a static target, so neither alone need cross a
+threshold). Measured on the shipped example (`examples/bell-state-differential`, one Bell
+circuit through Aer's `statevector` and `matrix_product_state` methods): TVD 0.0006; a circuit
+with an injected `cx`->`cz` bug diverges from the correct one at TVD 0.502.
+
+`against_job` **must name a job declared earlier** in the workflow's `jobs:` list (the runner
+only has that job's counts once it has actually run). A name that does not resolve, self-references,
+or names a later job fails closed with a message identifying the missing reference, rather than a
+schema error, since a job's assertions cannot see their siblings at parse time. See
+[ADR-0016](adr/0016-differential-oracle.md).
+
+---
+
 ## `circuit_depth`: Circuit Depth (structural)
 
 A static, output-independent check on the **authored** circuit's depth.
@@ -264,6 +308,7 @@ or to enforce a target device's basis before execution. Also static (no executio
 | Track a correlation/parity observable | `expectation_value` ($\langle Z\cdots\rangle$) |
 | Assert the right amount of randomness | `shannon_entropy` |
 | Forbid impossible outcomes / bound error | `allowed_states` |
+| No closed-form expected; compare two runs/backends instead | `differential` |
 | Bound circuit complexity, no execution | `circuit_depth` (structural) |
 | Enforce a gate set / device basis, no execution | `gate_set` (structural) |
 

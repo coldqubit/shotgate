@@ -188,6 +188,7 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 | `shannon_entropy` | Entropy in a min/max window (bits) | Assert the intended randomness/concentration |
 | `expectation_value` | `<Z..Z>` in [-1, 1] via window / target | Correlation/parity observable tracking |
 | `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer (e.g. Grover) |
+| `differential` | TVD ≤ bound against another job's counts | No closed-form expected: gate two backends/methods agree (ADR-0016) |
 | `circuit_depth` | Authored-circuit depth in a window | Static complexity budget (no execution) |
 | `gate_set` | Circuit uses only allowed gate names | Enforce a basis / catch unexpected gates (no execution) |
 
@@ -273,18 +274,36 @@ shotgate/
   the device's *full* calibrated noise model simulated on the circuit. Real-QPU validation
   (`docs/hardware-validation.md` section 12) showed it lowered but did not reliably cross the
   threshold, since a published noise model only approximates the device.
-- **v0.7.0 (latest release):** **[BREAKING]** retired the noise-aware/twin `chi_square`
+- **v0.7.0:** **[BREAKING]** retired the noise-aware/twin `chi_square`
   experiment (ADR-0015). `chi_square` is now simulator-only and fails closed on hardware;
   `kl_divergence` keeps the readout transform but applies it automatically (no knob); the
   `readout_error`/`noise_model` options and the digital-twin code were removed. Gate hardware
   with `distribution_tvd`, `hellinger_fidelity`, and `allowed_states`. To keep the removed
   modes, pin `shotgate==0.6.x`.
-- **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release: error
-  mitigation via [Mitiq](https://mitiq.readthedocs.io/), multi-backend differential testing,
-  circuit fixtures and property-based generation, a Helm chart, an optional OpenTelemetry
-  exporter (kept out of the core dependencies), and validation of the Braket cloud path on
-  real hardware. **`1.0.0`** is the API-stability milestone (the `shotgate.dev/v1` schema and
-  a frozen CLI/Python surface), not a feature count.
+- **v0.8.0 (latest release):** the `differential` oracle (ADR-0016), the first that needs no
+  declared `expected` at all: it bounds the total variation distance between one job's counts
+  and another job's, so it can gate a circuit whose correct output is not known in closed form,
+  or catch a backend/optimization-level regression a fixed-expected oracle would not.
+  `examples/bell-state-differential` runs one Bell circuit through Aer's `statevector` and
+  `matrix_product_state` methods with no `expected` anywhere, measured at TVD 0.0006.
+- **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release, continuing
+  the arc toward a full quantum test suite:
+  - **Metamorphic + property-based testing:** generate circuits and assert algebraic invariants
+    (`H.H = I`, `U.U^-1 = I`, symmetry), again with no expected distribution. (Feasible:
+    `U.U^-1 = I` held on 20/20 random 3-qubit circuits.)
+  - **Statistical-power tooling:** plan shots for a target type-I/type-II error and report
+    confidence intervals (Wilson) on the verdict, not just a point estimate against a threshold.
+    (Feasible: Wilson intervals and power-based shot counts compute in pure Python, no SciPy.)
+  - **Mutation testing:** inject a fault into a circuit and confirm the gate suite catches it,
+    measuring the suite's own sensitivity. (Feasible: a TVD gate killed 4/4 injected mutants.)
+  - **Regression / trend gating:** store a baseline metric and fail on a fidelity/TVD drop
+    beyond a delta across commits.
+  - Plus error mitigation via [Mitiq](https://mitiq.readthedocs.io/), circuit fixtures, a Helm
+    chart, an optional OpenTelemetry exporter (kept out of core deps), and Braket cloud-path
+    validation.
+
+  **`1.0.0`** is the API-stability milestone (the `shotgate.dev/v1` schema and a frozen
+  CLI/Python surface), not a feature count.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 

@@ -11,6 +11,7 @@ from shotgate.validation.assertions import (
     AllowedStatesAssertion,
     Assertion,
     ChiSquareAssertion,
+    DifferentialAssertion,
     DistributionTVDAssertion,
     HellingerFidelityAssertion,
     StateProbabilityAssertion,
@@ -286,3 +287,44 @@ def test_hellinger_fidelity_fail():
     res = a.evaluate({"00": 8192}, 8192)
     assert res.passed is False
     assert res.metrics["fidelity"] == pytest.approx(0.5, abs=1e-6)
+
+
+def test_differential_parses_and_needs_counts():
+    a = ADAPTER.validate_python(
+        {"type": "differential", "against_job": "baseline", "max_distance": 0.05}
+    )
+    assert isinstance(a, DifferentialAssertion)
+    assert DifferentialAssertion.needs_counts is True
+    with pytest.raises(ValidationError):
+        ADAPTER.validate_python({"type": "differential", "against_job": ""})
+
+
+def test_differential_pass_and_fail_no_expected_needed():
+    a = ADAPTER.validate_python(
+        {"type": "differential", "against_job": "baseline", "max_distance": 0.05}
+    )
+    # Close to the reference distribution -> passes, with no `expected` field anywhere.
+    close = a.evaluate(
+        {"00": 4100, "11": 4092}, 8192, reference_counts=BELL_COUNTS, reference_shots=8192
+    )
+    assert close.passed is True
+    assert close.metrics["tvd"] < 0.05
+    # Far from the reference (anti-correlated vs correlated) -> fails.
+    far = a.evaluate(
+        {"01": 4096, "10": 4096}, 8192, reference_counts=BELL_COUNTS, reference_shots=8192
+    )
+    assert far.passed is False
+    assert far.metrics["tvd"] == pytest.approx(1.0, abs=1e-6)
+
+
+def test_differential_fails_closed_without_a_reference():
+    a = ADAPTER.validate_python(
+        {"type": "differential", "against_job": "missing-job", "max_distance": 0.05}
+    )
+    # No reference at all (job not found / not yet executed).
+    res = a.evaluate(BELL_COUNTS, 8192)
+    assert res.passed is False
+    assert "missing-job" in res.message and "no counts" in res.message
+    # An explicitly empty reference (e.g. a structural-only or failed reference job).
+    res_empty = a.evaluate(BELL_COUNTS, 8192, reference_counts={}, reference_shots=0)
+    assert res_empty.passed is False

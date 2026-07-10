@@ -620,6 +620,58 @@ class MostFrequentOutcomeAssertion(_BaseAssertion):
         )
 
 
+class DifferentialAssertion(_BaseAssertion):
+    """Bound the total variation distance between this job's counts and another job's.
+
+    A **differential** oracle: it needs no declared ``expected`` distribution at all,
+    comparing two *measured* distributions instead. Useful when there is no closed-form
+    expected output to write down (a circuit whose answer is exactly what you are trying to
+    compute), or to gate that two backends, two optimization levels, or a circuit and a
+    known-equivalent rewrite agree with each other (ADR-0016).
+    """
+
+    type: Literal["differential"]
+    against_job: str = Field(min_length=1)
+    max_distance: float = Field(0.05, ge=0.0, le=1.0)
+
+    def default_label(self) -> str:
+        return f"differential(vs {self.against_job}) TVD <= {self.max_distance}"
+
+    def evaluate(
+        self,
+        counts: dict[str, int],
+        shots: int,
+        circuit_metrics: dict[str, Any] | None = None,
+        backend_metadata: dict[str, Any] | None = None,
+        reference_counts: dict[str, int] | None = None,
+        reference_shots: int | None = None,
+    ) -> AssertionResult:
+        if not reference_counts:
+            return AssertionResult(
+                type=self.type,
+                label=self.display_label(),
+                passed=False,
+                message=(
+                    f"differential: reference job {self.against_job!r} produced no counts "
+                    "(it must be declared earlier in the workflow's job list, exist, and "
+                    "have executed successfully)"
+                ),
+                metrics={},
+            )
+        probs = metrics.counts_to_probabilities(counts)
+        ref_probs = metrics.counts_to_probabilities(reference_counts)
+        distance = metrics.total_variation_distance(probs, ref_probs)
+        passed = distance <= self.max_distance
+        return AssertionResult(
+            type=self.type,
+            label=self.display_label(),
+            passed=passed,
+            message=f"TVD vs {self.against_job!r} {distance:.4f} "
+            f"({'<=' if passed else '>'} {self.max_distance})",
+            metrics={"tvd": distance, "max_distance": self.max_distance},
+        )
+
+
 # Operations that are not logical gates; always permitted by gate_set.
 _STRUCTURAL_OPS = frozenset({"measure", "barrier", "snapshot", "delay"})
 
@@ -744,6 +796,7 @@ Assertion = Annotated[
     | ShannonEntropyAssertion
     | ExpectationValueAssertion
     | MostFrequentOutcomeAssertion
+    | DifferentialAssertion
     | CircuitDepthAssertion
     | GateSetAssertion,
     Field(discriminator="type"),
@@ -759,6 +812,7 @@ ASSERTION_TYPES = (
     "shannon_entropy",
     "expectation_value",
     "most_frequent_outcome",
+    "differential",
     "circuit_depth",
     "gate_set",
 )
@@ -770,6 +824,7 @@ __all__ = [
     "AssertionResult",
     "ChiSquareAssertion",
     "CircuitDepthAssertion",
+    "DifferentialAssertion",
     "DistributionTVDAssertion",
     "ExpectationValueAssertion",
     "GateSetAssertion",

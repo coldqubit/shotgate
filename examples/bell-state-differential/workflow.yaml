@@ -1,0 +1,49 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: bell-state-differential
+  description: >-
+    Differential oracle (ADR-0016): no `expected` probability distribution is declared
+    anywhere in this workflow. `baseline` runs the circuit through Aer's exact statevector
+    method; `cross-check` runs the SAME circuit through a different simulation method
+    (matrix_product_state) and is gated only on agreement with `baseline`, via total
+    variation distance. This is the shape of a test for a circuit whose correct output is
+    not known in closed form (the real value of running it is computing that answer), and
+    it also catches a backend or optimization-level regression that a fixed-expected oracle
+    would not: if a future change makes one simulation method disagree with the other, this
+    gate fails even though neither job declares what the "right" distribution is.
+  labels:
+    suite: smoke
+    qubits: "2"
+
+jobs:
+  - name: baseline
+    circuit:
+      format: qasm2
+      path: bell.qasm
+    backend:
+      provider: local-aer
+      shots: 8192
+      seed: 1234
+      options:
+        method: statevector
+    assertions:
+      # Structural only: a support-set bound, not a probability distribution.
+      - type: allowed_states
+        states: ["00", "11"]
+        max_leakage: 0.0
+
+  - name: cross-check
+    circuit:
+      format: qasm2
+      path: bell.qasm
+    backend:
+      provider: local-aer
+      shots: 8192
+      seed: 5678
+      options:
+        method: matrix_product_state
+    assertions:
+      - type: differential
+        against_job: baseline
+        max_distance: 0.03

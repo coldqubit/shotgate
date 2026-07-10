@@ -97,9 +97,12 @@ class Runner:
         wall_start = time.perf_counter()
 
         jobs: list[JobReport] = []
+        reports_by_name: dict[str, JobReport] = {}
         for job in workflow.jobs:
             backend_spec = self._resolve_backend(workflow.effective_backend(job))
-            jobs.append(self._run_job(job.name, job, backend_spec))
+            report = self._run_job(job.name, job, backend_spec, reports_by_name)
+            jobs.append(report)
+            reports_by_name[job.name] = report
 
         return WorkflowReport(
             name=workflow.metadata.name,
@@ -117,7 +120,13 @@ class Runner:
             data["shots"] = self.shots_override
         return BackendSpec(**data)
 
-    def _run_job(self, name: str, job: Any, backend_spec: BackendSpec) -> JobReport:
+    def _run_job(
+        self,
+        name: str,
+        job: Any,
+        backend_spec: BackendSpec,
+        prior_reports: dict[str, JobReport],
+    ) -> JobReport:
         job_start = time.perf_counter()
         report = JobReport(
             name=name,
@@ -155,12 +164,24 @@ class Runner:
             else:
                 report.metrics["executed"] = False
 
-            outcomes = [
-                assertion.evaluate(
-                    counts, run_shots, circuit_metrics=cmetrics, backend_metadata=bmeta
+            outcomes = []
+            for assertion in job.assertions:
+                extra: dict[str, Any] = {}
+                against_job = getattr(assertion, "against_job", None)
+                if against_job is not None:
+                    ref = prior_reports.get(against_job)
+                    if ref is not None:
+                        extra["reference_counts"] = ref.counts
+                        extra["reference_shots"] = ref.shots
+                outcomes.append(
+                    assertion.evaluate(
+                        counts,
+                        run_shots,
+                        circuit_metrics=cmetrics,
+                        backend_metadata=bmeta,
+                        **extra,
+                    )
                 )
-                for assertion in job.assertions
-            ]
             report.assertions = outcomes
             if outcomes:
                 report.passed = all(o.passed for o in outcomes)
