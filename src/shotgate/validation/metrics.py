@@ -43,9 +43,12 @@ __all__ = [
     "most_frequent_outcome",
     "normalize",
     "shannon_entropy",
+    "shots_for_margin",
+    "shots_for_power",
     "state_probability",
     "support_leakage",
     "total_variation_distance",
+    "wilson_interval",
     "z_expectation",
 ]
 
@@ -347,3 +350,82 @@ def _gamma_q_cf(a: float, x: float, *, max_iter: int = 10_000) -> float:
         if abs(delta - 1.0) < 1e-16:
             break
     return math.exp(-x + a * math.log(x) - math.lgamma(a)) * h
+
+
+def _norm_ppf(p: float) -> float:
+    """Inverse standard normal CDF (the quantile function), via Newton's method on ``erf``.
+
+    ``Phi(x) = 0.5 * (1 + erf(x / sqrt(2)))``, so solving ``Phi(x) = p`` for x is equivalent
+    to inverting ``erf``. ``erf`` is available in the standard library and its derivative is
+    the (unnormalised) Gaussian, so Newton's method converges in a handful of iterations to
+    machine precision, with no rational-approximation coefficients to source or verify.
+    """
+    if not 0.0 < p < 1.0:
+        raise ValueError("p must be strictly between 0 and 1")
+    # A cheap but adequate starting point (exact at p=0.5; reasonable in the tails).
+    x = math.sqrt(2.0) * (p - 0.5) * 2.5
+    for _ in range(100):
+        cdf = 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+        pdf = math.exp(-0.5 * x * x) / math.sqrt(2.0 * math.pi)
+        step = (cdf - p) / pdf
+        x -= step
+        if abs(step) < 1e-14:
+            break
+    return x
+
+
+def wilson_interval(successes: int, trials: int, confidence: float = 0.95) -> tuple[float, float]:
+    """Wilson score confidence interval for a binomial proportion.
+
+    Bounds the *true* probability behind ``successes`` out of ``trials`` observed shots, at
+    the given ``confidence`` level (two-sided). Unlike the naive ``p +/- z*sqrt(p(1-p)/n)``
+    interval, Wilson's form stays inside ``[0, 1]`` and remains well-behaved for small ``n``
+    or ``p`` near 0 or 1, which is the common case for a rare leakage state or a marginal
+    probability measured at a few thousand shots. No SciPy: only ``math.erf``.
+    """
+    if trials <= 0:
+        raise ValueError("trials must be positive")
+    if not 0 <= successes <= trials:
+        raise ValueError("successes must be between 0 and trials")
+    z = _norm_ppf(0.5 + confidence / 2.0)
+    p = successes / trials
+    denom = 1.0 + z * z / trials
+    center = p + z * z / (2 * trials)
+    half_width = z * math.sqrt(p * (1 - p) / trials + z * z / (4 * trials * trials))
+    return ((center - half_width) / denom, (center + half_width) / denom)
+
+
+def shots_for_margin(p: float, margin: float, confidence: float = 0.95) -> int:
+    """Shots needed so a measured proportion near ``p`` has a Wilson half-width <= ``margin``.
+
+    Uses the normal approximation ``n = (z / margin)^2 * p * (1 - p)`` (exact for Wilson's
+    interval only in the large-``n`` limit, but the standard planning formula, and the value
+    of ``p`` that maximises the required ``n`` is 0.5). Use ``p=0.5`` when the true proportion
+    is unknown, for the most conservative (largest) shot count.
+    """
+    if not 0.0 < p < 1.0:
+        raise ValueError("p must be strictly between 0 and 1")
+    if margin <= 0.0:
+        raise ValueError("margin must be positive")
+    z = _norm_ppf(0.5 + confidence / 2.0)
+    return math.ceil((z / margin) ** 2 * p * (1 - p))
+
+
+def shots_for_power(effect_size: float, alpha: float = 0.05, power: float = 0.9) -> int:
+    """Shots needed to detect a proportion shift of ``effect_size`` with the given power.
+
+    A two-sample-style normal-approximation sample-size formula: ``n = ((z_alpha + z_power) /
+    effect_size)^2``, where ``z_alpha`` is the two-sided critical value at significance
+    ``alpha`` and ``z_power`` is the one-sided quantile at ``power``. Answers "how many shots
+    do I need so a real deviation of this size is caught with this probability, at this
+    significance level?", the sample-size-planning question a fixed shot count never asks.
+    """
+    if not 0.0 < effect_size <= 1.0:
+        raise ValueError("effect_size must be in (0, 1]")
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("alpha must be strictly between 0 and 1")
+    if not 0.0 < power < 1.0:
+        raise ValueError("power must be strictly between 0 and 1")
+    z_alpha = _norm_ppf(1.0 - alpha / 2.0)
+    z_power = _norm_ppf(power)
+    return math.ceil(((z_alpha + z_power) / effect_size) ** 2)

@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-11
+
+### Added
+
+- **Statistical-power tooling (ADR-0017): Wilson confidence intervals and sample-size
+  planning, pure stdlib.** `validation/metrics.py` gains `wilson_interval`,
+  `shots_for_margin`, and `shots_for_power`, backed by a Newton-iteration inverse-normal
+  (`_norm_ppf`) rather than a hard-coded rational approximation, verified to match textbook
+  z-values (1.959964 at 95%, 2.575829 at 99%) to 9 decimal places. `state_probability` now
+  reports a 95% Wilson interval on the measured probability (`ci95_lower`/`ci95_upper` in
+  `metrics`, shown in the message) whenever shots are available; every other oracle's
+  `evaluate()` is unchanged. New CLI command `shotgate shots --margin M` or
+  `--effect-size W [--alpha A] [--power P]` plans a shot count for a target confidence-interval
+  width or detection power ahead of writing a workflow, e.g.
+  `shots_for_power(0.05, alpha=0.01, power=0.9) == 5952`, matching the hand calculation
+  `((z_0.01 + z_power=0.9) / 0.05)^2`.
+
 ## [0.8.0] - 2026-07-11
 
 ### Added
@@ -346,7 +363,8 @@ All notable changes to this project are documented here. The format is based on
   (with the math), getting-started guide, and ADRs.
 - **Examples**: Bell state, 3-qubit GHZ, and 2-qubit Grover workflows.
 
-[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/coldqubit/shotgate/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/coldqubit/shotgate/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/coldqubit/shotgate/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/coldqubit/shotgate/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/coldqubit/shotgate/compare/v0.5.0...v0.6.0

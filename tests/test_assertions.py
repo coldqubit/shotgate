@@ -111,6 +111,17 @@ def test_state_probability_equals_with_tolerance():
     assert a.evaluate({"00": 6000, "11": 2192}, 8192).passed is False
 
 
+def test_state_probability_reports_a_wilson_confidence_interval():
+    a = StateProbabilityAssertion(type="state_probability", state="00", min=0.0)
+    res = a.evaluate(BELL_COUNTS, 8192)
+    assert res.metrics["ci95_lower"] < res.metrics["probability"] < res.metrics["ci95_upper"]
+    assert "95% CI" in res.message
+    # shots=0: the Wilson interval is undefined (zero trials), so it is simply omitted rather
+    # than raising.
+    degenerate = a.evaluate(BELL_COUNTS, 0)
+    assert "ci95_lower" not in degenerate.metrics
+
+
 def test_expected_rejects_non_binary_key():
     with pytest.raises(ValidationError):
         ADAPTER.validate_python(

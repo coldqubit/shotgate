@@ -7,6 +7,7 @@ Commands
 - ``shotgate run WORKFLOW``      execute a workflow and gate CI on the result.
 - ``shotgate validate WORKFLOW`` schema-validate a workflow without executing it.
 - ``shotgate backends``          list backends and whether their deps are installed.
+- ``shotgate shots``             plan a shot count for a target CI margin or detection power.
 
 Exit codes: ``0`` if all assertions pass, ``1`` if any fail, ``2`` for usage or
 load errors. This makes ``shotgate run`` a drop-in CI quality gate.
@@ -135,6 +136,78 @@ def backends() -> None:
             "missing deps", fg="yellow"
         )
         click.echo(f"  {provider:<12} {mark}")
+
+
+@main.command()
+@click.option(
+    "--p",
+    "p",
+    type=float,
+    default=0.5,
+    show_default=True,
+    help="Expected proportion (use 0.5, the worst case, if unknown).",
+)
+@click.option("--margin", type=float, help="Target Wilson-interval half-width.")
+@click.option(
+    "--effect-size",
+    "effect_size",
+    type=float,
+    help="Smallest proportion shift the gate must reliably detect.",
+)
+@click.option(
+    "--alpha",
+    type=float,
+    default=0.05,
+    show_default=True,
+    help="Significance level (used with --effect-size).",
+)
+@click.option(
+    "--power",
+    type=float,
+    default=0.9,
+    show_default=True,
+    help="Statistical power (used with --effect-size).",
+)
+@click.option(
+    "--confidence",
+    type=float,
+    default=0.95,
+    show_default=True,
+    help="Confidence level (used with --margin).",
+)
+def shots(
+    p: float,
+    margin: float | None,
+    effect_size: float | None,
+    alpha: float,
+    power: float,
+    confidence: float,
+) -> None:
+    """Plan a shot count for a target precision or detection power.
+
+    Give exactly one of --margin (how tight a confidence interval you want on a measured
+    probability) or --effect-size (the smallest true shift you need the gate to catch).
+    """
+    from shotgate.validation import metrics
+
+    if (margin is None) == (effect_size is None):
+        raise click.ClickException("pass exactly one of --margin or --effect-size")
+    try:
+        if margin is not None:
+            n = metrics.shots_for_margin(p, margin, confidence=confidence)
+            click.echo(
+                f"{n} shots -> a {confidence:.0%} Wilson interval of +/-{margin} "
+                f"around p={p}"
+            )
+        else:
+            assert effect_size is not None
+            n = metrics.shots_for_power(effect_size, alpha=alpha, power=power)
+            click.echo(
+                f"{n} shots -> {power:.0%} power to detect a shift of {effect_size} "
+                f"at alpha={alpha}"
+            )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 if __name__ == "__main__":  # pragma: no cover

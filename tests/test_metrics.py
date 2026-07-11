@@ -149,3 +149,56 @@ def test_apply_readout_error_identity_and_mass_on_errors():
     noisy = metrics.apply_readout_error(ideal, 0.07, 0.075)
     assert noisy["01"] > 0.0 and noisy["10"] > 0.0
     assert sum(noisy.values()) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
+    "p,expected_z",
+    [
+        (0.90, 1.6448536269514722),
+        (0.95, 1.959963984540054),
+        (0.99, 2.5758293035489),
+    ],
+)
+def test_norm_ppf_matches_known_z_values(p, expected_z):
+    assert metrics._norm_ppf(0.5 + p / 2.0) == pytest.approx(expected_z, abs=1e-9)
+
+
+def test_wilson_interval_matches_textbook_and_stays_in_unit_range():
+    # p=0.5, n=8192: half-width ~= 1.96 * sqrt(0.25/8192) =~ 0.01083 (textbook normal approx).
+    lo, hi = metrics.wilson_interval(4096, 8192)
+    assert lo == pytest.approx(0.5 - 0.01083, abs=2e-3)
+    assert hi == pytest.approx(0.5 + 0.01083, abs=2e-3)
+    # Zero successes: the naive p +/- z*sqrt(p(1-p)/n) interval would be degenerate ([0, 0]);
+    # Wilson's form correctly stays inside [0, 1] and is asymmetric.
+    lo0, hi0 = metrics.wilson_interval(0, 100)
+    assert lo0 == pytest.approx(0.0, abs=1e-9)
+    assert 0.0 < hi0 < 1.0
+    with pytest.raises(ValueError):
+        metrics.wilson_interval(5, 0)
+    with pytest.raises(ValueError):
+        metrics.wilson_interval(-1, 10)
+
+
+def test_shots_for_margin_scales_as_expected():
+    # Halving the margin should ~quadruple the required shots (n ~ 1/margin^2).
+    n_01 = metrics.shots_for_margin(0.5, 0.01)
+    n_005 = metrics.shots_for_margin(0.5, 0.005)
+    assert n_005 == pytest.approx(4 * n_01, rel=0.01)
+    # p=0.5 (max variance) needs more shots than p=0.1 for the same margin.
+    assert metrics.shots_for_margin(0.5, 0.01) > metrics.shots_for_margin(0.1, 0.01)
+    with pytest.raises(ValueError):
+        metrics.shots_for_margin(0.5, 0.0)
+    with pytest.raises(ValueError):
+        metrics.shots_for_margin(0.0, 0.01)
+
+
+def test_shots_for_power_hand_calculation():
+    # z(alpha=0.01, two-sided) = 2.575829, z(power=0.9, one-sided) = 1.281552.
+    # n = ((2.575829 + 1.281552) / 0.05)^2 = 5951.75 -> ceil 5952.
+    assert metrics.shots_for_power(0.05, alpha=0.01, power=0.9) == 5952
+    # A larger effect size is easier to detect -> fewer shots needed.
+    assert metrics.shots_for_power(0.10, alpha=0.01, power=0.9) < metrics.shots_for_power(
+        0.05, alpha=0.01, power=0.9
+    )
+    with pytest.raises(ValueError):
+        metrics.shots_for_power(0.0)

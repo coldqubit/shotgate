@@ -280,20 +280,22 @@ shotgate/
   `readout_error`/`noise_model` options and the digital-twin code were removed. Gate hardware
   with `distribution_tvd`, `hellinger_fidelity`, and `allowed_states`. To keep the removed
   modes, pin `shotgate==0.6.x`.
-- **v0.8.0 (latest release):** the `differential` oracle (ADR-0016), the first that needs no
+- **v0.8.0:** the `differential` oracle (ADR-0016), the first that needs no
   declared `expected` at all: it bounds the total variation distance between one job's counts
   and another job's, so it can gate a circuit whose correct output is not known in closed form,
   or catch a backend/optimization-level regression a fixed-expected oracle would not.
   `examples/bell-state-differential` runs one Bell circuit through Aer's `statevector` and
   `matrix_product_state` methods with no `expected` anywhere, measured at TVD 0.0006.
+- **v0.9.0 (latest release):** statistical-power tooling (ADR-0017): `state_probability` now
+  reports a 95% Wilson confidence interval on the measured probability alongside the point
+  estimate, and a new `shotgate shots --margin M` / `--effect-size W` command plans a shot
+  count for a target interval width or detection power, verified against a hand calculation
+  (`shots_for_power(0.05, alpha=0.01, power=0.9) == 5952`). Pure stdlib, no SciPy.
 - **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release, continuing
   the arc toward a full quantum test suite:
   - **Metamorphic + property-based testing:** generate circuits and assert algebraic invariants
     (`H.H = I`, `U.U^-1 = I`, symmetry), again with no expected distribution. (Feasible:
     `U.U^-1 = I` held on 20/20 random 3-qubit circuits.)
-  - **Statistical-power tooling:** plan shots for a target type-I/type-II error and report
-    confidence intervals (Wilson) on the verdict, not just a point estimate against a threshold.
-    (Feasible: Wilson intervals and power-based shot counts compute in pure Python, no SciPy.)
   - **Mutation testing:** inject a fault into a circuit and confirm the gate suite catches it,
     measuring the suite's own sensitivity. (Feasible: a TVD gate killed 4/4 injected mutants.)
   - **Regression / trend gating:** store a baseline metric and fail on a fidelity/TVD drop

@@ -111,6 +111,13 @@ Passes when all provided constraints hold: `min` $\le p(s)$, $p(s) \le$ `max`, a
 $|p(s) - \text{equals}| \le$ `tolerance`. At least one of `min`/`max`/`equals` is
 required. Ideal for amplitude-amplification checks (e.g. Grover's marked state).
 
+The result also reports a 95% Wilson confidence interval on the measured probability
+(`ci95_lower`/`ci95_upper` in `metrics`, and in the message), so a passing or failing result
+also shows how tightly `shots` actually constrains $p(s)$: `P(11) = 0.62 (95% CI [0.53, 0.70])`
+at 100 shots reads very differently from the same point estimate at 100000 shots, even though
+both might cross the same `min`. See [ADR-0017](adr/0017-statistical-power-tooling.md) and
+`shotgate shots` below for planning the shot count a target interval width needs.
+
 ---
 
 ## `allowed_states`: Structural / Leakage Oracle
@@ -323,3 +330,19 @@ $\sqrt{p(1-p)/N}$; at $N=8192$ and $p=0.5$ that's $\approx 0.0055$. Set distance
 thresholds a few standard errors above expected noise, and prefer fixed `seed`s on
 simulators to make pre-merge gates deterministic. Reserve looser thresholds for real
 hardware, where device error, not sampling, dominates.
+
+Rather than apply that formula by hand, `shotgate shots` computes a shot count directly
+(ADR-0017):
+
+```bash
+# "How many shots for a 95% CI of +/-0.01 around a measured probability?"
+shotgate shots --margin 0.01
+# 9604 shots -> a 95% Wilson interval of +/-0.01 around p=0.5
+
+# "How many shots to reliably (90% power) catch a 0.05 shift at alpha=0.01?"
+shotgate shots --effect-size 0.05 --alpha 0.01 --power 0.9
+# 5952 shots -> 90% power to detect a shift of 0.05 at alpha=0.01
+```
+
+Pass `--p` with `--margin` if the expected proportion is known and not near 0.5 (the default),
+since a proportion nearer 0 or 1 needs fewer shots for the same absolute margin.

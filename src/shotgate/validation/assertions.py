@@ -348,12 +348,23 @@ class StateProbabilityAssertion(_BaseAssertion):
             passed = passed and prob >= self.minimum
         if self.maximum is not None:
             passed = passed and prob <= self.maximum
+        result_metrics: dict[str, float] = {"probability": prob}
+        message = f"P({self.state}) = {prob:.4f}"
+        if shots > 0:
+            # A 95% Wilson interval on the measured probability: reports how tightly `shots`
+            # actually constrains the true probability, not just the point estimate.
+            target = metrics.clean_key(self.state)
+            raw_count = sum(v for k, v in counts.items() if metrics.clean_key(k) == target)
+            ci_lower, ci_upper = metrics.wilson_interval(raw_count, shots)
+            result_metrics["ci95_lower"] = ci_lower
+            result_metrics["ci95_upper"] = ci_upper
+            message += f" (95% CI [{ci_lower:.4f}, {ci_upper:.4f}])"
         return AssertionResult(
             type=self.type,
             label=self.display_label(),
             passed=passed,
-            message=f"P({self.state}) = {prob:.4f}",
-            metrics={"probability": prob},
+            message=message,
+            metrics=result_metrics,
         )
 
 
