@@ -26,7 +26,7 @@ jobs:
     name: lint + types
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -53,7 +53,7 @@ jobs:
       matrix:
         python: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -80,7 +80,7 @@ jobs:
     name: build image + integration + example gates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -132,7 +132,7 @@ jobs:
           - { qiskit: "qiskit==1.2.*", label: "floor-1.2" }
           - { qiskit: "qiskit<3", label: "latest-2.x" }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -173,7 +173,7 @@ jobs:
     # The Braket backend's local-simulation path runs with no AWS account; the cloud
     # path (named devices) needs AWS credentials and is not exercised in CI.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull base image (retry + mirror fallback)
         run: |
@@ -200,7 +200,7 @@ jobs:
     name: terraform fmt + validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Pull terraform image (retry + mirror fallback)
         run: |
