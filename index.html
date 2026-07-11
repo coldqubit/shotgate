@@ -149,11 +149,12 @@
         </div>
       </div>
       <div class="oracle-group">
-        <div class="oracle-group-label"><span class="tick"></span>Structural &amp; leakage</div>
-        <div class="oracles cols-3">
+        <div class="oracle-group-label"><span class="tick"></span>Structural &amp; cross-run</div>
+        <div class="oracles cols-4">
           <div class="card"><span class="sym">∉</span><h4>allowed_states</h4><p>Probability mass observed outside the allowed support set; catches states that should never appear.</p><div class="card-foot">max_leakage: 0.0</div></div>
           <div class="card"><span class="sym">≣</span><h4>circuit_depth</h4><p>Bound the authored circuit's depth in a min/max window. Static and output-independent.</p><div class="card-foot">max: 50 · no execution</div></div>
           <div class="card"><span class="sym">⊆</span><h4>gate_set</h4><p>Require the circuit to use only an allowed set of gate names. Static, runs every commit.</p><div class="card-foot">allowed: [h, cx, rz, sx] · no execution</div></div>
+          <div class="card"><span class="sym">Δ</span><h4>differential</h4><p>Total variation distance against another job's counts, not a declared expected. Gates a circuit with no closed-form answer.</p><div class="card-foot">against_job: baseline · max_distance: 0.05</div></div>
         </div>
       </div>
     </div>
