@@ -293,9 +293,12 @@ shotgate/
   (`shots_for_power(0.05, alpha=0.01, power=0.9) == 5952`). Pure stdlib, no SciPy.
 - **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release, continuing
   the arc toward a full quantum test suite:
-  - **Metamorphic + property-based testing:** generate circuits and assert algebraic invariants
-    (`H.H = I`, `U.U^-1 = I`, symmetry), again with no expected distribution. (Feasible:
-    `U.U^-1 = I` held on 20/20 random 3-qubit circuits.)
+  - **Metamorphic testing works today, no new code:** compose a circuit with its own inverse
+    and bound the all-zeros outcome, needing no expected distribution for what the circuit
+    itself computes. See `examples/metamorphic-inverse` ($U \cdot U^{-1} = I$, measured
+    $P(000) = 1.0000$). **Property-based generation** (systematically generating circuits
+    rather than hand-writing one) remains planned. (Feasible: the invariant held on 20/20
+    random 3-qubit circuits in an earlier spike.)
   - **Mutation testing:** inject a fault into a circuit and confirm the gate suite catches it,
     measuring the suite's own sensitivity. (Feasible: a TVD gate killed 4/4 injected mutants.)
   - **Regression / trend gating:** store a baseline metric and fail on a fidelity/TVD drop

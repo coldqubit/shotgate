@@ -1,0 +1,39 @@
+apiVersion: shotgate.dev/v1alpha1
+kind: QuantumWorkflow
+metadata:
+  name: metamorphic-inverse
+  description: >-
+    Metamorphic testing: no `expected` distribution is declared for U itself, only the
+    algebraic identity U.U^-1 = I. `circuit.qasm` applies an arbitrary, moderately
+    entangling circuit U (H, CX, a parametrized RZ) followed by its exact inverse U^-1
+    (same gates, reverse order, each inverted). Whatever U computes, U followed by U^-1
+    must return the circuit to |000>, so the gate needs no independent oracle for U's
+    output, the same shape of testing as the `differential` oracle (ADR-0016) but via a
+    self-composed circuit rather than a second job. Also demonstrates the Wilson
+    confidence interval `state_probability` now reports on its measured probability
+    (ADR-0017): a near-1.0 probability at these shots should report a CI barely below 1.
+  labels:
+    suite: smoke
+    qubits: "3"
+
+defaults:
+  backend:
+    provider: local-aer
+    shots: 8192
+    seed: 1234
+
+jobs:
+  - name: u-then-u-inverse
+    circuit:
+      format: qasm2
+      path: circuit.qasm
+    assertions:
+      # Structural: only |000> should ever appear (no expected distribution for U itself).
+      - type: allowed_states
+        states: ["000"]
+        max_leakage: 0.0
+      # Same fact via the marginal-probability oracle; its message now carries a 95% Wilson
+      # CI on the measured probability (ADR-0017).
+      - type: state_probability
+        state: "000"
+        min: 0.99

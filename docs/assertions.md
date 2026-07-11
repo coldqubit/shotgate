@@ -270,6 +270,13 @@ or names a later job fails closed with a message identifying the missing referen
 schema error, since a job's assertions cannot see their siblings at parse time. See
 [ADR-0016](adr/0016-differential-oracle.md).
 
+**Metamorphic testing needs no new assertion type.** A related "no expected needed" pattern,
+algebraic invariants (e.g. $U \cdot U^{-1} = I$), is already fully expressible with existing
+oracles: compose a circuit $U$ with its own exact inverse in one job, and bound the all-zeros
+outcome with `allowed_states`/`state_probability`, needing no oracle for what $U$ itself
+computes. See `examples/metamorphic-inverse` (a 3-qubit circuit through H/CX/RZ followed by
+its inverse, measured at $P(000) = 1.0000$, 95% CI $[0.9995, 1.0000]$ at 8192 shots).
+
 ---
 
 ## `circuit_depth`: Circuit Depth (structural)

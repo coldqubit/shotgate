@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **`examples/metamorphic-inverse`: metamorphic testing with no new assertion type.** A
+  circuit composed with its own exact inverse ($U \cdot U^{-1} = I$) must return to
+  $|000\rangle$ regardless of what $U$ computes, expressible today with `allowed_states`/
+  `state_probability` and no `expected` distribution for $U$ itself (measured
+  $P(000) = 1.0000$, 95% CI $[0.9995, 1.0000]$ at 8192 shots). Docs-only; no code change.
+
 ## [0.9.0] - 2026-07-11
 
 ### Added

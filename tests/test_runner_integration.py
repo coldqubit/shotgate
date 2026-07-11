@@ -38,6 +38,7 @@ BELL_QASM2 = (
         "bell-state-noisy-sim",
         "bell-state-structural",
         "bell-state-differential",
+        "metamorphic-inverse",
     ],
 )
 def test_example_workflows_pass(example: str):
