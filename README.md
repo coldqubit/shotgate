@@ -181,13 +181,13 @@ For hardware-isolated runs (each pipeline in a throwaway KVM micro-VM), see
 | --- | --- | --- |
 | `chi_square` | Pearson χ² GoF test (p-value vs α) | Formal hypothesis test; **simulator-only** (fails closed on hardware, ADR-0015) |
 | `distribution_tvd` | Total variation distance (TVD) ≤ bound | Default distribution check; interpretable, shot-count-agnostic |
-| `hellinger_fidelity` | Classical fidelity ≥ threshold | Fidelity tracking against an ideal distribution |
+| `hellinger_fidelity` | Classical fidelity ≥ threshold | **Deprecation candidate** (ADR-0018): redundant with `distribution_tvd`; v0.10.0 folds the fidelity number into TVD's own result |
 | `state_probability` | Marginal P(state) in a window / ≈ target | Single-outcome amplitude checks (e.g. Grover) |
 | `allowed_states` | Probability mass outside support ≤ budget | Structural/leakage guarantees (e.g. GHZ corners) |
 | `kl_divergence` | KL D(obs‖exp) ≤ bound (bits) | Information-theoretic distance; automatically readout-aware on a QPU (ADR-0015) |
 | `shannon_entropy` | Entropy in a min/max window (bits) | Assert the intended randomness/concentration |
 | `expectation_value` | `<Z..Z>` in [-1, 1] via window / target | Correlation/parity observable tracking |
-| `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer (e.g. Grover) |
+| `most_frequent_outcome` | Modal state (optional min probability) | Single intended answer where ranking matters more than absolute magnitude (e.g. Grover under noise) |
 | `differential` | TVD ≤ bound against another job's counts | No closed-form expected: gate two backends/methods agree (ADR-0016) |
 | `circuit_depth` | Authored-circuit depth in a window | Static complexity budget (no execution) |
 | `gate_set` | Circuit uses only allowed gate names | Enforce a basis / catch unexpected gates (no execution) |
@@ -291,24 +291,62 @@ shotgate/
   estimate, and a new `shotgate shots --margin M` / `--effect-size W` command plans a shot
   count for a target interval width or detection power, verified against a hand calculation
   (`shots_for_power(0.05, alpha=0.01, power=0.9) == 5952`). Pure stdlib, no SciPy.
-- **Planned**, each shipped as its own [SemVer](https://semver.org/) MINOR release, continuing
-  the arc toward a full quantum test suite:
-  - **Metamorphic testing works today, no new code:** compose a circuit with its own inverse
-    and bound the all-zeros outcome, needing no expected distribution for what the circuit
-    itself computes. See `examples/metamorphic-inverse` ($U \cdot U^{-1} = I$, measured
-    $P(000) = 1.0000$). **Property-based generation** (systematically generating circuits
-    rather than hand-writing one) remains planned. (Feasible: the invariant held on 20/20
-    random 3-qubit circuits in an earlier spike.)
-  - **Mutation testing:** inject a fault into a circuit and confirm the gate suite catches it,
-    measuring the suite's own sensitivity. (Feasible: a TVD gate killed 4/4 injected mutants.)
-  - **Regression / trend gating:** store a baseline metric and fail on a fidelity/TVD drop
-    beyond a delta across commits.
-  - Plus error mitigation via [Mitiq](https://mitiq.readthedocs.io/), circuit fixtures, a Helm
-    chart, an optional OpenTelemetry exporter (kept out of core deps), and Braket cloud-path
-    validation.
+- **v0.10.0 (planned):** oracle catalog consolidation (ADR-0018). `distribution_tvd`'s reported
+  metrics gain a `fidelity` field (the same number `hellinger_fidelity` reports today, computed
+  from the distributions TVD already has); `hellinger_fidelity` is marked deprecated in its
+  docstring and docs, still fully functional. Non-breaking.
 
-  **`1.0.0`** is the API-stability milestone (the `shotgate.dev/v1` schema and a frozen
-  CLI/Python surface), not a feature count.
+**`1.0.0`** is the API-stability milestone: the `shotgate.dev/v1alpha1` schema promoted through
+`v1beta1` to a stable, frozen `v1`, with the CLI flags and public Python entry points frozen
+under SemVer. Not a feature count, a set of guarantees; see the full definition of done in
+[`docs/adr/0018-oracle-catalog-consolidation.md`](docs/adr/0018-oracle-catalog-consolidation.md)
+and the ADR index.
+
+### Toward 1.0 (needed to responsibly freeze the surface)
+
+- **Oracle catalog consolidation** (v0.10.0 above): ship first, so the frozen `v1` catalog is not
+  carrying redundant surface (ADR-0018).
+- **Error mitigation via [Mitiq](https://mitiq.readthedocs.io/)**, as an optional counts-level
+  transform stage (ZNE-style extrapolation works over Sampler counts; it does not need an
+  Estimator primitive). This is the highest-leverage remaining gap against "the modern way" of
+  running quantum programs: today the hardware-capable oracles (`distribution_tvd`,
+  `hellinger_fidelity`, `allowed_states`, `kl_divergence`) validate a device's *raw* noisy
+  output; a real deployment pipeline usually wants to gate the *mitigated* output instead.
+- **Braket cloud-path validation on real AWS hardware.** Local Braket simulation is validated
+  (ADR-0011); the cloud path is implemented but has never been exercised against a real Braket
+  device, the same gap the IBM backend closed in v0.2. **Blocked on an AWS account with Braket
+  access** (the AWS Free Tier's 1 free hour/month of SV1/DM1/TN1 covers the *simulator* cloud
+  path; real QPUs have no free tier) — this is the one item on this list that needs something
+  only a human can provide.
+- **API-surface stabilisation:** promote the schema `v1alpha1` -> `v1beta1` -> `v1` with a
+  written compatibility guarantee and migration note, freeze the CLI flags and Python entry
+  points, publish the stability/deprecation policy.
+- **Coverage and supply-chain hardening:** >= 90% line coverage on the SDK-free core, an SBOM,
+  pinned base-image digest, and a written threat model.
+
+### Post-1.0 (additive; does not require re-freezing anything)
+
+- **Property-based circuit generation**, extending the metamorphic pattern already shipped
+  (`examples/metamorphic-inverse`, $U \cdot U^{-1} = I$, measured $P(000) = 1.0000$) from one
+  hand-written circuit to a systematic random-circuit generator. Deferred past 1.0 because it is
+  a new capability class (generating circuits, not just validating given ones), not something
+  the frozen validation surface depends on. (Feasible: the invariant held on 20/20 random
+  3-qubit circuits in an earlier spike.)
+- **Mutation testing:** inject a fault into a circuit and confirm the gate suite catches it,
+  measuring the suite's own sensitivity. (Feasible: a TVD gate killed 4/4 injected mutants.) A
+  pure addition; does not touch the frozen schema.
+- **Regression / trend gating:** store a baseline metric and fail on a fidelity/TVD drop beyond
+  a delta across commits. Needs its own ADR for where a baseline lives (a git-committed file, a
+  CI cache/artifact, or an external store each have real trade-offs); deliberately deferred until
+  that design gets dedicated attention rather than decided in a hurry.
+- **Arbitrary-Pauli / entanglement-witness / observable-circuit oracles.** `expectation_value`
+  today is Z-basis parity only, computed from computational-basis counts; a general Pauli-string
+  or witness oracle needs basis-change measurement circuits, a materially bigger scope than a
+  counts-level metric (ADR-0008 flagged this as future work when `expectation_value` shipped).
+  Correctly a 1.x item, not a 1.0 blocker.
+- Platform surfaces: a Helm chart, an optional OpenTelemetry exporter (kept out of core deps), a
+  GitHub Action wrapper, and entry-point plugin discovery for out-of-tree backends.
+- More backends (IonQ/Quantinuum directly or via qBraid), a policy/governance layer.
 
 See [`CHANGELOG.md`](CHANGELOG.md) and the [ADRs](docs/adr/) for decisions and rationale.
 

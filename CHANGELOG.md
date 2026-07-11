@@ -13,6 +13,21 @@ All notable changes to this project are documented here. The format is based on
   $|000\rangle$ regardless of what $U$ computes, expressible today with `allowed_states`/
   `state_probability` and no `expected` distribution for $U$ itself (measured
   $P(000) = 1.0000$, 95% CI $[0.9995, 1.0000]$ at 8192 shots). Docs-only; no code change.
+- **Oracle catalog consolidation strategy (ADR-0018), planning only, no code change.** Audited
+  the four "closeness to expected" oracles; kept `distribution_tvd` (default), `chi_square`
+  (a distinct hypothesis-test framework), and `kl_divergence` (the only one of the four that is
+  automatically hardware-portable, with a proven real-QPU result) as three reasoned alternates,
+  and marked `hellinger_fidelity` a deprecation candidate: it does not answer a question the
+  other three do not already answer, and its only real argument is Qiskit-vocabulary
+  familiarity. Plan for v0.10.0: fold a `fidelity` field into `distribution_tvd`'s reported
+  metrics (the number survives without a fourth independently-thresholded gate), mark
+  `hellinger_fidelity` deprecated in docs (still fully functional), and drop the standalone
+  type from the frozen `v1` catalog at the schema-stabilisation milestone unless real usage
+  argues otherwise before then. README's roadmap is reordered into "toward 1.0" (needed to
+  responsibly freeze the schema/CLI surface: this consolidation, Mitiq error mitigation, Braket
+  cloud-hardware validation, API stabilisation, coverage/supply-chain hardening) versus
+  "post-1.0" (additive: property-based generation, mutation testing, regression/trend gating,
+  arbitrary-Pauli oracles, platform surfaces).
 
 ## [0.9.0] - 2026-07-11
 

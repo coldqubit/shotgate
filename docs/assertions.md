@@ -31,7 +31,7 @@ hardware (the measured ibm_fez Bell TVD was 0.1284 at 4096 shots; see the
 
 ---
 
-## `hellinger_fidelity`: Classical Fidelity
+## `hellinger_fidelity`: Classical Fidelity (deprecation candidate)
 
 With the Bhattacharyya coefficient $\mathrm{BC}(p,q) = \sum_x \sqrt{p(x)\,q(x)}$,
 
@@ -46,6 +46,17 @@ single-number "closeness" score to track across commits.
   expected: { "00": 0.5, "11": 0.5 }
   min_fidelity: 0.99
 ```
+
+**Marked a deprecation candidate (ADR-0018).** It is TVD's close mathematical cousin (both are
+bounded $f$-divergences that agree on pass/fail at the threshold levels used throughout this
+project's examples and hardware runs) and, unlike `chi_square` (a distinct hypothesis-test
+framework) or `kl_divergence` (automatically hardware-portable since ADR-0015, with a proven
+real-QPU result), it does not answer a question the other two closeness oracles do not already
+answer. Plan: v0.10.0 adds a `fidelity` field to `distribution_tvd`'s reported metrics (so the
+number survives without a fourth independently-thresholded gate); the standalone assertion type
+is dropped from the frozen `shotgate.dev/v1` catalog at the 1.0 schema migration unless real
+usage argues otherwise before then. It keeps working exactly as documented here until it is
+actually removed; nothing changes functionally in this release.
 
 ---
 
@@ -226,6 +237,13 @@ Passes when the modal outcome equals `state` (and its probability $\ge$
 bitstring for determinism. Ideal for algorithms with a single intended answer (e.g.
 Grover's marked state).
 
+**Versus `state_probability`.** Both can check "does the intended state dominate," but they
+answer different questions: `state_probability` bounds an *absolute* probability
+($p(s) \ge 0.7$), while `most_frequent_outcome` bounds a *ranking*, the intended state must be
+the argmax regardless of its absolute value. Use `most_frequent_outcome` when noise may erode
+the winning margin but the correct answer should still win; use `state_probability` when you
+need a specific absolute floor (e.g. for amplitude-amplification success-probability claims).
+
 ---
 
 ## `differential`: Cross-Run Agreement (no `expected` needed)
@@ -316,9 +334,10 @@ or to enforce a target device's basis before execution. Also static (no executio
 | Goal | Use |
 | --- | --- |
 | General "does the distribution match?" | `distribution_tvd` (default) + `chi_square` (simulator) |
-| Track closeness as one number over time | `hellinger_fidelity` |
+| Formal significance test (a p-value, not a threshold) | `chi_square` (simulator-only) |
 | Information-theoretic distance to expected | `kl_divergence` (simulator; auto readout-aware on a QPU) |
-| Algorithm produces a specific answer | `state_probability` or `most_frequent_outcome` |
+| Algorithm produces a specific answer with an absolute floor | `state_probability` |
+| Algorithm produces a specific answer, ranking matters more than magnitude | `most_frequent_outcome` |
 | Track a correlation/parity observable | `expectation_value` ($\langle Z\cdots\rangle$) |
 | Assert the right amount of randomness | `shannon_entropy` |
 | Forbid impossible outcomes / bound error | `allowed_states` |
