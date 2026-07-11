@@ -248,7 +248,7 @@ shotgate/
 | --- | --- |
 | `local-aer` (Qiskit Aer simulator) | **Working**, default, baked into the image |
 | `ibm` (IBM Quantum via Qiskit Runtime) | **Validated on real hardware** (`ibm_fez`, 2026-06-11: Bell/GHZ/Grover gates passed at 4096 shots; [measured baseline](docs/hardware-validation.md)) |
-| `braket` (AWS Braket via qiskit-braket-provider) | **Working: local simulation** (no AWS account). Cloud devices need AWS credentials; not yet validated on real Braket hardware. |
+| `braket` (AWS Braket via qiskit-braket-provider) | **Working: local simulation** (no AWS account, the validated default). Cloud devices need AWS credentials; not validated against real hardware by the maintainer and not planned to be (ADR-0019: no free or low-cost tier for real QPU access exists), though implemented and open to a community-contributed validation. |
 | Error mitigation ([Mitiq](https://mitiq.readthedocs.io/)) | **Planned** |
 
 ## Roadmap
@@ -298,9 +298,10 @@ shotgate/
 
 **`1.0.0`** is the API-stability milestone: the `shotgate.dev/v1alpha1` schema promoted through
 `v1beta1` to a stable, frozen `v1`, with the CLI flags and public Python entry points frozen
-under SemVer. Not a feature count, a set of guarantees; see the full definition of done in
-[`docs/adr/0018-oracle-catalog-consolidation.md`](docs/adr/0018-oracle-catalog-consolidation.md)
-and the ADR index.
+under SemVer. Not a feature count, a set of guarantees; the two most recently revised clauses
+are the oracle catalog
+([ADR-0018](docs/adr/0018-oracle-catalog-consolidation.md)) and the backend-validation scope
+([ADR-0019](docs/adr/0019-braket-cloud-validation-scope.md)) — see the ADR index for the rest.
 
 ### Toward 1.0 (needed to responsibly freeze the surface)
 
@@ -320,12 +321,6 @@ and the ADR index.
   running quantum programs: today the hardware-capable oracles (`distribution_tvd`,
   `hellinger_fidelity`, `allowed_states`, `kl_divergence`) validate a device's *raw* noisy
   output; a real deployment pipeline usually wants to gate the *mitigated* output instead.
-- **Braket cloud-path validation on real AWS hardware.** Local Braket simulation is validated
-  (ADR-0011); the cloud path is implemented but has never been exercised against a real Braket
-  device, the same gap the IBM backend closed in v0.2. **Blocked on an AWS account with Braket
-  access** (the AWS Free Tier's 1 free hour/month of SV1/DM1/TN1 covers the *simulator* cloud
-  path; real QPUs have no free tier) — this is the one item on this list that needs something
-  only a human can provide.
 - **API-surface stabilisation:** promote the schema `v1alpha1` -> `v1beta1` -> `v1` with a
   written compatibility guarantee and migration note, freeze the CLI flags and Python entry
   points, publish the stability/deprecation policy.
@@ -347,6 +342,11 @@ and the ADR index.
   a delta across commits. Needs its own ADR for where a baseline lives (a git-committed file, a
   CI cache/artifact, or an external store each have real trade-offs); deliberately deferred until
   that design gets dedicated attention rather than decided in a hurry.
+- **Braket cloud-hardware validation** is open to a community contribution, not on the
+  maintainer's own roadmap (ADR-0019): the local path (ADR-0011) is the validated default, and
+  there is no free or low-cost tier for real QPU access on AWS Braket at any provider. A
+  contributor with their own AWS Braket access is welcome to run the existing
+  `hardware-validation`-style workflow and submit the result.
 - **Arbitrary-Pauli / entanglement-witness / observable-circuit oracles.** `expectation_value`
   today is Z-basis parity only, computed from computational-basis counts; a general Pauli-string
   or witness oracle needs basis-change measurement circuits, a materially bigger scope than a

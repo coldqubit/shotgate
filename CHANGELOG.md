@@ -37,6 +37,17 @@ All notable changes to this project are documented here. The format is based on
   benchmark, a curated 40-program suite for comparing quantum software testing tools, to
   convert today's self-measured spikes into externally reproducible claims before the 1.0
   schema freeze.
+- **Braket cloud-hardware validation is out of maintainer scope (ADR-0019), no code change.**
+  AWS Braket has no free or low-cost tier for real QPU access at any provider (a flat $0.30
+  per-task fee plus $0.000425-$0.08 per shot depending on provider, on top of AWS
+  account/billing overhead), so the maintainer will not fund or perform this validation, as a
+  standing policy rather than a temporary blocker. The local Braket path (ADR-0011, no AWS
+  account) remains the validated default and the project's actual claim. Real-hardware
+  validation is welcomed as a community contribution and would be folded into
+  `docs/hardware-validation.md` if submitted, but is no longer on the "Toward 1.0" list; the
+  1.0 definition of done now requires one real-hardware-validated backend (IBM) plus one
+  additional backend validated in cloud simulation (Braket local), not two hardware-validated
+  backends.
 
 ## [0.9.0] - 2026-07-11
 
