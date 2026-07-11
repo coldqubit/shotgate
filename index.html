@@ -134,7 +134,7 @@
         <div class="oracle-group-label"><span class="tick"></span>Distance &amp; fit</div>
         <div class="oracles cols-4">
           <div class="card"><span class="sym">δ</span><h4>distribution_tvd</h4><p>Total variation distance between observed and expected counts, bounded above. Interpretable, shot-count agnostic.</p><div class="card-foot">max_distance: 0.03</div></div>
-          <div class="card"><span class="sym">F</span><h4>hellinger_fidelity</h4><p>Classical fidelity between the observed and expected distributions, bounded below.</p><div class="card-foot">min_fidelity: 0.99</div></div>
+          <div class="card"><span class="sym">F</span><h4>hellinger_fidelity</h4><p>Classical fidelity, bounded below. Deprecation candidate (ADR-0018): the number moves onto distribution_tvd's result.</p><div class="card-foot">min_fidelity: 0.99 · deprecation candidate</div></div>
           <div class="card"><span class="sym">χ²</span><h4>chi_square</h4><p>Pearson goodness-of-fit, gated on a p-value. Simulator-only: fails closed on real hardware.</p><div class="card-foot">significance: 0.01 · sim-only</div></div>
           <div class="card"><span class="sym">D</span><h4>kl_divergence</h4><p>Kullback-Leibler divergence from expected, bounded above (bits). Auto readout-aware on a QPU.</p><div class="card-foot">max_divergence: 0.05</div></div>
         </div>
