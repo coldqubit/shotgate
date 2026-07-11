@@ -84,7 +84,13 @@ Notes & caveats:
   (rejects only strong evidence of mismatch), reducing flakiness.
 - Outcomes expected with probability 0 but observed (leakage) push the statistic up
   and the p-value down, so the test correctly fails. (Internally, expected counts are
-  floored at a tiny epsilon to keep the statistic finite.)
+  floored at `1e-12` to keep the statistic finite.) This floor is a deliberate departure
+  from classical goodness-of-fit practice: Cochran's rule calls for *pooling* categories
+  with expected count below 5 rather than dividing by a near-zero denominator, but pooling
+  would suppress exactly the leakage signal this oracle exists to catch. On the `ibm_fez`
+  Bell leakage case (ADR-0015) the statistic diverges to 1.5e17 instead of settling at a
+  textbook-conformant value; read a p-value driven by a near-zero-expected category as a
+  leakage detector's output, not a citable classical goodness-of-fit result.
 - Classical validity expects $E_x \gtrsim 5$ per category; with many categories and
   few shots, prefer `distribution_tvd`.
 - **Simulator-only (enforced).** `chi_square` compares against the *exact* `expected`, so on

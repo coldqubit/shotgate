@@ -28,6 +28,15 @@ All notable changes to this project are documented here. The format is based on
   cloud-hardware validation, API stabilisation, coverage/supply-chain hardening) versus
   "post-1.0" (additive: property-based generation, mutation testing, regression/trend gating,
   arbitrary-Pauli oracles, platform surfaces).
+- **Two documentation refinements after independent review, no code change.**
+  `docs/assertions.md`'s `chi_square` notes now state explicitly that the `1e-12`
+  expected-count floor is a deliberate departure from Cochran's rule (pool categories with
+  expected count below 5) rather than an oversight, since pooling would suppress exactly the
+  leakage signal the floor exists to preserve. README's "Toward 1.0" list gains a new item:
+  benchmark the oracle suite against the [Qolumbina](https://arxiv.org/abs/2607.02029)
+  benchmark, a curated 40-program suite for comparing quantum software testing tools, to
+  convert today's self-measured spikes into externally reproducible claims before the 1.0
+  schema freeze.
 
 ## [0.9.0] - 2026-07-11
 

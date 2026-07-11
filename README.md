@@ -306,6 +306,14 @@ and the ADR index.
 
 - **Oracle catalog consolidation** (v0.10.0 above): ship first, so the frozen `v1` catalog is not
   carrying redundant surface (ADR-0018).
+- **Benchmark the oracle suite against [Qolumbina](https://arxiv.org/abs/2607.02029)**, a curated
+  40-program benchmark infrastructure for comparing quantum software testing tools on equal
+  footing (published 2026-07-02). Every measured number in this project's docs today (the 4/4
+  mutant-killing result, the metamorphic-inverse spike, the hardware TVD/fidelity baselines) is
+  self-measured on hand-chosen circuits; running the oracle suite against Qolumbina's program set
+  and reporting the result converts those into externally-reproducible, citable claims. Lower
+  engineering cost than validating Braket on real cloud hardware, and blocked on nothing but
+  time, so it does not need to wait on an AWS account.
 - **Error mitigation via [Mitiq](https://mitiq.readthedocs.io/)**, as an optional counts-level
   transform stage (ZNE-style extrapolation works over Sampler counts; it does not need an
   Estimator primitive). This is the highest-leverage remaining gap against "the modern way" of
